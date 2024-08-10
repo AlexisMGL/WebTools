@@ -1625,6 +1625,7 @@ function update_minimal_config() {
 function load_params(log) {
     load_ins(log)
     load_compass(log)
+    load_am(log)
     load_baro(log)
     load_airspeed(log)
     load_gps(log)
@@ -1649,6 +1650,200 @@ function load_params(log) {
         alert("Arming checks disabled")
     }
 
+}
+
+function load_am(log) {
+
+    // This section contains fastlog tool by AerialMetric
+
+    let am_section = document.getElementById("AM")
+
+    // Section 1 : In this section I try to devide log in Vertcial / Transition / Away / Return / Away nodhdem / Return nodhdem
+
+    const MSG = log.get("MSG")
+    MSG_time = TimeUS_to_seconds(MSG.TimeUS)
+    Messages = MSG.Message
+
+    let time_mark = {}
+
+    time_mark = findMessageTimes(MSG_time, Messages)
+
+    // Display all time_mark pairs
+    Object.keys(time_mark).forEach(key => {
+        const time = time_mark[key];
+        const timeDiv = document.createElement("div");
+        timeDiv.innerHTML = `${key}: ${time}`;
+        am_section.appendChild(timeDiv);
+    });
+
+    // Section 2 : Now I create alert based on those sequences
+
+    let table_seq = document.createElement("table_seq")
+    am_section.appendChild(table_seq)
+    let column_to = document.createElement("colmun_to")
+    column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"]))
+    table_seq.appendChild(column_to)
+
+
+    //
+
+
+    
+    //let data_sk = {}
+
+    //data_sk.x = time
+    //data_sk.y = TECS.dsp
+
+    //// Use the findMaxPair function to get the max (x, y) pair
+    //const maxPair = findMaxPair(data_sk);
+
+    //// Create a new div to display the max value
+    //const maxValueDiv = document.createElement("div");
+    //maxValueDiv.innerHTML = `Max (x, y): (${maxPair.x.toFixed(3)}, ${maxPair.y.toFixed(3)})`;
+    //am_section.appendChild(maxValueDiv);
+
+
+    am_section.hidden = false
+    am_section.previousElementSibling.hidden = false
+
+
+    
+}
+
+function findMaxPair(dataxy) {
+    let maxIndex = 0;
+    for (let i = 1; i < dataxy.y.length; i++) {
+        if (dataxy.y[i] > dataxy.y[maxIndex]) {
+            maxIndex = i;
+        }
+    }
+
+    return {
+        x: dataxy.x[maxIndex],
+        y: dataxy.y[maxIndex]
+    };
+}
+
+function findMessageTimes(MSG_time, MSG) {
+
+    const time_mark = {
+        "VTOL Takeoff": null,
+        "Transition start": null,
+        "Cruise start": null,
+        "Payload Drop": null,
+        "Start airbrake": null,
+        "Start full VTOL land": null,
+        "Throttle disarmed": null
+    };
+
+    for (let i = 0; i < MSG.length; i++) {
+        const message = MSG[i];
+        const time = MSG_time[i];
+
+        // Vérifier les premiers messages
+        if (time_mark["VTOL Takeoff"] === null && message.includes("1 VTOLTakeoff")) {
+            time_mark["VTOL Takeoff"] = time;
+        }
+        if (time_mark["Transition start"] === null && message.includes("Mission: 2 WP")) {
+            time_mark["Transition start"] = time;
+        }
+        if (time_mark["Cruise start"] === null && message.includes("Set airspeed")) {
+            time_mark["Cruise start"] = time;
+        }
+
+        // Vérifier les derniers messages
+        if (message.includes("SetServo")) {
+            time_mark["Payload Drop"] = time;
+        }
+        if (message.includes("VTOL airbrake")) {
+            time_mark["Start airbrake"] = time;
+        }
+        if (message.includes("VTOL position2 started")) {
+            time_mark["Start full VTOL land"] = time;
+        }
+        if (message.includes("Throttle disarmed")) {
+            time_mark["Throttle disarmed"] = time;
+        }
+    }
+
+    // Si une clé est encore null, cela signifie que le message n'a pas été trouvé
+    Object.keys(time_mark).forEach(key => {
+        if (time_mark[key] === null) {
+            time_mark[key] = "Message non trouvé";
+        }
+    });
+
+    return time_mark;
+}
+
+function findMinMaxAvgValue(time, values, t1, t2) {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let sum = 0;
+    let count = 0;
+    let start = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2) {
+            if (values[i] < minValue) {
+                minValue = values[i];
+            }
+            if (values[i] > maxValue) {
+                maxValue = values[i];
+            }
+            sum += values[i];
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avgValue = count > 0 ? sum / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (minValue === Infinity) minValue = null;
+    if (maxValue === -Infinity) maxValue = null;
+
+    return [minValue, maxValue, avgValue];
+}
+
+
+function print_to(log,t1,t2) {
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = "takeoff"
+    fieldset.appendChild(heading)
+
+    const bat_1 = log.get_instance("BAT", 1)
+
+    let time = TimeUS_to_seconds(bat_1.TimeUS)
+    let bat_1_volt = bat_1.Volt
+    let bat_1_curr = bat_1.Curr
+
+    // batt 1 volt
+    const [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
+    let div1 = document.createElement("div1");
+    div1.innerHTML = `batt1_volt_min: ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 46 ? "\u2705" : "\u274c"}`;
+    fieldset.appendChild(div1);
+
+    //// batt 1 curr
+    //const [minvalue, maxvalue, avgvalue] = findminmaxavgvalue(time, bat_1_curr, t1, t2);
+    //div1.innerhtml = `batt1_curr_max: ${maxvalue !== null ? maxvalue.tofixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
+    //fieldset.appendchild(div1);
+
+    return fieldset
 }
 
 function load_param_file(text) {
@@ -2885,6 +3080,7 @@ function reset() {
         section.previousElementSibling.hidden = true
     }
 
+    setup_section(document.getElementById("AM"))
     setup_section(document.getElementById("VER"))
     setup_section(document.getElementById("FC"))
     setup_section(document.getElementById("WDOG"))
