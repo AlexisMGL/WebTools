@@ -1885,11 +1885,11 @@ function print_tr(log, t1, t2, t3) {
 
     // batt 0 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    div1.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue < 85) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue) && (maxvalue < 85) ? "\u2705" : "\u274c"}`;
     div1.innerHTML += "<br>";  // Add a line break
 
     time = (t3 - t1)
-    div1.innerHTML += `transition time (10<_<18 s): ${time !== null ? time.toFixed(2) : "n/a"} ${time !== null && (10 < time < 18) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += `transition time (10<_<18 s): ${time !== null ? time.toFixed(2) : "n/a"} ${time !== null && (10 < time) && (time < 18) ? "\u2705" : "\u274c"}`;
     div1.innerHTML += "<br>";  // Add a line break
 
 
@@ -1908,19 +1908,77 @@ function print_re(log, t1, t2) {
     fieldset.appendChild(heading)
 
     const bat_0 = log.get_instance("BAT", 0)
+    const bat_1 = log.get_instance("BAT", 1)
+    const tecs = log.get("TECS")
+    const arspd_0 = log.get_instance("ARSP", 0)
+    const arspd_1 = log.get_instance("ARSP", 1)
+    const rcou = log.get("RCOU")
+    const att = log.get("ATT")
+    const vibe_0 = log.get_instance("VIBE", 0)
 
     let time = TimeUS_to_seconds(bat_0.TimeUS)
-    let bat_0_curr = bat_0.Curr
-    let time = TimeUS_to_seconds(bat_1.TimeUS)
+    let bat_0_curr = bat_0.Curr 
     let bat_1_curr = bat_1.Curr
+
 
     // Create a single division
     let div1 = document.createElement("div");
 
-    // batt 0 volt
+    // batt 0 
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    div1.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue < 85) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += `batt0_curr_avg (19<_<25 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (19 < avgvalue) && (avgvalue < 25) ? "\u2705" : "\u274c"}`;
     div1.innerHTML += "<br>";  // Add a line break
+
+    // batt 1
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1_curr, t1, t2);
+    div1.innerHTML += `batt1_curr_avg (<1 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (avgvalue < 1) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    div1.innerHTML += `batt1_curr_max (<4 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 4) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+    //Attitude
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Roll, t1, t2);
+    div1.innerHTML += `att_roll_avg (-2<_<2 °): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (-2 < avgvalue) && (avgvalue < 2) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    if (-minvalue > maxvalue) {
+        div1.innerHTML += `att_|roll|_max (<33 °): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (-minvalue < 33) ? "\u2705" : "\u274c"}`;
+        div1.innerHTML += "<br>";  // Add a line break
+    }
+    else {
+        div1.innerHTML += `att_|roll|_max (<33 °): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 32) ? "\u2705" : "\u274c"}`;
+        div1.innerHTML += "<br>";  // Add a line break
+    }
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
+    div1.innerHTML += `att_pitch_avg (0<_<5 °): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0 < avgvalue) && (avgvalue < 5) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    div1.innerHTML += `att_pitch_max (<16 °): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 16) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+    //RCOU
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C1, t1, t2);
+    div1.innerHTML += `rcou_c1_avg (1470<_< 1530 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1470 < avgvalue) && (avgvalue < 1530) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    if ((1500-minvalue) > (maxvalue-1500)) {
+        div1.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (1400 < minvalue) ? "\u2705" : "\u274c"}`;
+        div1.innerHTML += "<br>";  // Add a line brea
+    }
+    else {
+        div1.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1600) ? "\u2705" : "\u274c"}`;
+        div1.innerHTML += "<br>";  // Add a line brea
+    }
+
+    // vibe
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeX, t1, t2);
+    div1.innerHTML += `vibe_X_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeY, t1, t2);
+    div1.innerHTML += `vibe_Y_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
+    div1.innerHTML += `vibe_Z_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+    //
 
 
 
