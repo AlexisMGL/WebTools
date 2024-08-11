@@ -1680,11 +1680,21 @@ function load_am(log) {
 
     let table_seq = document.createElement("table_seq")
     am_section.appendChild(table_seq)
+
     let column_to = document.createElement("colmun_to")
     column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"]))
     table_seq.appendChild(column_to)
 
-
+    let column_tr = document.createElement("colmun_tr")
+    column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"]))
+    table_seq.appendChild(column_tr)
+    
+    if (time_mark["Payload Drop"] == "Message non trouvé") {
+        // Flight Test
+        let column_re = document.createElement("colmun_re")
+        column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"]))
+        table_seq.appendChild(column_re)
+    }
     //
 
 
@@ -1729,6 +1739,7 @@ function findMessageTimes(MSG_time, MSG) {
     const time_mark = {
         "VTOL Takeoff": null,
         "Transition start": null,
+        "Transition end": null,
         "Cruise start": null,
         "Payload Drop": null,
         "Start airbrake": null,
@@ -1749,6 +1760,9 @@ function findMessageTimes(MSG_time, MSG) {
         }
         if (time_mark["Cruise start"] === null && message.includes("Set airspeed")) {
             time_mark["Cruise start"] = time;
+        }
+        if (time_mark["Transition end"] === null && message.includes("Transition done")) {
+            time_mark["Transition end"] = time;
         }
 
         // Vérifier les derniers messages
@@ -1832,16 +1846,86 @@ function print_to(log,t1,t2) {
     let bat_1_volt = bat_1.Volt
     let bat_1_curr = bat_1.Curr
 
+    // Create a single division
+    let div1 = document.createElement("div");
+
     // batt 1 volt
-    const [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
-    let div1 = document.createElement("div1");
-    div1.innerHTML = `batt1_volt_min: ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 46 ? "\u2705" : "\u274c"}`;
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
+    div1.innerHTML += `batt1_volt_min (>46 A): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 46 ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+    // batt 1 curr
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
+    div1.innerHTML += `batt1_curr_max (<250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add another line break
+    div1.innerHTML += `batt1_curr_avg (<150 A) ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add another line break
+
+    // Append the div to the fieldset
     fieldset.appendChild(div1);
 
-    //// batt 1 curr
-    //const [minvalue, maxvalue, avgvalue] = findminmaxavgvalue(time, bat_1_curr, t1, t2);
-    //div1.innerhtml = `batt1_curr_max: ${maxvalue !== null ? maxvalue.tofixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
-    //fieldset.appendchild(div1);
+    return fieldset
+}
+
+function print_tr(log, t1, t2, t3) {
+    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = "transition"
+    fieldset.appendChild(heading)
+
+    const bat_0 = log.get_instance("BAT", 0)
+
+    let time = TimeUS_to_seconds(bat_0.TimeUS)
+    let bat_0_curr = bat_0.Curr
+
+    // Create a single division
+    let div1 = document.createElement("div");
+
+    // batt 0 volt
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
+    div1.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue < 85) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+    time = (t3 - t1)
+    div1.innerHTML += `transition time (10<_<18 s): ${time !== null ? time.toFixed(2) : "n/a"} ${time !== null && (10 < time < 18) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+
+    // Append the div to the fieldset
+    fieldset.appendChild(div1);
+
+    return fieldset
+}
+
+function print_re(log, t1, t2) {
+    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = "Return"
+    fieldset.appendChild(heading)
+
+    const bat_0 = log.get_instance("BAT", 0)
+
+    let time = TimeUS_to_seconds(bat_0.TimeUS)
+    let bat_0_curr = bat_0.Curr
+    let time = TimeUS_to_seconds(bat_1.TimeUS)
+    let bat_1_curr = bat_1.Curr
+
+    // Create a single division
+    let div1 = document.createElement("div");
+
+    // batt 0 volt
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
+    div1.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue < 85) ? "\u2705" : "\u274c"}`;
+    div1.innerHTML += "<br>";  // Add a line break
+
+
+
+    // Append the div to the fieldset
+    fieldset.appendChild(div1);
 
     return fieldset
 }
