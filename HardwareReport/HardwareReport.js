@@ -1677,7 +1677,7 @@ function load_am(log) {
         am_section.appendChild(timeDiv);
     });
 
-    // [t11, t12, t21, t22] = find_palier(log, time_mark)
+    
 
     // Section 2 : Now I create alert based on those sequences
 
@@ -1715,11 +1715,18 @@ function load_am(log) {
 
     let table_seq = document.createElement("table")
     am_section.appendChild(table_seq)
+    let table_pl = document.createElement("table")
+    am_section.appendChild(table_pl)
+
+    let [t11, t12, h1, t21, t22, h2] = find_palier(log, time_mark)
     if (time_mark["Payload Drop"] == "Message non trouvé") {
         // Flight Test
         let column_re = document.createElement("td")
         column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Cruise (TestFlight)"))
-        table_seq.appendChild(colum_re)
+        table_seq.appendChild(column_re)
+        let column_pltest = document.createElement("td")
+        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier TestFlight"))
+        table_pl.appendChild(column_pltest)
     }
     else {
         let column_aw = document.createElement("td")
@@ -1728,6 +1735,12 @@ function load_am(log) {
         let column_re = document.createElement("td")
         column_re.appendChild(print_re(log, time_mark["Payload Drop"], time_mark["Start airbrake"], "Return cruise"))
         table_seq.appendChild(column_re)
+        let column_plaw = document.createElement("td")
+        column_plaw.appendChild(print_pl(log, t11, t12, h1, "Palier Away"))
+        table_pl.appendChild(column_plaw)
+        let column_plre = document.createElement("td")
+        column_plre.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
+        table_pl.appendChild(column_plre)
     }
 
     let table_ff = document.createElement("table")
@@ -1831,14 +1844,17 @@ function findMessageTimes(MSG_time, MSG) {
     return time_mark;
 }
 
-function find_palier(log, time_mark){
-        const tecs = log.get("TECS")
-        let [t1, t2] = [time_mark["Cruise start"], time_mark["Payload Drop"]]
-        let [t3, t4] = [time_mark["Payload Drop"], time_mark["Start airbrake"]]
-        time = TimeUS_to_seconds(tecs.TimeUS)
-        dh = tecs.dh
+function find_palier(log, time_mark) {
 
-        return [t11,t12,t21,t22]
+    let [t1, t2] = [time_mark["Cruise start"], time_mark["Payload Drop"]]
+    let [t3, t4] = [time_mark["Payload Drop"], time_mark["Start airbrake"]]
+    if (time_mark["Payload Drop"] == "Message non trouvé") {
+        t3 = t1
+    }
+    let [t11, t12, h1] = find_max_interval(log, t1, t2)
+    let [t21, t22, h2] = find_max_interval(log, t3, t4)
+    return [t11, t12, h1, t21, t22, h2]
+
 }
 
 // Fonction pour trouver l'intervalle le plus long où dh est quasi nul
@@ -1846,12 +1862,14 @@ function find_max_interval(log, start_time, end_time) {
 
     const tecs = log.get("TECS")
     time = TimeUS_to_seconds(tecs.TimeUS)
-    dh = tecs.dh
+    dh = tecs.dhdem
+    hdem = tecs.hdem
 
 
     let max_start = null;
     let max_end = null;
     let max_duration = 0;
+    let hdem_start = null;
 
     let current_start = null;
     let current_duration = 0;
@@ -1868,6 +1886,7 @@ function find_max_interval(log, start_time, end_time) {
                 // Vérifier si c'est la plus longue séquence
                 if (current_duration > max_duration) {
                     max_start = current_start;
+                    hdem_start = hdem[i];
                     max_end = time[i];
                     max_duration = current_duration;
                 }
@@ -1879,7 +1898,7 @@ function find_max_interval(log, start_time, end_time) {
         }
     }
 
-    return [max_start, max_end];
+    return [max_start, max_end, hdem_start];
 }
 
 
@@ -1989,7 +2008,7 @@ function print_to(log,t1,t2,head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
     fieldset.innerHTML += `qtun_ThO_max (<0.85): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.85) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `qtun_ThO_avg (0.50<_<0.65): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.50 < avgvalue) && (avgvalue < 0.65) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `qtun_ThO_avg (0.35<_<0.65): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.35 < avgvalue) && (avgvalue < 0.65) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = qtun.ThH[1]
     fieldset.innerHTML += `qtun_ThH_est (0.35<_<0.45): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.35 < avgvalue) && (avgvalue < 0.45) ? "\u2705" : "\u274c"}`;
@@ -2025,6 +2044,7 @@ function print_la(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";  // Add another line break
     fieldset.innerHTML += `batt1_curr_avg (<150 A) ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
+
     //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
     fieldset.innerHTML += `rcou_C5_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
@@ -2052,6 +2072,7 @@ function print_la(log, t1, t2, head) {
     avgvalue = (avgvalue5 + avgvalue7) / 2
     fieldset.innerHTML += `rcou_front(C5C7)_avg (1500<_<1800 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1500 < avgvalue) && (avgvalue < 1800) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
+
     //QTUN
     [minvalue1, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
     fieldset.innerHTML += `qtun_CRt_max (<0.8 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.8) ? "\u2705" : "\u274c"}`;
@@ -2061,12 +2082,10 @@ function print_la(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
     fieldset.innerHTML += `qtun_ThO_max (<0.60): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.60) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `qtun_ThO_avg (0.30<_<0.55): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.30 < avgvalue) && (avgvalue < 0.50) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `qtun_ThO_avg (0.20<_<0.55): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.20 < avgvalue) && (avgvalue < 0.50) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `qtun_CRt_min (>-3.8 m/s): ${minvalue1 !== null ? minvalue1.toFixed(2) : "n/a"} ${minvalue1 !== null && (-3.8 < minvalue1) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-
 
     return fieldset
 }
@@ -2283,6 +2302,67 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
     fieldset.innerHTML += `vibe_Z_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+
+    return fieldset
+}
+
+function print_pl(log, t1, t2, h, head) {
+    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
+
+    const bat_0 = log.get_instance("BAT", 0)
+    const gps_0 = log.get_instance("GPS", 0)
+    const arsp_1 = log.get_instance("ARSP", 1)
+    const tecs= log.get("TECS")
+    const att = log.get("ATT")
+    const ctun = log.get("CTUN")
+    const aetr = log.get("AETR")
+
+    let time = TimeUS_to_seconds(bat_0.TimeUS)
+
+    //Palier data
+    fieldset.innerHTML += `palier_start (s): ${t1 !== null ? t1.toFixed(0) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `palier_end (s): ${t2 !== null ? t2.toFixed(0) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `palier_alt (m): ${h !== null ? h.toFixed(0) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.spdem, t1, t2);
+    fieldset.innerHTML += `palier_tas (m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arsp_1.TimeUS), arsp_1.Airspeed, t1, t2);
+    fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
+    fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.E2T, t1, t2);
+    fieldset.innerHTML += `palier_equivalent2true : ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    time = (t2-t1)/60
+    fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(0) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //AETR
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
+    fieldset.innerHTML += `aetr_Elev_max (<2000): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 2000) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `aetr_Elev_avg (300<_<900): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (300 < avgvalue) && (avgvalue < 900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //Attitude
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
+    fieldset.innerHTML += `att_pitch_avg (0<_<5 °): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0 < avgvalue) && (avgvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_pitch_max (<16 °): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 16) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // batt 0 
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
+    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (19 < avgvalue) && (avgvalue < 25) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
