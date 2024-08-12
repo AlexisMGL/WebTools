@@ -1725,8 +1725,8 @@ function load_am(log) {
         column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Cruise (TestFlight)"))
         table_seq.appendChild(column_re)
         let column_pltest = document.createElement("td")
-        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier TestFlight"))
-        table_pl.appendChild(column_pltest)
+        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier (TestFlight)"))
+        table_seq.appendChild(column_pltest)
     }
     else {
         let column_aw = document.createElement("td")
@@ -1752,6 +1752,9 @@ function load_am(log) {
     let column_ffh = document.createElement("td")
     column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"))
     table_ff.appendChild(column_ffh)
+    let column_ffresp = document.createElement("td")
+    column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+    table_ff.appendChild(column_ffresp)
     
 
 
@@ -1990,6 +1993,50 @@ function findMinMaxFirst(time, values, t1, t2) {
     return [minValue, maxValue, first];
 }
 
+function findDeltas(time, values1, values2, t1, t2) {
+    // give avg delta and avg || delta
+    let maxDelta = -Infinity;
+    let sumd = 0;
+    let sumdabs = 0;
+    let count = 0;
+    let start = 0;
+    let lowpass = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2) {
+            lowpass = 0.95*lowpass + 0.05*Math.abs(values2[i] - values1[i]); //value lowpassed on ~20 values
+            if (lowpass > maxDelta) {
+                maxDelta = lowpass
+            }
+            sumd += values2[i] - values1[i];
+            sumdabs += Math.abs(values2[i] - values1[i]);
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avg_d = count > 0 ? sumd / count : null;
+    let avg_d_abs = count > 0 ? sumdabs / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (maxDelta === -Infinity) maxValue = null;
+
+    return [avg_d, avg_d_abs, maxDelta];
+}
+
+
 function findFFH(time, east_m, north_m, t1, t2) {
 
     let start = 0;
@@ -2075,7 +2122,7 @@ function print_to(log,t1,t2,head) {
     fieldset.innerHTML += `qtun_ThO_avg (0.35<_<0.65): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.35 < avgvalue) && (avgvalue < 0.65) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = qtun.ThH[1]
-    fieldset.innerHTML += `qtun_ThH_est (0.35<_<0.45): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.35 < avgvalue) && (avgvalue < 0.45) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `qtun_ThH_est (0.10<_<0.45): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.10 < avgvalue) && (avgvalue < 0.45) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
@@ -2577,6 +2624,52 @@ function print_ffh(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C13, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
     fieldset.innerHTML += `RCIN_C13delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+
+
+
+    return fieldset
+}
+
+function print_ffresp(log, t1, t2, t3, t4, head) {
+    // response (regulation)
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
+
+    const att = log.get("ATT")
+    const tecs = log.get("TECS")
+
+    let [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Pitch, att.DesPitch, t1, t2);
+    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-1 < avg_d) && (avg_d < 1) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 3) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 12) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Roll, att.DesRoll, t1, t2);
+    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-3 < avg_d) && (avg_d < 3) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 6) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 °): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t3, t4);
+    fieldset.innerHTML += `att_Des-h_avg (-2<_<2 m): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-2 < avg_d) && (avg_d < 2) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-h_maxdelta (<16 m): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.sp, tecs.spdem, t3, t4);
+    fieldset.innerHTML += `att_Des-sp_avg (-0.3<_<0.3 m/s): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-0.3 < avg_d) && (avg_d < 0.3) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-sp_abs_avg (<3 m/s): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
