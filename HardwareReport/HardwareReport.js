@@ -1755,6 +1755,9 @@ function load_am(log) {
     let column_ffresp = document.createElement("td")
     column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
     table_ff.appendChild(column_ffresp)
+    let column_para = document.createElement("td")
+    column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
+    table_ff.appendChild(column_para)
     
 
 
@@ -2451,7 +2454,7 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
+    fieldset.innerHTML += `palier_gsp (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.E2T, t1, t2);
     fieldset.innerHTML += `palier_equivalent2true : ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
@@ -2671,6 +2674,41 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
+
+    return fieldset
+}
+
+function print_para(log, t1, t2, head) {
+    // parachute 
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
+
+    const tecs = log.get("TECS")
+    const xkf1_0 = log.get_instance("XKF1", 0)
+    const fpar = log.get("FPAR")
+
+    
+    // TECS
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
+    fieldset.innerHTML += `tecs_dh_min (>-5 m/s): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (-5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // XKF1
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf1_0.TimeUS), xkf1_0.VD, t1, t2);
+    fieldset.innerHTML += `xkf1_VD_max (<5 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // FPAR
+    if (fpar != null) {
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(fpar.TimeUS), fpar.sink_time, t1, t2);
+        fieldset.innerHTML += `fpar_sinktime_max (<1 ms): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 1) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    }
+    else {
+        fieldset.innerHTML += `fpar_sinktime_max (<1 ms): ${"n/a"} ${(0 < 1) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    }
 
 
 
