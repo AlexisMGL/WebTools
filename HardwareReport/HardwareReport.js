@@ -1738,10 +1738,10 @@ function load_am(log) {
     if (time_mark["Payload Drop"] == "Message non trouvé") {
         // Flight Test
         let column_re = document.createElement("td")
-        column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Cruise (TestFlight)"))
+        column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Return cruise"))
         table_seq.appendChild(column_re)
         let column_pltest = document.createElement("td")
-        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier (TestFlight)"))
+        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
         table_seq.appendChild(column_pltest)
     }
     else {
@@ -1878,8 +1878,18 @@ function load_am(log) {
 
                             // Séparer la valeur du signe et ajouter le suffixe '_a' si nécessaire
                             const [value, alert] = lineWithoutParentheses.split(/: (\u2705|\u274C)/);
-                            const valueLine = sectionPrefix + value.trim() + (alert ? " : " + value.split(' ').pop() : "");
-                            const alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
+                            const valueLine = sectionPrefix + value.trim();
+                            let alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
+
+                            // Supprimer tout ce qui se trouve entre le premier ':' et le dernier '_a'
+                            alertLine = alertLine.replace(/:(.*?_a)/, '_a');
+
+                            // Modifier alertLine en fonction du symbole présent
+                            if (alert === '\u2705') {
+                                alertLine = alertLine.replace('\u2705', 'OK');
+                            } else if (alert === '\u274C') {
+                                alertLine = alertLine.replace('\u274C', 'ALERT');
+                            }
 
                             return alert ? valueLine + "\n" + alertLine : valueLine;
                         }
@@ -1896,6 +1906,13 @@ function load_am(log) {
             reader.readAsText(file0);
         }
     };
+
+
+
+
+
+
+
 
 
     // Ajout du bouton de sélection de fichier à la section am_section
