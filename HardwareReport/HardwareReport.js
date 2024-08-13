@@ -1672,26 +1672,27 @@ function load_am(log) {
 
     time_mark = findMessageTimes(MSG_time, Messages)
 
+    let fs_tm = document.createElement("fieldset")
+    let heading = document.createElement("legend")
+    heading.innerHTML = "Time Reader"
+    fs_tm.appendChild(heading)
     // Display all time_mark pairs
     Object.keys(time_mark).forEach(key => {
         const time = time_mark[key];
-        const timeDiv = document.createElement("div");
         if (key == "Lane switch") {
-            timeDiv.innerHTML = `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)} ${time == "Message non trouvé" ? "\u2705" : "\u274c"}`;
-            am_section.appendChild(timeDiv)
-
+            fs_tm.innerHTML += `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)} ${time == "Message non trouvé" ? "\u2705" : "\u274c"}`;
+            fs_tm.innerHTML += "<br>";  // Add a line break
         }
         else {
-            timeDiv.innerHTML = `${key}: ${time.toFixed(0)}`;
-            am_section.appendChild(timeDiv);
-
+            fs_tm.innerHTML += `${key}: ${time.toFixed(0)}`;
+            fs_tm.innerHTML += "<br>";  // Add a line break
         }
 
     });
-    const timeDiv = document.createElement("div");
     const time = (time_mark["Throttle disarmed"] - time_mark["VTOL Takeoff"])/60;
-    timeDiv.innerHTML = `Flight Time (min): ${time !== null ? time.toFixed(2) : "n/a"}`;
-    am_section.appendChild(timeDiv);
+    fs_tm.innerHTML += `Flight Time (min): ${time !== null ? time.toFixed(2) : "n/a"}`;
+    fs_tm.innerHTML += "<br>";  // Add a line break
+    am_section.appendChild(fs_tm);
     
 
     // Section 2 : Now I create alert based on those sequences
@@ -1848,10 +1849,7 @@ function load_am(log) {
                     const blob = new Blob([combinedData], { type: 'text/plain' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    const newFileName = `${document.getElementById("fileItem").value}.am.txt`;
-                    //a.download = newFileName; 
                     save_text(blob,".am")
-                    // a.click();
                 };
 
                 // Ajout du bouton de téléchargement à la section am_section
@@ -1865,6 +1863,58 @@ function load_am(log) {
     fileInputButton.style.marginRight = "10px"; // Espacement entre les boutons
     save_section.appendChild(fileInputButton);
     save_section.appendChild(fileInput);
+
+    //// Section pour la conversion d'un fichier .am en .csv
+
+    //const convertToCSVButton = document.createElement("button");
+    //convertToCSVButton.innerText = "Convert .am to .csv";
+
+    //const fileInputCSV = document.createElement("input");
+    //fileInputCSV.type = "file";
+    //fileInputCSV.accept = ".am";
+    //fileInputCSV.style.display = "none";
+
+    //convertToCSVButton.onclick = () => fileInputCSV.click();
+
+    //fileInputCSV.onchange = function (event) {
+    //    const file = event.target.files[0];
+    //    if (file) {
+    //        const reader = new FileReader();
+    //        reader.onload = function (e) {
+    //            const fileContent = e.target.result;
+    //            const lines = fileContent.split('\n');
+    //            let csvContent = '';
+
+    //            lines.forEach(line => {
+    //                if (line.trim()) {
+    //                    let csvLine = line.replace(/:\s+/g, ','); // Remplacer les deux-points par des virgules
+    //                    csvLine = csvLine.replace("\u2705", ',OK'); // Transformer "âœ…" en ",OK"
+    //                    csvLine = csvLine.replace("\u274c", ',NOK'); // Transformer "âŒ" en ",NOK"
+    //                    csvContent += csvLine + '\n';
+    //                }
+    //            });
+
+    //            lines.forEach(line => {
+    //                if (line.trim()) {
+    //                    const csvLine = line.replace(/:\s+/g, ',');
+    //                    csvContent += csvLine + '\n';
+    //                }
+    //            });
+
+    //            const blob = new Blob([csvContent], { type: 'text/csv' });
+    //            const a = document.createElement('a');
+    //            a.href = URL.createObjectURL(blob);
+    //            a.download = 'converted_data.csv';
+    //            a.click();
+    //        };
+    //        reader.readAsText(file);
+    //    }
+    //};
+
+    //// Ajout du bouton de conversion à la section save_section
+    //save_section.appendChild(convertToCSVButton);
+    //save_section.appendChild(fileInputCSV);
+
 
     save_section.hidden = false
     save_section.previousElementSibling.hidden = false
@@ -2176,7 +2226,7 @@ function print_to(log,t1,t2,head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (<250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
-    fieldset.innerHTML += `batt1_curr_avg (<150 A) ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
     //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
