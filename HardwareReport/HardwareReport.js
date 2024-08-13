@@ -119,6 +119,7 @@ async function check_release(hash, paragraph) {
     const sha = request.data.sha
 
     paragraph.appendChild(document.createTextNode("Found commit: "))
+    
 
     let link = document.createElement("a")
     link.href = request.data.html_url
@@ -164,6 +165,7 @@ async function check_release(hash, paragraph) {
 
         return
     }
+    paragraph.appendChild(document.createTextNode("SN (" + params["SYSID_THISMAV"] + ")"))
 
     // Could check if commit is in the history of some branch, maybe just master?
 
@@ -1673,10 +1675,13 @@ function load_am(log) {
     Object.keys(time_mark).forEach(key => {
         const time = time_mark[key];
         const timeDiv = document.createElement("div");
-        timeDiv.innerHTML = `${key}: ${time}`;
+        timeDiv.innerHTML = `${key}: ${time.toFixed(0)}`;
         am_section.appendChild(timeDiv);
     });
-
+    const timeDiv = document.createElement("div");
+    const time = (time_mark["Throttle disarmed"] - time_mark["VTOL Takeoff"])/60;
+    timeDiv.innerHTML = `Flight Time (min): ${time !== null ? time.toFixed(2) : "n/a"}`;
+    am_section.appendChild(timeDiv);
     
 
     // Section 2 : Now I create alert based on those sequences
@@ -1780,7 +1785,10 @@ function load_am(log) {
     am_section.previousElementSibling.hidden = false
 
 
-    // Extraction du texte de am_section et téléchargement du fichier
+
+    // Section 3 : Extraction du texte de am_section et téléchargement du fichier
+
+    let save_section = document.getElementById("SaveData")
 
     // Création du bouton pour déclencher le téléchargement
     const downloadButton = document.createElement("button");
@@ -1795,9 +1803,61 @@ function load_am(log) {
     };
 
     // Ajout du bouton à la section am_section
-    am_section.appendChild(downloadButton);
+    downloadButton.style.marginRight = "10px"; // Espacement entre les boutons
+    save_section.appendChild(downloadButton);
 
+    // Création du bouton pour sélectionner un fichier .txt
+    const fileInputButton = document.createElement("button");
+    fileInputButton.innerText = "prf Reader";
 
+    // Création de l'input de type file (invisible) pour sélectionner le fichier
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".txt";
+    fileInput.style.display = "none";
+
+    fileInputButton.onclick = () => fileInput.click();
+
+    fileInput.onchange = function (event) {
+        const file0 = event.target.files[0];
+        if (file0) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const fileContent = e.target.result;
+
+                // Extraire le texte avant "Bat1"
+                const textBeforeBat = fileContent.split(/Bat1:/)[0];
+
+                // Ajouter le bouton pour télécharger le fichier avec le texte extrait
+                const downloadButton = document.createElement("button");
+                downloadButton.innerText = "Save to .am";
+                downloadButton.onclick = function () {
+                    const am_section = document.getElementById("AM");
+                    const data = am_section.innerText;
+                    const combinedData = textBeforeBat + "\n" + data;
+                    const blob = new Blob([combinedData], { type: 'text/plain' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    const newFileName = `${document.getElementById("fileItem").value}.am.txt`;
+                    //a.download = newFileName; 
+                    save_text(blob,".am")
+                    // a.click();
+                };
+
+                // Ajout du bouton de téléchargement à la section am_section
+                save_section.appendChild(downloadButton);
+            };
+            reader.readAsText(file0);
+        }
+    };
+
+    // Ajout du bouton de sélection de fichier à la section am_section
+    fileInputButton.style.marginRight = "10px"; // Espacement entre les boutons
+    save_section.appendChild(fileInputButton);
+    save_section.appendChild(fileInput);
+
+    save_section.hidden = false
+    save_section.previousElementSibling.hidden = false
 
 }
 
@@ -2489,7 +2549,7 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += `palier_equivalent2true : ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     time = (t2-t1)/60
-    fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(0) : "n/a"}`;
+    fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     //AETR
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
@@ -2548,6 +2608,19 @@ function print_ff(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (< 250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 250) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.CurrTot, t1, t2);
+    fieldset.innerHTML += `batt0_currTot (mAh): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue1, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.CurrTot, t1, t2);
+    fieldset.innerHTML += `batt1_currTot (mAh): ${maxvalue1 !== null ? maxvalue1.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue2, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
+    minvalue = (maxvalue) / avgvalue //Conso horaire batt_0
+    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    minvalue = (maxvalue + maxvalue1) / avgvalue //Conso horaire batt_0
+    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     //GPS
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
