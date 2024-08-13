@@ -1782,12 +1782,22 @@ function load_am(log) {
 
     // Extraction du texte de am_section et téléchargement du fichier
 
-    const data = am_section.innerText;
-    const blob = new Blob([data], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'data.txt';
-    a.click();
+    // Création du bouton pour déclencher le téléchargement
+    const downloadButton = document.createElement("button");
+    downloadButton.innerText = "Save data to txt";
+    downloadButton.onclick = function () {
+        const data = am_section.innerText;
+        const blob = new Blob([data], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'data.txt';
+        a.click();
+    };
+
+    // Ajout du bouton à la section am_section
+    am_section.appendChild(downloadButton);
+
+
 
 }
 
