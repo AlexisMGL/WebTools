@@ -165,7 +165,8 @@ async function check_release(hash, paragraph) {
 
         return
     }
-    paragraph.appendChild(document.createTextNode("SN (" + params["SYSID_THISMAV"] + ")"))
+    paragraph.appendChild(document.createElement("br"))
+    paragraph.appendChild(document.createTextNode("SN 0" + params["SYSID_THISMAV"] + ""))
 
     // Could check if commit is in the history of some branch, maybe just master?
 
@@ -1675,8 +1676,17 @@ function load_am(log) {
     Object.keys(time_mark).forEach(key => {
         const time = time_mark[key];
         const timeDiv = document.createElement("div");
-        timeDiv.innerHTML = `${key}: ${time.toFixed(0)}`;
-        am_section.appendChild(timeDiv);
+        if (key == "Lane switch") {
+            timeDiv.innerHTML = `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)} ${time == "Message non trouvé" ? "\u2705" : "\u274c"}`;
+            am_section.appendChild(timeDiv)
+
+        }
+        else {
+            timeDiv.innerHTML = `${key}: ${time.toFixed(0)}`;
+            am_section.appendChild(timeDiv);
+
+        }
+
     });
     const timeDiv = document.createElement("div");
     const time = (time_mark["Throttle disarmed"] - time_mark["VTOL Takeoff"])/60;
@@ -1885,7 +1895,8 @@ function findMessageTimes(MSG_time, MSG) {
         "Payload Drop": null,
         "Start airbrake": null,
         "Start full VTOL land": null,
-        "Throttle disarmed": null
+        "Throttle disarmed": null,
+        "Lane switch": null
     };
 
     for (let i = 0; i < MSG.length; i++) {
@@ -1904,6 +1915,9 @@ function findMessageTimes(MSG_time, MSG) {
         }
         if (time_mark["Transition end"] === null && message.includes("Transition done")) {
             time_mark["Transition end"] = time;
+        }
+        if (time_mark["Lane switch"] === null && message.includes("lane switch")) {
+            time_mark["Lane switch"] = time;
         }
 
         // Vérifier les derniers messages
