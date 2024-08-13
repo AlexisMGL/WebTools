@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>ArduPilot Hardware Report</title>
+<title>AerialMetric FastLog Analyzer and Hardware Report</title>
 <link rel="icon" href="../images/AP_favicon.png">
 <script type="text/javascript" src="HardwareReport.js"></script>
 <script type="text/javascript" src="../Libraries/DecodeDevID.js"></script>
@@ -22,9 +22,9 @@
 <table style="width:1200px"><tr><td>
   <a href="https://ardupilot.org"><img src="../images/ArduPilot.png"></a>
 </td><td>
-  <a href="https://github.com/ArduPilot/WebTools"><img src="../images/github-mark.png" style="width:60px"></a>
+  <a href="https://github.com/AlexisMGL/WebTools"><img src="../images/github-mark.png" style="width:60px"></a>
   <br>
-  <a href="https://github.com/ArduPilot/WebTools"><img src="../images/GitHub_Logo.png" style="width:60px"></a>
+  <a href="https://github.com/AlexisMGL/WebTools"><img src="../images/GitHub_Logo.png" style="width:60px"></a>
 </td></tr></table>
 
 <style>
@@ -33,7 +33,7 @@
   }
 </style>
 
-<h1><a href="" style="color: #000000; text-decoration:none;">ArduPilot Hardware Report</a></h1>
+<h1><a href="" style="color: #000000; text-decoration:none;">AerialMetric FastLog Analyzer and Hardware Report</a></h1>
 
 <body onload="initial_load(); reset();">
 <input id="fileItem" type="file" accept=".param,.parm,.bin" onchange="load(this)">
@@ -42,6 +42,9 @@
 
 <h3 hidden>Firmware</h3>
 <p id="VER"></p>
+
+<h3 hidden>AM Log Analyzer</h3>
+<p id="AM"></p>
 
 <h3 hidden>Flight Controller</h3>
 <p id="FC"></p>
@@ -58,8 +61,6 @@
 <h3 hidden>Inertial Sensors</h3>
 <p id="INS"></p>
 
-<h3 hidden>AerialMetric</h3>
-<p id="AM"></p>
 
 <h3 hidden>Compasses</h3>
 <p id="COMPASS"></p>

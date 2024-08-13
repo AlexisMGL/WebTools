@@ -1623,9 +1623,9 @@ function update_minimal_config() {
 }
 
 function load_params(log) {
+    load_am(log)
     load_ins(log)
     load_compass(log)
-    load_am(log)
     load_baro(log)
     load_airspeed(log)
     load_gps(log)
@@ -1780,7 +1780,9 @@ function load_am(log) {
     am_section.previousElementSibling.hidden = false
 
 
-    
+    // Extraction du texte de am_section et téléchargement du fichier
+
+
 }
 
 function findMaxPair(dataxy) {
@@ -2113,6 +2115,9 @@ function print_to(log,t1,t2,head) {
     avgvalue = (avgvalue5 + avgvalue7) / 2
     fieldset.innerHTML += `rcou_front(C5C7)_avg (1650<_<1850 m): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1650 < avgvalue) && (avgvalue < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     //QTUN
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
     fieldset.innerHTML += `qtun_CRt_max (<3.4 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 3.4) ? "\u2705" : "\u274c"}`;
@@ -2127,7 +2132,6 @@ function print_to(log,t1,t2,head) {
     avgvalue = qtun.ThH[1]
     fieldset.innerHTML += `qtun_ThH_est (0.10<_<0.45): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.10 < avgvalue) && (avgvalue < 0.45) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
 
     return fieldset
 }
@@ -2186,6 +2190,9 @@ function print_la(log, t1, t2, head) {
     avgvalue = (avgvalue5 + avgvalue7) / 2
     fieldset.innerHTML += `rcou_front(C5C7)_avg (1500<_<1800 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1500 < avgvalue) && (avgvalue < 1800) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
     //QTUN
     [minvalue1, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
@@ -2231,23 +2238,26 @@ function print_tr(log, t1, t2, t3, head) {
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t3);
     fieldset.innerHTML += `rcou_C6_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1300<_<1750 m): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1300 < avgvalue6) && (avgvalue6 < 1750) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `rcou_C6_avg (1300<_<1750 ms): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1300 < avgvalue6) && (avgvalue6 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t3);
     fieldset.innerHTML += `rcou_C7_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1300<_<1750 m): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1300 < avgvalue7) && (avgvalue7 < 1750) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `rcou_C7_avg (1300<_<1750 ms): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1300 < avgvalue7) && (avgvalue7 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t3);
     fieldset.innerHTML += `rcou_C8_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1300<_<1750 m): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1300 < avgvalue8) && (avgvalue8 < 1750) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `rcou_C8_avg (1300<_<1750 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1300 < avgvalue8) && (avgvalue8 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = (avgvalue6 + avgvalue8) / 2
-    fieldset.innerHTML += `rcou_back(C6C8)_avg (1300<_<1750 m): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `rcou_back(C6C8)_avg (1300<_<1750 s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    avgvalue = (avgvalue5 + avgvalue7) / 2
-    fieldset.innerHTML += `rcou_front(C5C7)_avg (1300<_<1750 m): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
+    avgvalue6 = (avgvalue5 + avgvalue7) / 2
+    fieldset.innerHTML += `rcou_front(C5C7)_avg (1300<_<1750 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     time = (t3 - t1)
@@ -2303,6 +2313,9 @@ function print_ab(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = (avgvalue5 + avgvalue7) / 2
     fieldset.innerHTML += `rcou_front(C5C7)_avg (1150<_<1450 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1150 < avgvalue) && (avgvalue < 1450) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
@@ -2483,6 +2496,10 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += `ctun_ThO_avg (60<_<77 %): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (60 < avgvalue) && (avgvalue < 77) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `ctun_ThO_max (<90 %): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 90) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //TECS
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
+    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (-12 < max_d) && (max_d < 12) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     return fieldset
