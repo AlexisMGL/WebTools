@@ -1839,17 +1839,55 @@ function load_am(log) {
                 // Extraire le texte avant "Bat1"
                 const textBeforeBat = fileContent.split(/Bat1:/)[0];
 
+                // Définir les préfixes pour chaque section
+                const prefixes = {
+                    "Time Reader": "tr_",
+                    "VTOL TakeOff": "to_",
+                    "VTOL Landing": "la_",
+                    "Transition": "tr_",
+                    "Airbrake": "ab_",
+                    "Away cruise": "ca_",
+                    "Return cruise": "cr_",
+                    "Palier Away": "pa_",
+                    "Palier Return": "pr_",
+                    "Full Flight Controls": "ff_",
+                    "Far From Home (5km) Controls": "fh_",
+                    "Response": "re_",
+                    "Parachute Margin": "pa_"
+                };
+
                 // Ajouter le bouton pour télécharger le fichier avec le texte extrait
                 const downloadButton = document.createElement("button");
                 downloadButton.innerText = "Save to .am";
                 downloadButton.onclick = function () {
                     const am_section = document.getElementById("AM");
-                    const data = am_section.innerText;
-                    const combinedData = textBeforeBat + "\n" + data;
+                    const data = am_section.innerText.split('\n');
+                    let sectionPrefix = "";
+                    const processedData = data.map(line => {
+                        if (!line.includes(':')) {
+                            // Identifier le début d'une nouvelle section
+                            sectionPrefix = prefixes[line.trim()] || "";
+                            return line; // Conserver le nom de la section
+                        } else {
+                            // Supprimer les parenthèses et leur contenu
+                            let lineWithoutParentheses = line.replace(/\(.*?\)/g, '').trim();
+                            // Remplacer les symboles par ceux souhaités
+                            lineWithoutParentheses = lineWithoutParentheses
+                                .replace(/\u2705/g, ': \u2705')
+                                .replace(/\u274C/g, ': \u274C');
+
+                            // Séparer la valeur du signe et ajouter le suffixe '_a' si nécessaire
+                            const [value, alert] = lineWithoutParentheses.split(/: (\u2705|\u274C)/);
+                            const valueLine = sectionPrefix + value.trim() + (alert ? " : " + value.split(' ').pop() : "");
+                            const alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
+
+                            return alert ? valueLine + "\n" + alertLine : valueLine;
+                        }
+                    }).join('\n');
+
+                    const combinedData = textBeforeBat + "\n" + processedData;
                     const blob = new Blob([combinedData], { type: 'text/plain' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    save_text(blob,".am")
+                    save_text(blob, ".am");
                 };
 
                 // Ajout du bouton de téléchargement à la section am_section
@@ -1858,6 +1896,7 @@ function load_am(log) {
             reader.readAsText(file0);
         }
     };
+
 
     // Ajout du bouton de sélection de fichier à la section am_section
     fileInputButton.style.marginRight = "10px"; // Espacement entre les boutons
@@ -2300,7 +2339,7 @@ function print_la(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (<250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
-    fieldset.innerHTML += `batt1_curr_avg (<150 A) ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
 
     //RCOU
