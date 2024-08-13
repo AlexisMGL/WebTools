@@ -1782,6 +1782,12 @@ function load_am(log) {
 
     // Extraction du texte de am_section et téléchargement du fichier
 
+    const data = am_section.innerText;
+    const blob = new Blob([data], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'data.txt';
+    a.click();
 
 }
 
