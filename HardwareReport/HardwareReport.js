@@ -1709,7 +1709,8 @@ function load_am(log) {
     // Création de la troisième colonne pour l'image
     let column_img = document.createElement("td")
     let img = document.createElement("img")
-    img.src = "../images/savior_channels.png"
+    var preloadImage = document.getElementById('preloadedImage');
+    img.src = preloadImage.src
     img.alt = "Savior Channels"
     img.style.width = "75%"  // Réduire la largeur de l'image à 65%
     img.style.height = "auto" // Conserver le ratio d'aspect
