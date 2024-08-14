@@ -1708,15 +1708,13 @@ function load_am(log) {
     table_ve.appendChild(column_la)
     // Création de la troisième colonne pour l'image
     let column_img = document.createElement("td")
-    let img = document.createElement("img")
     var preloadImage = document.getElementById('preloadedImage');
-    img.src = preloadImage.src
-    img.alt = "Savior Channels"
-    img.style.width = "75%"  // Réduire la largeur de l'image à 65%
-    img.style.height = "auto" // Conserver le ratio d'aspect
-    img.style.verticalAlign = "middle" // Aligner verticalement l'image au milieu de la cellule
+    preloadImage.style.display = 'block'; // Rendre l'image visible
+    preloadImage.style.width = "75%";  // Ajuster la largeur
+    preloadImage.style.height = "auto"; // Conserver le ratio d'aspect
+    preloadImage.style.verticalAlign = "middle"; // Aligner verticalement
     column_img.style.verticalAlign = "middle" // Aligner la cellule avec les autres
-    column_img.appendChild(img)
+    column_img.appendChild(preloadImage)
     table_ve.appendChild(column_img)
 
     let table_trans = document.createElement("table")
