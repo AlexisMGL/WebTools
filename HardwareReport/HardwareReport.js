@@ -2739,8 +2739,8 @@ function print_ff(log, t1, t2, head) {
     minvalue = (maxvalue) / avgvalue //Conso horaire batt_0
     fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    minvalue = (maxvalue + maxvalue1) / avgvalue //Conso horaire batt_0
-    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
+    minvalue = (maxvalue + maxvalue1) / avgvalue //Conso horaire batt_tot
+    fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     //GPS
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
