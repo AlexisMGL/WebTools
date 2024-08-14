@@ -1684,7 +1684,7 @@ function load_am(log) {
             fs_tm.innerHTML += "<br>";  // Add a line break
         }
         else {
-            fs_tm.innerHTML += `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)} ${time == "Message non trouvé" ? "\u2705" : "\u274c"}`;
+            fs_tm.innerHTML += `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)}`;
             fs_tm.innerHTML += "<br>";  // Add a line break
         }
 
