@@ -1,6 +1,8 @@
 
 let import_done = []
 var DataflashParser
+
+
 import_done[0] = import('../modules/JsDataflashParser/parser.js').then((mod) => { DataflashParser = mod.default })
 
 // This is the one package we do get from a CDN.
@@ -1707,15 +1709,15 @@ function load_am(log) {
     column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
     table_ve.appendChild(column_la)
     // Création de la troisième colonne pour l'image
-    let column_img = document.createElement("td")
-    var preloadImage = document.getElementById('preloadedImage');
-    preloadImage.style.display = 'block'; // Rendre l'image visible
-    preloadImage.style.width = "75%";  // Ajuster la largeur
-    preloadImage.style.height = "auto"; // Conserver le ratio d'aspect
-    preloadImage.style.verticalAlign = "middle"; // Aligner verticalement
-    column_img.style.verticalAlign = "middle" // Aligner la cellule avec les autres
-    column_img.appendChild(preloadImage)
-    table_ve.appendChild(column_img)
+    //let column_img = document.createElement("td")
+    //var preloadImage = document.getElementById('preloadedImage');
+    //preloadImage.style.display = 'block'; // Rendre l'image visible
+    //preloadImage.style.width = "75%";  // Ajuster la largeur
+    //preloadImage.style.height = "auto"; // Conserver le ratio d'aspect
+    //preloadImage.style.verticalAlign = "middle"; // Aligner verticalement
+    //column_img.style.verticalAlign = "middle" // Aligner la cellule avec les autres
+    //column_img.appendChild(preloadImage)
+    //table_ve.appendChild(column_img)
 
     let table_trans = document.createElement("table")
     am_section.appendChild(table_trans)
@@ -1895,8 +1897,8 @@ function load_am(log) {
                     }).join('\n');
 
                     const combinedData = textBeforeBat + "\n" + processedData;
-                    const blob = new Blob([combinedData], { type: 'text/plain' });
-                    save_text_2(blob, ".am");
+                    // Passer fs, path, et le chemin du fichier .prf à save_text_2
+                    save_text_2(combinedData, ".am", file0.path);
                 };
 
                 // Ajout du bouton de téléchargement à la section am_section
@@ -1905,7 +1907,6 @@ function load_am(log) {
             reader.readAsText(file0);
         }
     };
-
 
 
 
@@ -4150,6 +4151,65 @@ async function load(e) {
 
 }
 
+
+async function load_2(e) {
+    reset();
+
+    let file;
+
+    if (typeof e === 'string') {
+        const filePath = e;
+        try {
+            const fileExists = await fs.stat(filePath);
+            if (!fileExists) {
+                console.log('File does not exist.');
+                return;
+            }
+
+            file = {
+                name: path.basename(filePath),
+                path: filePath,
+                async text() {
+                    return await fs.readFile(filePath, 'utf8');
+                }
+            };
+        } catch (error) {
+            console.error('Error handling file:', error);
+            return;
+        }
+    } else {
+        file = e.files[0];
+    }
+
+    if (file.name.toLowerCase().endsWith(".bin")) {
+        let reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = function (e) {
+                loading_call(() => {
+                    try {
+                        let log = new DataflashParser();
+                        log.processData(reader.result, []);
+                        load_am(log);
+                        resolve(); // Résoudre la promesse ici une fois le traitement terminé
+                    } catch (error) {
+                        reject(error); // Rejeter la promesse en cas d'erreur
+                    }
+                });
+            };
+
+            if (typeof e === 'string') {
+                fs.readFile(file.path).then(buffer => {
+                    reader.readAsArrayBuffer(new Blob([buffer]));
+                }).catch(error => {
+                    reject(error);
+                });
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    }
+}
+
 let Sensor_Offset = {}
 let Temperature = {}
 let Board_Voltage = {}
@@ -4652,34 +4712,29 @@ function save_text(text, file_postfix) {
     saveAs(blob, file_name);
 }
 
-async function save_text_2(text, file_postfix) {
+function save_text_2(text, file_postfix, prfFilePath) {
+    // Obtenir le répertoire du fichier `.prf`
+    let prfDirectory = path.dirname(prfFilePath);
 
     // Récupérer le nom du fichier `.prf`
-    let log_file_name = document.getElementById("fileItem").value.replace(/.*[\/\\]/, '');
+    // let log_file_name = path.basename(prfFilePath, path.extname(prfFilePath));
+    let log_file_name = document.getElementById("fileItem").value.replace(/.*[\/\\]/, '')
 
-    if (log_file_name.length == 0) {
+
+    if (log_file_name.length === 0) {
         log_file_name = "log";
     }
 
-    // Déterminer le nom du fichier `.am`
-    const file_name = (log_file_name.substr(0, log_file_name.lastIndexOf('.')) || log_file_name) + file_postfix;
+    // Générer le nom du fichier `.am`
+    const amFileName = (log_file_name.substr(0, log_file_name.lastIndexOf('.')) || log_file_name) + file_postfix
+
+    // Construire le chemin complet pour le fichier `.am`
+    const amFilePath = path.join(prfDirectory, amFileName);
 
     try {
-        // Ouvrir un dialogue pour demander à l'utilisateur où sauvegarder le fichier
-        const fileHandle = await window.showSaveFilePicker({
-            suggestedName: file_name,
-            types: [{
-                description: 'AM Files',
-                accept: { 'text/plain': ['.am'] }
-            }]
-        });
-
-        // Créer un flux d'écriture pour sauvegarder le fichier
-        const writable = await fileHandle.createWritable();
-        await writable.write(text);
-        await writable.close();
-
-        console.log('Fichier enregistré avec succès sous ' + file_name);
+        // Sauvegarder le fichier dans le même répertoire que le fichier `.prf`
+        fs.writeFileSync(amFilePath, text, 'utf8');
+        console.log('Fichier enregistré avec succès sous ' + amFilePath);
     } catch (error) {
         console.error('Erreur lors de la sauvegarde du fichier:', error);
     }
@@ -4750,4 +4805,192 @@ function save_minimal_parameters() {
     save_text(get_param_download_text(minimal), "_minimal.param")
 
 }
+const fs = require('fs').promises; // Utiliser les promesses
+const path = require('path');
+// ELECTRON load all
 
+
+async function selectFolderAndProcess() {
+    try {
+        // Request the main process to open the dialog
+        const folderPath = await ipcRenderer.invoke('select-folder');
+
+        if (!folderPath) {
+            console.log('Aucun dossier sélectionné');
+            return;
+        }
+
+        console.log('Dossier sélectionné:', folderPath);
+        await processDirectory(folderPath);
+    } catch (error) {
+        console.error('Erreur lors de la sélection du dossier ou du traitement:', error);
+    }
+}
+
+
+async function processDirectory(folderPath) {
+    try {
+        // Lire le contenu du dossier
+        const entries = await fs.readdir(folderPath, { withFileTypes: true });
+
+        // Filter for .prf files
+        const prfFiles = entries.filter(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
+        const prfFilePaths = prfFiles.map(file => path.join(folderPath, file.name));
+        const prfExists = prfFilePaths.length > 0;
+        console.log(`Fichiers .prf trouvés: ${prfFilePaths.join(', ')}`);
+
+        await Promise.all(entries.map(async (entry) => {
+            const entryPath = path.join(folderPath, entry.name);
+
+            if (entry.isDirectory()) {
+                // Traitement des sous-répertoires
+                await processDirectory(entryPath); // récursif
+            } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.bin')) {
+                if (prfExists) {
+                    // Traitement du fichier .bin
+                    console.log(`Traitement du fichier .bin: ${entryPath}`);
+                    await Promise.all(prfFilePaths.map(async prfFilePath => {
+                        await processBinFile(entryPath, prfFilePath);
+                    }));
+                } else {
+                    console.log(`Ignoré: ${entry.name} car aucun fichier .prf n'a été trouvé dans le même dossier.`);
+                }
+            }
+        }));
+    } catch (error) {
+        console.error('Erreur lors du traitement du répertoire', error);
+    }
+}
+
+
+let queue = Promise.resolve(); // Initialisation de la file d'attente
+let processingInProgress = false;
+
+async function processBinFile(binFilePath) {
+    queue = queue.then(() => processTask(binFilePath)).catch(error => {
+        console.error('Erreur dans la file d\'attente :', error);
+    });
+}
+
+async function processTask(binFilePath) {
+    if (processingInProgress) {
+        console.log('Un traitement est déjà en cours. Veuillez patienter.');
+        return;
+    }
+    reset();
+    processingInProgress = true;
+   
+
+    const directoryPath = path.dirname(binFilePath);
+    console.log(`bin trouvé ici : ${directoryPath}`);
+
+    try {
+        const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+        entries.forEach(entry => {
+            console.log(entry.name, entry.isFile() ? '(file)' : '(directory)');
+        });
+
+        const prfFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
+        console.log('prfFile :', prfFile);
+
+        if (prfFile) {
+            const prfFilename = entries.find(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf')).name;
+            const prfFilePath = path.join(directoryPath, prfFilename);
+            const prfContent = await fs.readFile(prfFilePath, 'utf8');
+
+            // Votre logique de traitement du contenu
+            const textBeforeBat = prfContent.split(/Bat1:/)[0];
+            const prefixes = {
+                "Time Reader": "tr_",
+                "VTOL TakeOff": "to_",
+                "VTOL Landing": "la_",
+                "Transition": "tr_",
+                "Airbrake": "ab_",
+                "Away cruise": "ca_",
+                "Return cruise": "cr_",
+                "Palier Away": "pa_",
+                "Palier Return": "pr_",
+                "Full Flight Controls": "ff_",
+                "Far From Home (5km) Controls": "fh_",
+                "Response": "re_",
+                "Parachute Margin": "pa_"
+            };
+
+            await handleFileProcessing(binFilePath); // Attendre que load_2 se termine
+            const am_section = document.getElementById("AM");
+            const amSection = am_section.innerText;
+
+            const data = amSection.split('\n');
+            let sectionPrefix = "";
+
+            const processedData = data.map(line => {
+                if (!line.includes(':')) {
+                    sectionPrefix = prefixes[line.trim()] || "";
+                    return line;
+                } else {
+                    let lineWithoutParentheses = line.replace(/\(.*?\)/g, '').trim();
+                    lineWithoutParentheses = lineWithoutParentheses
+                        .replace(/\u2705/g, ': \u2705')
+                        .replace(/\u274C/g, ': \u274C');
+
+                    const [value, alert] = lineWithoutParentheses.split(/: (\u2705|\u274C)/);
+                    const valueLine = sectionPrefix + value.trim();
+                    let alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
+
+                    alertLine = alertLine.replace(/:(.*?_a)/, '_a');
+
+                    if (alert === '\u2705') {
+                        alertLine = alertLine.replace('\u2705', 'OK');
+                    } else if (alert === '\u274C') {
+                        alertLine = alertLine.replace('\u274C', 'ALERT');
+                    }
+
+                    return alert ? valueLine + "\n" + alertLine : valueLine;
+                }
+            }).join('\n');
+
+            const combinedData = textBeforeBat + "\n" + processedData;
+            const amFilePath = binFilePath.replace('.bin', '.am');
+
+            await fs.writeFile(amFilePath, combinedData, 'utf8');
+            console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
+        } else {
+            console.log(`Aucun fichier .prf trouvé dans le même répertoire que ${binFilePath}`);
+        }
+    } catch (error) {
+        console.error(`Erreur lors du traitement du fichier .bin : ${binFilePath}`, error);
+    } finally {
+        processingInProgress = false;
+        
+    }
+}
+
+
+async function handleFile(e) {
+    try {
+        // e est un chemin de fichier
+        const filePath = e;
+
+        // Vérifiez si le fichier existe
+        const fileExists = await fs.stat(filePath);
+        if (!fileExists) {
+            console.log('File does not exist.');
+            return;
+        }
+
+        // Lire le contenu du fichier
+        const fileContent = await fs.readFile(filePath);
+        console.log('File content:', fileContent);
+
+        // Vous pouvez maintenant traiter le contenu du fichier comme nécessaire
+    } catch (error) {
+        console.error('Error handling file:', error);
+    }
+}
+
+async function handleFileProcessing(binFilePath) {
+    await load_2(binFilePath); // Attendre que load_2 se termine
+
+    const am_section = document.getElementById("AM");
+    console.log('load_2 is complete, and am_section is ready:', am_section);
+}
