@@ -1896,7 +1896,7 @@ function load_am(log) {
 
                     const combinedData = textBeforeBat + "\n" + processedData;
                     const blob = new Blob([combinedData], { type: 'text/plain' });
-                    save_text(blob, ".am");
+                    save_text_2(blob, ".am");
                 };
 
                 // Ajout du bouton de téléchargement à la section am_section
@@ -2721,9 +2721,9 @@ function print_ff(log, t1, t2, head) {
     fieldset.innerHTML += `batt0_volt_min (>43 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (43 < minvalue) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (< 80 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 80) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `batt0_curr_max (<80 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 80) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `batt0_curr_avg (< 80 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (avgvalue > 19) && (avgvalue < 26) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `batt0_curr_avg (19<_<26 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (avgvalue > 19) && (avgvalue < 26) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (< 250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 250) ? "\u2705" : "\u274c"}`;
@@ -2735,10 +2735,10 @@ function print_ff(log, t1, t2, head) {
     fieldset.innerHTML += `batt1_currTot (mAh): ${maxvalue1 !== null ? maxvalue1.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue2, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    minvalue = (maxvalue) / avgvalue //Conso horaire batt_0
+    minvalue = (maxvalue) / (0.001*avgvalue*(t2-t1)) //Conso horaire batt_0
     fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    minvalue = (maxvalue + maxvalue1) / avgvalue //Conso horaire batt_tot
+    minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1)) //Conso horaire batt_tot
     fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     //GPS
@@ -4650,6 +4650,39 @@ function save_text(text, file_postfix) {
 
     var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     saveAs(blob, file_name);
+}
+
+async function save_text_2(text, file_postfix) {
+
+    // Récupérer le nom du fichier `.prf`
+    let log_file_name = document.getElementById("fileItem").value.replace(/.*[\/\\]/, '');
+
+    if (log_file_name.length == 0) {
+        log_file_name = "log";
+    }
+
+    // Déterminer le nom du fichier `.am`
+    const file_name = (log_file_name.substr(0, log_file_name.lastIndexOf('.')) || log_file_name) + file_postfix;
+
+    try {
+        // Ouvrir un dialogue pour demander à l'utilisateur où sauvegarder le fichier
+        const fileHandle = await window.showSaveFilePicker({
+            suggestedName: file_name,
+            types: [{
+                description: 'AM Files',
+                accept: { 'text/plain': ['.am'] }
+            }]
+        });
+
+        // Créer un flux d'écriture pour sauvegarder le fichier
+        const writable = await fileHandle.createWritable();
+        await writable.write(text);
+        await writable.close();
+
+        console.log('Fichier enregistré avec succès sous ' + file_name);
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde du fichier:', error);
+    }
 }
 
 function save_all_parameters() {
