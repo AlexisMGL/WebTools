@@ -2395,7 +2395,7 @@ function print_to(log,t1,t2,head) {
 
     // batt 1 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
-    fieldset.innerHTML += `batt1_volt_min (>45 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 45 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += `batt1_volt_min (>45 V): ${checkThreshold('pl', 'batt1_volt_min', minvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // batt 1 curr
