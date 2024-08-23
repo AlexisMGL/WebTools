@@ -1678,7 +1678,15 @@ function load_am(log) {
     let heading = document.createElement("legend")
     heading.innerHTML = "Time Reader"
     fs_tm.appendChild(heading)
+
+    //Find top
+    const gps_0 = log.get_instance("GPS", 0)
+    const top = findTOP(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["VTOL Takeoff"])
+    fs_tm.innerHTML += `TOP: ${top}`;
+    fs_tm.innerHTML += "<br>";  // Add a line break
     // Display all time_mark pairs
+    
+
     Object.keys(time_mark).forEach(key => {
         const time = time_mark[key];
         if (key == "Lane switch") {
@@ -2255,6 +2263,43 @@ function findFFH(time, east_m, north_m, t1, t2) {
 
 
     return [time[start], time[end]];
+}
+
+function findTOP(time, lat, lng, t1) {
+
+    let start = 0;
+
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    const TOPs = {
+        "MWN": [-15.4208580, 49.7245765],   // Maroantsetra
+        "VVB": [-19.8450000, 48.8086111],   // Mahanoro
+        "BHJ": [-19.672116, 47.314187],     // Behenjy
+        "TMM": [-18.1492012, 49.4023289],   // Tamatave (Toamasina)
+        "VND": [-23.3470407, 47.5962614],   // Vangaindrano
+        "WAK": [-15.73333, 46.33333]        // Sakara
+    };
+
+    const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
+    console.log(`Coordonnées à t1: lat0 = ${lat[start]}, lng0 = ${lng[start]}`);
+
+    let closestPoint = null;
+    let minSquaredDistance = Infinity;
+
+    // Boucle pour trouver le point le plus proche
+    for (const [point, [lat1, lng1]] of Object.entries(TOPs)) {
+        if (lat1 !== null && lng1 !== null) {
+            const squaredDistance = (lat1 - lat0) ** 2 + (lng1 - lng0) ** 2;
+            console.log(`Point: ${point}, Distance au carré: ${squaredDistance}`);
+            if (squaredDistance < minSquaredDistance) {
+                minSquaredDistance = squaredDistance;
+                closestPoint = point;
+            }
+        }
+    }
+    return closestPoint;
 }
 
 
@@ -4886,12 +4931,9 @@ async function processTask(binFilePath) {
 
     try {
         const entries = await fs.readdir(directoryPath, { withFileTypes: true });
-        entries.forEach(entry => {
-            console.log(entry.name, entry.isFile() ? '(file)' : '(directory)');
-        });
+
 
         const prfFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
-        console.log('prfFile :', prfFile);
 
         if (prfFile) {
             const prfFilename = entries.find(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf')).name;
