@@ -16,6 +16,79 @@ import_done[1] = import('https://esm.sh/@octokit/request')
 
 let ArduPilot_GitHub_tags
 let octokitRequest_ratelimit_reset
+
+const thresholds = [
+    { step: 'pl', champ: 'palier_tas', min: null, max: null },
+    { step: 'pl', champ: 'palier_eas', min: null, max: null },
+    { step: 'pl', champ: 'palier_gsp', min: null, max: null },
+    { step: 'pl', champ: 'palier_equivalent2true', min: null, max: null },
+    { step: 'pl', champ: 'aetr_Elev_max', min: null, max: 2000 },
+    { step: 'pl', champ: 'aetr_Elev_avg', min: 300, max: 900 },
+    { step: 'pl', champ: 'att_pitch_avg', min: 0, max: 5 },
+    { step: 'pl', champ: 'att_pitch_max', min: null, max: 16 },
+    { step: 'pl', champ: 'batt0_curr_avg', min: 19, max: 25 },
+    { step: 'pl', champ: 'ctun_ThO_avg', min: 60, max: 77 },
+    { step: 'pl', champ: 'ctun_ThO_max', min: null, max: 90 },
+    { step: 'pl', champ: 'tecs_att_Des-h_max_d', min: -12, max: 12 },
+
+    { step: 'to', champ: 'batt1_volt_min', min: 45, max: null },
+    { step: 'to', champ: 'batt1_curr_max', min: null, max: 250 },
+    { step: 'to', champ: 'batt1_curr_avg', min: null, max: 150 },
+    { step: 'to', champ: 'rcou_C5_max', min: null, max: 1980 },
+    { step: 'to', champ: 'rcou_C5_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_C6_max', min: null, max: 1980 },
+    { step: 'to', champ: 'rcou_C6_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_C7_max', min: null, max: 1980 },
+    { step: 'to', champ: 'rcou_C7_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_C8_max', min: null, max: 1980 },
+    { step: 'to', champ: 'rcou_C8_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_back(C6C8)_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_front(C5C7)_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
+    { step: 'to', champ: 'qtun_CRt_max', min: null, max: 3.4 },
+    { step: 'to', champ: 'qtun_CRt_avg', min: 1.8, max: 2.2 },
+    { step: 'to', champ: 'qtun_ThO_max', min: null, max: 0.85 },
+    { step: 'to', champ: 'qtun_ThO_avg', min: 0.35, max: 0.65 },
+    { step: 'to', champ: 'qtun_ThH_est', min: 0.10, max: 0.45 },
+
+    { step: 'la', champ: 'batt1_volt_min', min: 42, max: null },
+    { step: 'la', champ: 'batt1_curr_max', min: null, max: 250 },
+    { step: 'la', champ: 'batt1_curr_avg', min: null, max: 150 },
+    { step: 'la', champ: 'rcou_C5_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C5_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_C6_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C6_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_C7_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C7_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_C8_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C8_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_back(C6C8)_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_front(C5C7)_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
+    { step: 'la', champ: 'qtun_CRt_max', min: null, max: 0.8 },
+    { step: 'la', champ: 'qtun_CRt_avg', min: -2, max: 0 },
+    { step: 'la', champ: 'qtun_ThO_max', min: null, max: 0.60 },
+    { step: 'la', champ: 'qtun_ThO_avg', min: 0.2, max: 0.55 }, 
+    { step: 'la', champ: 'qtun_CRt_min', min: -3.8, max: null},
+    
+];
+
+function checkThreshold(step, champ, value) {
+    // Recherche le seuil correspondant dans la base de données
+    const threshold = thresholds.find(th => th.step === step && th.champ === champ);
+    if (!threshold) return "n/a";
+
+    // Vérifie si la valeur est dans les limites définies
+    const withinMin = threshold.min === null || value > threshold.min;
+    const withinMax = threshold.max === null || value < threshold.max;
+
+    if (threshold.min === null && threshold.max === null) {
+        return value !== null ? `${value.toFixed(2)}` : "n/a";
+    }
+
+    return value !== null ? `${value.toFixed(2)} ${withinMin && withinMax ? "\u2705" : "\u274c"}` : "n/a";
+}
+
 async function check_release(hash, paragraph) {
     paragraph.appendChild(document.createElement("br"))
 
@@ -1850,7 +1923,7 @@ function load_am(log) {
 
                 // Définir les préfixes pour chaque section
                 const prefixes = {
-                    "Time Reader": "tr_",
+                    "Time Reader": "ti_",
                     "VTOL TakeOff": "to_",
                     "VTOL Landing": "la_",
                     "Transition": "tr_",
@@ -1906,7 +1979,9 @@ function load_am(log) {
 
                     const combinedData = textBeforeBat + "\n" + processedData;
                     // Passer fs, path, et le chemin du fichier .prf à save_text_2
-                    save_text_2(combinedData, ".am", file0.path);
+                    // save_text_2(combinedData, ".am", file0.path);
+                    const blob = new Blob([combinedData], { type: 'text/plain' });
+                    save_text(blob, ".am");
                 };
 
                 // Ajout du bouton de téléchargement à la section am_section
@@ -2677,73 +2752,76 @@ function print_re(log, t1, t2, head) {
 }
 
 function print_pl(log, t1, t2, h, head) {
-    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
-    let fieldset = document.createElement("fieldset")
+    let fieldset = document.createElement("fieldset");
 
-    let heading = document.createElement("legend")
-    heading.innerHTML = head
-    fieldset.appendChild(heading)
+    let heading = document.createElement("legend");
+    heading.innerHTML = head;
+    fieldset.appendChild(heading);
 
-    const bat_0 = log.get_instance("BAT", 0)
-    const gps_0 = log.get_instance("GPS", 0)
-    const arsp_1 = log.get_instance("ARSP", 1)
-    const tecs= log.get("TECS")
-    const att = log.get("ATT")
-    const ctun = log.get("CTUN")
-    const aetr = log.get("AETR")
+    const bat_0 = log.get_instance("BAT", 0);
+    const gps_0 = log.get_instance("GPS", 0);
+    const arsp_1 = log.get_instance("ARSP", 1);
+    const tecs = log.get("TECS");
+    const att = log.get("ATT");
+    const ctun = log.get("CTUN");
+    const aetr = log.get("AETR");
 
-    let time = TimeUS_to_seconds(bat_0.TimeUS)
+    let time = TimeUS_to_seconds(bat_0.TimeUS);
 
-    //Palier data
     fieldset.innerHTML += `palier_start (s): ${t1 !== null ? t1.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `palier_end (s): ${t2 !== null ? t2.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `palier_alt (m): ${h !== null ? h.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.spdem, t1, t2);
-    fieldset.innerHTML += `palier_tas (m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arsp_1.TimeUS), arsp_1.Airspeed, t1, t2);
-    fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    fieldset.innerHTML += `palier_gsp (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.E2T, t1, t2);
-    fieldset.innerHTML += `palier_equivalent2true : ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    time = (t2-t1)/60
-    fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(2) : "n/a"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    //AETR
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
-    fieldset.innerHTML += `aetr_Elev_max (<2000): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 2000) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `aetr_Elev_avg (300<_<900): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (300 < avgvalue) && (avgvalue < 900) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    //Attitude
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
-    fieldset.innerHTML += `att_pitch_avg (0<_<5 °): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0 < avgvalue) && (avgvalue < 5) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_pitch_max (<16 °): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 16) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    // batt 0 
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (19 < avgvalue) && (avgvalue < 25) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    //CTUN
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.ThO, t1, t2);
-    fieldset.innerHTML += `ctun_ThO_avg (60<_<77 %): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (60 < avgvalue) && (avgvalue < 77) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `ctun_ThO_max (<90 %): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 90) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    //TECS
-    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
-    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (-12 < max_d) && (max_d < 12) ? "\u2705" : "\u274c"}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += "<br>";
 
-    return fieldset
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.spdem, t1, t2);
+    fieldset.innerHTML += `palier_tas (m/s): ${checkThreshold('pl', 'palier_tas', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arsp_1.TimeUS), arsp_1.Airspeed, t1, t2);
+    fieldset.innerHTML += `palier_eas (m/s) : ${checkThreshold('pl', 'palier_eas', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
+    fieldset.innerHTML += `palier_gsp (m/s) : ${checkThreshold('pl', 'palier_gsp', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.E2T, t1, t2);
+    fieldset.innerHTML += `palier_equivalent2true : ${checkThreshold('pl', 'palier_equivalent2true', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    time = (t2 - t1) / 60;
+    fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
+    fieldset.innerHTML += `aetr_Elev_max (<2000): ${checkThreshold('pl', 'aetr_Elev_max', maxvalue)}`;
+    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `aetr_Elev_avg (300<_<900): ${checkThreshold('pl', 'aetr_Elev_avg', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
+    fieldset.innerHTML += `att_pitch_avg (0<_<5 °): ${checkThreshold('pl', 'att_pitch_avg', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `att_pitch_max (<16 °): ${checkThreshold('pl', 'att_pitch_max', maxvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
+    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${checkThreshold('pl', 'batt0_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.ThO, t1, t2);
+    fieldset.innerHTML += `ctun_ThO_avg (60<_<77 %): ${checkThreshold('pl', 'ctun_ThO_avg', avgvalue)}`;
+    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `ctun_ThO_max (<90 %): ${checkThreshold('pl', 'ctun_ThO_max', maxvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
+    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${checkThreshold('pl', 'tecs_att_Des-h_max_d', max_d)}`;
+    fieldset.innerHTML += "<br>";
+
+    return fieldset;
 }
 
 function print_ff(log, t1, t2, head) {
@@ -4759,6 +4837,7 @@ function save_text(text, file_postfix) {
 
 function save_text_2(text, file_postfix, prfFilePath) {
     // Obtenir le répertoire du fichier `.prf`
+    const path = require('path');
     let prfDirectory = path.dirname(prfFilePath);
 
     // Récupérer le nom du fichier `.prf`
@@ -4850,8 +4929,228 @@ function save_minimal_parameters() {
     save_text(get_param_download_text(minimal), "_minimal.param")
 
 }
+
+// CREATE ALERT
+
+function sortFilesByDateDescending(files) {
+    // Fonction pour extraire la date d'un nom de fichier et la convertir en objet Date
+    function extractDate(fileName) {
+        // Supposer que le format est toujours "yyyy-mm-dd hh-mm-ss.am"
+        // Retirer l'extension .am
+        const baseName = fileName.replace('.am', '');
+        // Convertir le reste en format de date
+        const date = new Date(baseName.replace(/-/g, '/').replace(/ /, 'T'));
+        return date;
+    }
+
+    // Trier les fichiers par date décroissante
+    files.sort((a, b) => {
+        const dateA = extractDate(a.name);
+        const dateB = extractDate(b.name);
+        return dateB - dateA; // Pour décroissant
+    });
+
+    return files;
+}
+
+function sortFilesByDate(files) {
+    // Fonction pour extraire et construire un nombre basé sur les chiffres du nom de fichier
+    function extractNumericValue(filename) {
+        // Extraire tous les chiffres du nom de fichier et les concaténer
+        const numbers = filename.match(/\d+/g); // Trouver tous les groupes de chiffres
+        if (numbers) {
+            return parseInt(numbers.join(''), 10); // Concaténer les chiffres et les convertir en nombre
+        }
+        return -1; // Retourner -1 si aucun chiffre n'est trouvé (pour les fichiers non pertinents)
+    }
+
+    // Trier les fichiers en fonction du nombre extrait en ordre décroissant
+    files.sort((a, b) => {
+        const valueA = extractNumericValue(a.name);
+        const valueB = extractNumericValue(b.name);
+        return valueB - valueA; // Tri décroissant
+    });
+
+    return files;
+}
+
+function processAlert(files) {
+    var droneID = "";
+    var TOP = "";
+
+    files = sortFilesByDate(files)
+
+    // Fonction pour lire un fichier et exécuter un callback avec le contenu
+    function readFile(file) {
+        return new Promise((resolve, reject) => {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                resolve(event.target.result);
+            };
+            reader.onerror = function () {
+                reject(new Error('Erreur lors de la lecture du fichier.'));
+            };
+            reader.readAsText(file);
+        });
+    }
+
+
+    // Lire le premier fichier pour obtenir droneID et TOP
+    readFile(files[0]).then(fileContent => {
+        var lines = fileContent.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('Drone ID')) {
+                droneID = lines[i].split(':')[1].trim();
+            }
+            if (lines[i].includes('TOP')) {
+                TOP = lines[i].split(':')[1].trim();
+            }
+        }
+
+        // Lire les autres fichiers
+        var fileReadPromises = files.map(file => readFile(file));
+
+        Promise.all(fileReadPromises).then(fileContents => {
+            var currentDateTime = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+
+            var newWindowContent = `
+                <html>
+                <head>
+                    <title>Demande TakeOff</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                        }
+                        h1, h2 {
+                            border-bottom: 1px solid #ccc;
+                            padding-bottom: 5px;
+                            margin-bottom: 20px;
+                        }
+                        .form-group {
+                            display: grid;
+                            grid-template-columns: auto 1fr;
+                            align-items: center;
+                            margin-bottom: 10px;
+                        }
+                        .form-group label {
+                            margin: 0;
+                        }
+                        .form-group input[type="text"] {
+                            width: 100%;
+                            padding: 8px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                        }
+                        pre {
+                            background-color: #f4f4f4;
+                            padding: 10px;
+                            border-radius: 5px;
+                        }
+                        .text-group {
+                            display: flex;
+                            align-items: center;
+                            margin-bottom: 10px;
+                        }
+                        .text-group label {
+                            margin-right: 8px;
+                            width: 200px; /* Width for labels to align with textboxes */
+                        }
+                        .text-group input[type="text"] {
+                            flex: 1;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>DEMANDE D’AUTORISATION DE DÉCOLLAGE</h1>
+   
+    
+                    <p><strong>Drone: ${droneID}</strong></p>
+    
+                    <p><strong>DESTINATAIRE :</strong> RDOA</p>
+                    <p><strong>DE :</strong> AIRLOG</p>
+    
+                    <p><strong>DATE/HEURE :</strong> ${currentDateTime}</p>
+    
+                    <h2>DÉTAILS DE L'OPÉRATEUR DE DRONE :</h2>
+    
+                    <div class="form-group">
+                        <label for="nom-pilote">Nom du pilote :</label>
+                        <input type="text" id="nom-pilote" placeholder="Entrez le nom du pilote...">
+                    </div>
+    
+                    <div class="form-group">
+                        <label for="coordonnees-pilote">Coordonnées du pilote :</label>
+                        <input type="text" id="coordonnees-pilote" placeholder="Entrez les coordonnées du pilote...">
+                    </div>
+    
+                    <div class="form-group">
+                        <label for="lieu-decollage">Lieu de décollage : ${TOP}</label>
+                    </div>
+    
+                    <h2>DÉTAILS DE L'AUTORISATION :</h2>
+    
+                    <div class="text-group">
+                        <label for="log-prf-uploades">Log et Prf Uploadés :</label>
+                        <input type="text" id="log-prf-uploades" placeholder="Entrez des détails...">
+                    </div>
+    
+                    <div class="text-group">
+                        <label for="videos-vues">Vidéos visionnées :</label>
+                        <input type="text" id="videos-vues" placeholder="Entrez des détails...">
+                    </div>
+                </body>
+                </html>
+                `;
+
+            fileContents.forEach((fileContent, index) => {
+                var lines = fileContent.split('\n');
+                var fileTitle = files[index].name.replace('.am', '');
+
+                newWindowContent += `<h2>${fileTitle}</h2>`;
+
+                var alertlines = [];
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes('ALERT')) {
+                        alertlines.push(lines[i - 1]);
+                    }
+                    if (lines[i].includes('Destination')) {
+                        alertlines.push(lines[i]);
+                    }
+                    if (lines[i].includes('Flight Time')) {
+                        alertlines.push(lines[i]);
+                    }
+                }
+                if (alertlines.length > 0) {
+                    newWindowContent += `<pre>${alertlines.join('\n')}</pre>`;
+                }
+            });
+
+            newWindowContent += `</body></html>`;
+
+            var newWindow = window.open('', '_blank');
+            newWindow.document.write(newWindowContent);
+            newWindow.document.close();
+        }).catch(error => {
+            console.error('Erreur lors de la lecture des fichiers:', error);
+        });
+    }).catch(error => {
+        console.error('Erreur lors de la lecture du premier fichier:', error);
+    });
+}
+
+
+
+
+
+
 const fs = require('fs').promises; // Utiliser les promesses
 const path = require('path');
+
+
+
+
+
 // ELECTRON load all
 
 

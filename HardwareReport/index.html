@@ -40,6 +40,9 @@
 
     <input id="OpenIn" type="button" value="Open In" disabled>
 
+    <!-- Bouton pour ouvrir l'explorateur de fichiers -->
+    <input id="openExplorer" type="button" value="Ask Validation" onclick="openFileExplorer()">
+
     <!-- Bouton pour choisir un dossier -->
     <input id="selectFolder" type="button" value="Select Folder" onclick="selectFolder()">
 
@@ -58,6 +61,34 @@
                 }
             });
         }
+
+        function openFileExplorer() {
+            // Crée un élément input de type file
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true; // Permet de sélectionner plusieurs fichiers
+            input.webkitdirectory = true; // Permet de sélectionner un dossier (et ses sous-fichiers)
+
+            // Ajoute un écouteur d'événement pour traiter la sélection des fichiers/dossiers
+            input.onchange = function (event) {
+                var files = event.target.files;
+
+                // Filtrer uniquement les fichiers avec extension .am
+                var amfiles = Array.from(files).filter(file => file.name.endsWith('.am'));
+
+                if (amfiles.length > 0) {
+                    var fileNames = amfiles.map(file => file.webkitRelativePath).join('\n');
+                    alert('Fichiers .am sélectionnés :\n' + fileNames);
+                    processAlert(amfiles);
+                } else {
+                    alert('Aucun fichier .am sélectionné.');
+                }
+            };
+
+            // Simule un clic sur l'élément input pour ouvrir l'explorateur
+            input.click();
+        }
+
     </script>
 
     <h3 hidden>AM Save Data</h3>

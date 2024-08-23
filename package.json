@@ -1,0 +1,11 @@
+{
+  "name": "mon-app-electron",
+  "version": "1.0.0",
+  "main": "HarwareReport\Main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^latest"
+  }
+}
