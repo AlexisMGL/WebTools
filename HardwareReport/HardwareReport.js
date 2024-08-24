@@ -42,8 +42,8 @@ const thresholds = [
     { step: 'to', champ: 'rcou_C7_avg', min: 1650, max: 1850 },
     { step: 'to', champ: 'rcou_C8_max', min: null, max: 1980 },
     { step: 'to', champ: 'rcou_C8_avg', min: 1650, max: 1850 },
-    { step: 'to', champ: 'rcou_back(C6C8)_avg', min: 1650, max: 1850 },
-    { step: 'to', champ: 'rcou_front(C5C7)_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_backC6C8_avg', min: 1650, max: 1850 },
+    { step: 'to', champ: 'rcou_frontC5C7_avg', min: 1650, max: 1850 },
     { step: 'to', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'to', champ: 'qtun_CRt_max', min: null, max: 3.4 },
     { step: 'to', champ: 'qtun_CRt_avg', min: 1.8, max: 2.2 },
@@ -62,8 +62,8 @@ const thresholds = [
     { step: 'la', champ: 'rcou_C7_avg', min: 1500, max: 1800 },
     { step: 'la', champ: 'rcou_C8_max', min: null, max: 1900 },
     { step: 'la', champ: 'rcou_C8_avg', min: 1500, max: 1800 },
-    { step: 'la', champ: 'rcou_back(C6C8)_avg', min: 1500, max: 1800 },
-    { step: 'la', champ: 'rcou_front(C5C7)_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_backC6C8_avg', min: 1500, max: 1800 },
+    { step: 'la', champ: 'rcou_frontC5C7_avg', min: 1500, max: 1800 },
     { step: 'la', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'la', champ: 'qtun_CRt_max', min: null, max: 0.8 },
     { step: 'la', champ: 'qtun_CRt_avg', min: -2, max: 0 },
@@ -80,8 +80,8 @@ const thresholds = [
     { step: 'tr', champ: 'rcou_C7_avg', min: 1300, max: 1750 },
     { step: 'tr', champ: 'rcou_C8_max', min: null, max: 1900 },
     { step: 'tr', champ: 'rcou_C8_avg', min: 1300, max: 1750 },
-    { step: 'tr', champ: 'rcou_back_avg', min: 1300, max: 1750 },
-    { step: 'tr', champ: 'rcou_front_avg', min: 1300, max: 1750 },
+    { step: 'tr', champ: 'rcou_backC6C8_avg', min: 1300, max: 1750 },
+    { step: 'tr', champ: 'rcou_frontC5C7_avg', min: 1300, max: 1750 },
     { step: 'tr', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'tr', champ: 'transition_time', min: 10, max: 18 },
 
@@ -1893,16 +1893,17 @@ function load_am(log) {
     column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
     table_ve.appendChild(column_la)
     // Création de la troisième colonne pour l'image
-    //let column_img = document.createElement("td")
-    //var preloadImage = document.getElementById('preloadedImage');
-    //preloadImage.style.display = 'block'; // Rendre l'image visible
-    //preloadImage.style.width = "75%";  // Ajuster la largeur
-    //preloadImage.style.height = "auto"; // Conserver le ratio d'aspect
-    //preloadImage.style.verticalAlign = "middle"; // Aligner verticalement
-    //column_img.style.verticalAlign = "middle" // Aligner la cellule avec les autres
-    //column_img.appendChild(preloadImage)
-    //table_ve.appendChild(column_img)
+    let column_img = document.createElement("td")
+    let preloadImage = document.getElementById('preloadedImage');
+    let imageClone = preloadImage.cloneNode(true); // Cloner l'image
+    imageClone.style.display = 'block'; // Rendre l'image visible
+    imageClone.style.width = "75%";  // Ajuster la largeur
+    imageClone.style.height = "auto"; // Conserver le ratio d'aspect
+    imageClone.style.verticalAlign = "middle"; // Aligner verticalement
 
+    column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
+    column_img.appendChild(imageClone); // Ajouter le clone
+    table_ve.appendChild(column_img); // Ajouter la colonne à la table
     let table_trans = document.createElement("table")
     am_section.appendChild(table_trans)
 
@@ -2530,7 +2531,7 @@ function print_to(log,t1,t2,head) {
     fieldset.innerHTML += `rcou_back(C6C8)_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_back(C6C8)_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue6 = (avgvalue5 + avgvalue7) / 2
-    fieldset.innerHTML += `rcou_front(C5C7)_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_front(C5C7)_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_frontC5C7_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_frontC5C7_avg', avgvalue6)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue8 = (avgvalue - avgvalue6) / 2
     fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('to', 'rcou_motordeseq_avg', avgvalue8)}`;
@@ -2614,7 +2615,7 @@ function print_la(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";
 
     avgvalue6 = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_front(C5C7)_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_front(C5C7)_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_frontC5C7_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_frontC5C7_avg', avgvalue6)}`;
     fieldset.innerHTML += "<br>";
 
     avgvalue8 = (avgvalue - avgvalue6) / 2;
@@ -2688,11 +2689,11 @@ function print_tr(log, t1, t2, t3, head) {
 
     // Calculations for back and front averages
     const avgvalueBack = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_back(C6C8)_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_back_avg', avgvalueBack)}`;
+    fieldset.innerHTML += `rcou_backC6C8_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_back_avg', avgvalueBack)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const avgvalueFront = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_front(C5C7)_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_front_avg', avgvalueFront)}`;
+    fieldset.innerHTML += `rcou_frontC5C7_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_front_avg', avgvalueFront)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;
@@ -2754,11 +2755,11 @@ function print_ab(log, t1, t2, head) {
 
     // Averages for back and front
     const avgvalueBack = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_back(C6C8)_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_back(C6C8)_avg', avgvalueBack)}`;
+    fieldset.innerHTML += `rcou_backC6C8_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_backC6C8_avg', avgvalueBack)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const avgvalueFront = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_front(C5C7)_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_front(C5C7)_avg', avgvalueFront)}`;
+    fieldset.innerHTML += `rcou_frontC5C7_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_frontC5C7_avg', avgvalueFront)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;
@@ -4515,6 +4516,7 @@ function reset() {
     }
 
     setup_section(document.getElementById("AM"))
+    setup_section(document.getElementById("SaveData"))
     setup_section(document.getElementById("VER"))
     setup_section(document.getElementById("FC"))
     setup_section(document.getElementById("WDOG"))
@@ -5136,6 +5138,15 @@ function processAlert(files) {
 
     files = sortFilesByDate(files)
 
+    var n = parseInt(document.getElementById('counter').value);
+    // Vérifier si n est supérieur au nombre de fichiers disponibles
+    if (n > files.length) {
+        n = files.length; // Si oui, on garde tous les fichiers
+    }
+
+    // Garder uniquement les n premiers fichiers
+    files = files.slice(0, n);
+
     // Fonction pour lire un fichier et exécuter un callback avec le contenu
     function readFile(file) {
         return new Promise((resolve, reject) => {
@@ -5472,6 +5483,7 @@ async function processTask(binFilePath) {
 
             await fs.writeFile(amFilePath, combinedData, 'utf8');
             console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
+            reset()
         } else {
             console.log(`Aucun fichier .prf trouvé dans le même répertoire que ${binFilePath}`);
         }
