@@ -2023,7 +2023,7 @@ function load_am(log) {
                 const fileContent = e.target.result;
 
                 // Extraire le texte avant "Bat1"
-                const textBeforeBat = fileContent.split(/Bat1:/)[0];
+                const textBeforeBat = fileContent.split(/Bat1/)[0];
 
                 // Définir les préfixes pour chaque section
                 const prefixes = {
@@ -5428,7 +5428,7 @@ async function processTask(binFilePath) {
             const prfContent = await fs.readFile(prfFilePath, 'utf8');
 
             // Votre logique de traitement du contenu
-            const textBeforeBat = prfContent.split(/Bat1:/)[0];
+            const textBeforeBat = prfContent.split(/Bat1/)[0];
             const prefixes = {
                 "Time Reader": "ti_",
                 "VTOL TakeOff": "to_",
