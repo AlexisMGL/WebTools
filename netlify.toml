@@ -1,6 +1,6 @@
 [build]
   command = "rm -f public/js/HardwareReport/Main.js && echo 'Skipping build, deploying static files'"
-  publish = "public"  # Remplace par le dossier où se trouvent tes fichiers statiques (ex. '.', 'dist', 'build').
+  publish = "."  # Remplace par le dossier où se trouvent tes fichiers statiques (ex. '.', 'dist', 'build').
 
 [[redirects]]
   from = "/*"
