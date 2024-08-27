@@ -94,7 +94,7 @@ const thresholds = [
     { step: 'ab', champ: 'rcou_C7_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_C8_max', min: null, max: 1750 },
     { step: 'ab', champ: 'rcou_C8_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_back(C6C8)_avg', min: 1150, max: 1450 },
+    { step: 'ab', champ: 'rcou_backC6C8_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_front(C5C7)_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'ab', champ: 'transition_time', min: 10, max: 18 },
@@ -2528,7 +2528,7 @@ function print_to(log,t1,t2,head) {
     fieldset.innerHTML += `rcou_C8_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_C8_avg', avgvalue8)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = (avgvalue6 + avgvalue8) / 2
-    fieldset.innerHTML += `rcou_back(C6C8)_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_back(C6C8)_avg', avgvalue)}`;
+    fieldset.innerHTML += `rcou_backC6C8_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_backC6C8_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue6 = (avgvalue5 + avgvalue7) / 2
     fieldset.innerHTML += `rcou_frontC5C7_avg (1650<_<1850 m): ${checkThreshold('to', 'rcou_frontC5C7_avg', avgvalue6)}`;
@@ -2611,7 +2611,7 @@ function print_la(log, t1, t2, head) {
 
     // Combined averages
     avgvalue = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_back(C6C8)_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_back(C6C8)_avg', avgvalue)}`;
+    fieldset.innerHTML += `rcou_backC6C8_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_backC6C8_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     avgvalue6 = (avgvalue5 + avgvalue7) / 2;
@@ -3146,38 +3146,38 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
 
     // ATT - Pitch
     let [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Pitch, att.DesPitch, t1, t2);
-    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${checkThreshold('rp', 'att_Des-Pitch_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Pitch_avg', avg_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('rp', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${checkThreshold('rp', 'att_Des-Pitch_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // ATT - Roll
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Roll, att.DesRoll, t1, t2);
-    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${checkThreshold('rp', 'att_Des-Roll_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${checkThreshold('re', 'att_Des-Roll_avg', avg_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('rp', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('re', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 °): ${checkThreshold('rp', 'att_Des-Roll_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // TECS - Height
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t3, t4);
-    fieldset.innerHTML += `att_Des-h_avg (-2<_<2 m): ${checkThreshold('rp', 'att_Des-h_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-h_avg (-2<_<2 m): ${checkThreshold('re', 'att_Des-h_avg', avg_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${checkThreshold('rp', 'att_Des-h_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${checkThreshold('re', 'att_Des-h_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-h_maxdelta (<16 m): ${checkThreshold('rp', 'att_Des-h_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-h_maxdelta (<16 m): ${checkThreshold('re', 'att_Des-h_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // TECS - Speed
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.sp, tecs.spdem, t3, t4);
-    fieldset.innerHTML += `att_Des-sp_avg (-0.3<_<0.3 m/s): ${checkThreshold('rp', 'att_Des-sp_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-sp_avg (-0.3<_<0.3 m/s): ${checkThreshold('re', 'att_Des-sp_avg', avg_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-sp_abs_avg (<3 m/s): ${checkThreshold('rp', 'att_Des-sp_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-sp_abs_avg (<3 m/s): ${checkThreshold('re', 'att_Des-sp_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${checkThreshold('rp', 'att_Des-sp_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${checkThreshold('re', 'att_Des-sp_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     return fieldset
