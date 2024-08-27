@@ -1,10 +1,9 @@
 [build]
-  command = "echo 'Skipping build'"  # Ceci désactive les étapes de build
+  publish = "public"  # Ensure this points to the correct folder where your static files are stored.
 
-  # Remplacez "public" par le chemin où sont stockés vos fichiers statiques
-  publish = "."
+# Custom command to remove or ignore problematic files
+[[plugins]]
+  package = "@netlify/plugin-skip-build"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+[functions]
+  ignore_files = ["Main.js", "some-other-file.js"] # Add any files you want to ignore during deployment
