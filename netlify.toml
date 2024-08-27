@@ -1,6 +1,6 @@
 [build]
-  command = "echo 'Skipping build, serving static files'"
-  publish = "."  # Le répertoire racine où se trouvent tes fichiers (ex: index.html)
+  command = ""  # Pas de commande de build, on ignore cette étape
+  publish = "."  # Répertoire racine des fichiers statiques
 
 [[redirects]]
   from = "/*"
