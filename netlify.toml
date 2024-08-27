@@ -1,9 +1,8 @@
 [build]
-  publish = "public"  # Ensure this points to the correct folder where your static files are stored.
+  command = "rm -f public/js/HardwareReport/Main.js && echo 'Skipping build, deploying static files'"
+  publish = "public"  # Remplace par le dossier où se trouvent tes fichiers statiques (ex. '.', 'dist', 'build').
 
-# Custom command to remove or ignore problematic files
-[[plugins]]
-  package = "@netlify/plugin-skip-build"
-
-[functions]
-  ignore_files = ["Main.js", "some-other-file.js"] # Add any files you want to ignore during deployment
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
