@@ -95,7 +95,7 @@ const thresholds = [
     { step: 'ab', champ: 'rcou_C8_max', min: null, max: 1750 },
     { step: 'ab', champ: 'rcou_C8_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_backC6C8_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_front(C5C7)_avg', min: 1150, max: 1450 },
+    { step: 'ab', champ: 'rcou_frontC5C7_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'ab', champ: 'transition_time', min: 10, max: 18 },
 
@@ -2689,11 +2689,11 @@ function print_tr(log, t1, t2, t3, head) {
 
     // Calculations for back and front averages
     const avgvalueBack = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_backC6C8_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_back_avg', avgvalueBack)}`;
+    fieldset.innerHTML += `rcou_backC6C8_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_backC6C8_avg', avgvalueBack)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const avgvalueFront = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_frontC5C7_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_front_avg', avgvalueFront)}`;
+    fieldset.innerHTML += `rcou_frontC5C7_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_frontC5C7_avg', avgvalueFront)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;

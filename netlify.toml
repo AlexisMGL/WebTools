@@ -1,0 +1,10 @@
+[build]
+  command = "echo 'Skipping build'"  # Ceci désactive les étapes de build
+
+  # Remplacez "public" par le chemin où sont stockés vos fichiers statiques
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
