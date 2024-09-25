@@ -1952,8 +1952,13 @@ function load_am(log) {
     column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
     table_ff.appendChild(column_ff)
     let column_ffh = document.createElement("td")
-    column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"))
-    table_ff.appendChild(column_ffh)
+    try {
+        column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"));
+        table_ff.appendChild(column_ffh);
+    } catch (error) {
+        console.error("An error occurred:", error);
+        // Tu peux aussi faire autre chose ici, comme ignorer l'erreur ou ajouter un log spécifique.
+    }
     let column_ffresp = document.createElement("td")
     column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
     table_ff.appendChild(column_ffresp)
@@ -2951,7 +2956,7 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += "<br>";
 
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
-    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${checkThreshold('pl', 'tecs_att_Des-h_max_d', max_d)}`;
+    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${checkThreshold('pr', 'tecs_att_Des-h_max_d', max_d)}`;
     fieldset.innerHTML += "<br>";
 
     return fieldset;
