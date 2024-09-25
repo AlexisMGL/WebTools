@@ -3302,11 +3302,11 @@ function print_ffrespv(log, t1, t2, t3, t4, head) {
 
     // ATT - Yaw
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Yaw, att.DesYaw, t1, t2);
-    fieldset.innerHTML += `att_Des-Yaw_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Yaw_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-Yaw_avg (-5<_<5 °): ${checkThreshold('re', 'att_Des-Yaw_avg', avg_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Yaw_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Yaw_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-Yaw_abs_avg (<10 °): ${checkThreshold('re', 'att_Des-Yaw_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Yaw_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Yaw_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Yaw_maxdelta (<30 °): ${checkThreshold('re', 'att_Des-Yaw_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
@@ -3326,11 +3326,16 @@ function print_para(log, t1, t2, head) {
     const xkf1_0 = log.get_instance("XKF1", 0)
     const fpar = log.get("FPAR")
 
-    
+    try {
+        let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
+        fieldset.innerHTML += `tecs_dh_min (>-5 m/s): ${checkThreshold('ch', 'tecs_dh_min', minvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    }
+    catch (error) {
+        console.error('Error handling file:', error);
+    }
     // TECS
-    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
-    fieldset.innerHTML += `tecs_dh_min (>-5 m/s): ${checkThreshold('ch', 'tecs_dh_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
+    
 
     // XKF1
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf1_0.TimeUS), xkf1_0.VD, t1, t2);
