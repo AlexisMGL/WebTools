@@ -1886,63 +1886,89 @@ function load_am(log) {
     let table_ve = document.createElement("table")
     am_section.appendChild(table_ve)
 
-    let column_to = document.createElement("td")
-    column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"],"VTOL TakeOff"))
-    table_ve.appendChild(column_to)
-    let column_la = document.createElement("td")
-    column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
-    table_ve.appendChild(column_la)
-    // Création de la troisième colonne pour l'image
-    let column_img = document.createElement("td")
-    let preloadImage = document.getElementById('preloadedImage');
-    let imageClone = preloadImage.cloneNode(true); // Cloner l'image
-    imageClone.style.display = 'block'; // Rendre l'image visible
-    imageClone.style.width = "75%";  // Ajuster la largeur
-    imageClone.style.height = "auto"; // Conserver le ratio d'aspect
-    imageClone.style.verticalAlign = "middle"; // Aligner verticalement
+    if (time_mark["Transition start"] == "Message non trouvé") {
+        time_max_alt = find_max_alt_time(log);
+        time_last_arm = find_last_arm_time(log);
+        let column_to = document.createElement("td")
+        column_to.appendChild(print_to(log, time_last_arm, time_max_alt, "VTOL Climb"));
+        table_ve.appendChild(column_to)
+        let column_la = document.createElement("td")
+        column_la.appendChild(print_la(log, time_max_alt, time_mark["Throttle disarmed"], "VTOL Descent"));
+        table_ve.appendChild(column_la)
+        // Création de la troisième colonne pour l'image
+        let column_img = document.createElement("td")
+        let preloadImage = document.getElementById('preloadedImage');
+        let imageClone = preloadImage.cloneNode(true); // Cloner l'image
+        imageClone.style.display = 'block'; // Rendre l'image visible
+        imageClone.style.width = "75%";  // Ajuster la largeur
+        imageClone.style.height = "auto"; // Conserver le ratio d'aspect
+        imageClone.style.verticalAlign = "middle"; // Aligner verticalement
 
-    column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
-    column_img.appendChild(imageClone); // Ajouter le clone
-    table_ve.appendChild(column_img); // Ajouter la colonne à la table
-    let table_trans = document.createElement("table")
-    am_section.appendChild(table_trans)
-
-    let column_tr = document.createElement("td")
-    column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"],"Transition"))
-    table_trans.appendChild(column_tr)
-    let column_ab = document.createElement("td")
-    column_ab.appendChild(print_ab(log, time_mark["Start airbrake"], time_mark["Start full VTOL land"], "Airbrake"))
-    table_trans.appendChild(column_ab)
-
-
-    let table_seq = document.createElement("table")
-    am_section.appendChild(table_seq)
-    let table_pl = document.createElement("table")
-    am_section.appendChild(table_pl)
-
-    let [t11, t12, h1, t21, t22, h2] = find_palier(log, time_mark)
-    if (time_mark["Payload Drop"] == "Message non trouvé") {
-        // Flight Test
-        let column_re = document.createElement("td")
-        column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Return cruise"))
-        table_seq.appendChild(column_re)
-        let column_pltest = document.createElement("td")
-        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
-        table_seq.appendChild(column_pltest)
+        column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
+        column_img.appendChild(imageClone); // Ajouter le clone
+        table_ve.appendChild(column_img); // Ajouter la colonne à la table
     }
+
     else {
-        let column_aw = document.createElement("td")
-        column_aw.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Payload Drop"], "Away cruise"))
-        table_seq.appendChild(column_aw)
-        let column_re = document.createElement("td")
-        column_re.appendChild(print_re(log, time_mark["Payload Drop"], time_mark["Start airbrake"], "Return cruise"))
-        table_seq.appendChild(column_re)
-        let column_plaw = document.createElement("td")
-        column_plaw.appendChild(print_pl(log, t11, t12, h1, "Palier Away"))
-        table_pl.appendChild(column_plaw)
-        let column_plre = document.createElement("td")
-        column_plre.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
-        table_pl.appendChild(column_plre)
+        let column_to = document.createElement("td")
+        column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"], "VTOL TakeOff"))
+        table_ve.appendChild(column_to)
+        let column_la = document.createElement("td")
+        column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
+        table_ve.appendChild(column_la)
+        // Création de la troisième colonne pour l'image
+        let column_img = document.createElement("td")
+        let preloadImage = document.getElementById('preloadedImage');
+        let imageClone = preloadImage.cloneNode(true); // Cloner l'image
+        imageClone.style.display = 'block'; // Rendre l'image visible
+        imageClone.style.width = "75%";  // Ajuster la largeur
+        imageClone.style.height = "auto"; // Conserver le ratio d'aspect
+        imageClone.style.verticalAlign = "middle"; // Aligner verticalement
+
+        column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
+        column_img.appendChild(imageClone); // Ajouter le clone
+        table_ve.appendChild(column_img); // Ajouter la colonne à la table
+        let table_trans = document.createElement("table")
+        am_section.appendChild(table_trans)
+
+        let column_tr = document.createElement("td")
+        column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"], "Transition"))
+        table_trans.appendChild(column_tr)
+        let column_ab = document.createElement("td")
+        column_ab.appendChild(print_ab(log, time_mark["Start airbrake"], time_mark["Start full VTOL land"], "Airbrake"))
+        table_trans.appendChild(column_ab)
+
+
+        let table_seq = document.createElement("table")
+        am_section.appendChild(table_seq)
+        let table_pl = document.createElement("table")
+        am_section.appendChild(table_pl)
+
+        let [t11, t12, h1, t21, t22, h2] = find_palier(log, time_mark)
+        if (time_mark["Payload Drop"] == "Message non trouvé") {
+            // Flight Test
+            let column_re = document.createElement("td")
+            column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Return cruise"))
+            table_seq.appendChild(column_re)
+            let column_pltest = document.createElement("td")
+            column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
+            table_seq.appendChild(column_pltest)
+        }
+        else {
+            let column_aw = document.createElement("td")
+            column_aw.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Payload Drop"], "Away cruise"))
+            table_seq.appendChild(column_aw)
+            let column_re = document.createElement("td")
+            column_re.appendChild(print_re(log, time_mark["Payload Drop"], time_mark["Start airbrake"], "Return cruise"))
+            table_seq.appendChild(column_re)
+            let column_plaw = document.createElement("td")
+            column_plaw.appendChild(print_pl(log, t11, t12, h1, "Palier Away"))
+            table_pl.appendChild(column_plaw)
+            let column_plre = document.createElement("td")
+            column_plre.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
+            table_pl.appendChild(column_plre)
+        }
+
     }
 
     let table_ff = document.createElement("table")
@@ -2429,6 +2455,39 @@ function findDeltas(time, values1, values2, t1, t2) {
     return [avg_d, avg_d_abs, maxDelta];
 }
 
+function find_max_alt_time(log) {
+
+    terr = log.get("TERR");
+    time = TimeUS_to_seconds(terr.TimeUS)
+    alt = terr.CHeight
+
+    let maxAlt = alt[0];
+    let maxIndex = 0;
+
+    for (let i = 1; i < alt.length; i++) {
+        if (alt[i] > maxAlt) {
+            maxAlt = alt[i];
+            maxIndex = i;
+        }
+    }
+
+    return time[maxIndex];
+}
+
+function find_last_arm_time(log) {
+    arm = log.get("ARM");
+    armstate = TimeUS_to_seconds(arm.TimeUS)
+    time = arm.ArmState
+    let lastArmTime = null;
+
+    for (let i = 0; i < armstate.length; i++) {
+        if (armstate[i] === 1) {
+            lastArmTime = time[i];
+        }
+    }
+
+    return lastArmTime;
+}
 
 function findFFH(time, east_m, north_m, t1, t2) {
 
