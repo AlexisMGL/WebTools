@@ -169,6 +169,10 @@ const thresholds = [
     { step: 're', champ: 'att_Des-sp_avg', min: -0.3, max: 0.3 },
     { step: 're', champ: 'att_Des-sp_abs_avg', min: null, max: 3 },
     { step: 're', champ: 'att_Des-sp_maxdelta', min: null, max: 5 },
+    { step: 're', champ: 'att_Des-Yaw_avg', min: -5, max: 5 },
+    { step: 're', champ: 'att_Des-Yaw_abs_avg', min: null, max: 10 },
+    { step: 're', champ: 'att_Des-Yaw_maxdelta', min: null, max: 30 },
+
 
     { step: 'ch', champ: 'tecs_dh_min', min: -5, max: null },
     { step: 'ch', champ: 'xkf1_VD_max', min: null, max: 5 },
@@ -1888,7 +1892,7 @@ function load_am(log) {
 
     if (time_mark["Transition start"] == "Message non trouvé") {
         time_max_alt = find_max_alt_time(log);
-        time_last_arm = find_last_arm_time(log);
+        time_last_arm = time_mark["Throttle armed"]
         let column_to = document.createElement("td")
         column_to.appendChild(print_to(log, time_last_arm, time_max_alt, "VTOL Climb"));
         table_ve.appendChild(column_to)
@@ -1975,8 +1979,15 @@ function load_am(log) {
     am_section.appendChild(table_ff)
 
     let column_ff = document.createElement("td")
-    column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
-    table_ff.appendChild(column_ff)
+
+    if (time_mark["Transition start"] == "Message non trouvé") {
+        column_ff.appendChild(print_ff(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Full Flight Controls"))
+        table_ff.appendChild(column_ff)
+    }
+    else {
+        column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
+        table_ff.appendChild(column_ff)
+    }
     let column_ffh = document.createElement("td")
     try {
         column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"));
@@ -1986,11 +1997,21 @@ function load_am(log) {
         // Tu peux aussi faire autre chose ici, comme ignorer l'erreur ou ajouter un log spécifique.
     }
     let column_ffresp = document.createElement("td")
-    column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
-    table_ff.appendChild(column_ffresp)
     let column_para = document.createElement("td")
-    column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
-    table_ff.appendChild(column_para)
+    if (time_mark["Transition start"] == "Message non trouvé") {
+        column_ffresp.appendChild(print_ffrespv(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+        table_ff.appendChild(column_ffresp)
+        column_para.appendChild(print_para(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Parachute Margin"))
+        table_ff.appendChild(column_para)
+    }
+    else {
+        column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+        table_ff.appendChild(column_ffresp)
+        column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
+        table_ff.appendChild(column_para)
+    }
+    
+
     
 
 
@@ -2212,6 +2233,7 @@ function findMaxPair(dataxy) {
 function findMessageTimes(MSG_time, MSG) {
 
     const time_mark = {
+        "Throttle armed": null,
         "VTOL Takeoff": null,
         "Transition start": null,
         "Transition end": null,
@@ -2245,6 +2267,9 @@ function findMessageTimes(MSG_time, MSG) {
         }
 
         // Vérifier les derniers messages
+        if (message.includes("Throttle armed")) {
+            time_mark["Throttle armed"] = time;
+        }
         if (message.includes("SetServo")) {
             time_mark["Payload Drop"] = time;
         }
@@ -3243,6 +3268,48 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${checkThreshold('re', 'att_Des-sp_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
+
+    return fieldset
+}
+
+function print_ffrespv(log, t1, t2, t3, t4, head) {
+    // response (regulation)
+    let fieldset = document.createElement("fieldset")
+
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
+
+    const att = log.get("ATT")
+
+    // ATT - Pitch
+    let [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Pitch, att.DesPitch, t1, t2);
+    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Pitch_avg', avg_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+    // ATT - Roll
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Roll, att.DesRoll, t1, t2);
+    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${checkThreshold('re', 'att_Des-Roll_avg', avg_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('re', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+    // ATT - Yaw
+    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Yaw, att.DesYaw, t1, t2);
+    fieldset.innerHTML += `att_Des-Yaw_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Yaw_avg', avg_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Yaw_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Yaw_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_Des-Yaw_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Yaw_maxdelta', max_d)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+
 
     return fieldset
 }
