@@ -5272,16 +5272,35 @@ function processAlert(files) {
     var droneID = "";
     var TOP = "";
 
-    files = sortFilesByDate(files)
+    // Récupérer la date sélectionnée dans le datePicker
+    var selectedDate = document.getElementById('datePicker').value;
+    var selectedDateObj = new Date(selectedDate); // Créer un objet Date à partir de la date sélectionnée
 
-    var n = parseInt(document.getElementById('counter').value);
-    // Vérifier si n est supérieur au nombre de fichiers disponibles
-    if (n > files.length) {
-        n = files.length; // Si oui, on garde tous les fichiers
-    }
+    // Filtrer les fichiers avec une date >= à la date sélectionnée
+    files = files.filter(function (file) {
+        // Extraire uniquement le nom du fichier sans le chemin
+        var fileName = file.name.split('/').pop(); // '2024-09-23 12-12-05.bin' extrait depuis 'xxx/xxx/xxx/2024-09-23 12-12-05.bin'
 
-    // Garder uniquement les n premiers fichiers
-    files = files.slice(0, n);
+        // Extraire les 10 premiers caractères du nom du fichier (potentiellement la date)
+        var fileDateStr = fileName.substring(0, 10); // '2024-09-23'
+        var fileDateObj;
+
+        // Vérifier si la chaîne extraite est au format 'yyyy-mm-dd'
+        if (/^\d{4}-\d{2}-\d{2}$/.test(fileDateStr)) {
+            // Si oui, créer un objet Date à partir de cette chaîne
+            fileDateObj = new Date(fileDateStr);
+            console.log(fileDateObj);
+        } else {
+            // Sinon, utiliser la date de modification du fichier (lastModified)
+            fileDateObj = new Date(file.lastModified);
+        }
+
+        // Comparer les dates : on garde les fichiers plus récents ou égaux à la date sélectionnée
+        return fileDateObj >= selectedDateObj;
+    });
+
+    // Ici, tu peux continuer le reste de ta logique avec les fichiers filtrés
+    console.log(files); // Vérification des fichiers filtrés
 
     // Fonction pour lire un fichier et exécuter un callback avec le contenu
     function readFile(file) {
@@ -5368,7 +5387,7 @@ function processAlert(files) {
                     <h1>DEMANDE D’AUTORISATION DE DÉCOLLAGE</h1>
    
     
-                    <p><strong>Drone: ${droneID}</strong></p>
+
     
                     <p><strong>DESTINATAIRE :</strong> RDOA</p>
                     <p><strong>DE :</strong> AIRLOG</p>
@@ -5376,6 +5395,11 @@ function processAlert(files) {
                     <p><strong>DATE/HEURE :</strong> ${currentDateTime}</p>
     
                     <h2>DÉTAILS DE L'OPÉRATEUR DE DRONE :</h2>
+
+                    <div class="form-group">
+                        <label for="drone">Drones :</label>
+                        <input type="text" id="drone" placeholder="Quels sont les drones concernés...">
+                    </div>
     
                     <div class="form-group">
                         <label for="nom-pilote">Nom du pilote :</label>
@@ -5410,10 +5434,13 @@ function processAlert(files) {
                 var lines = fileContent.split('\n');
                 var fileTitle = files[index].name.replace('.am', '');
 
-                newWindowContent += `<h2>${fileTitle}</h2>`;
+                //newWindowContent += `<h2>${fileTitle}</h2>`;
 
                 var alertlines = [];
                 for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes('Drone ID')) {
+                        droneID = lines[i].split(':')[1].trim();
+                    }
                     if (lines[i].includes('ALERT')) {
                         // alertlines.push(lines[i - 1]);
                         alertlines.push(addThresholdInfo(lines[i - 1]));
@@ -5425,6 +5452,11 @@ function processAlert(files) {
                         alertlines.push(lines[i]);
                     }
                 }
+
+                newWindowContent += `<br><br>`; // Ajouter deux sauts de ligne
+                var fileTitle = files[index].name.replace('.am', ' '+ droneID);
+
+                newWindowContent += `<h2>${fileTitle}</h2>`;
                 if (alertlines.length > 0) {
                     newWindowContent += `<pre>${alertlines.join('\n')}</pre>`;
                 }
@@ -5496,7 +5528,7 @@ async function selectFolderAndProcess() {
 }
 
 
-async function processDirectory(folderPath) {
+async function processDirectory(folderPath,tasktype) {
     try {
         // Lire le contenu du dossier
         const entries = await fs.readdir(folderPath, { withFileTypes: true });
@@ -5512,13 +5544,14 @@ async function processDirectory(folderPath) {
 
             if (entry.isDirectory()) {
                 // Traitement des sous-répertoires
-                await processDirectory(entryPath); // récursif
+                await processDirectory(entryPath, tasktype); // récursif
             } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.bin')) {
-                if (prfExists) {
+
+                if (prfExists && check_date(entry)) {
                     // Traitement du fichier .bin
                     console.log(`Traitement du fichier .bin: ${entryPath}`);
                     await Promise.all(prfFilePaths.map(async prfFilePath => {
-                        await processBinFile(entryPath, prfFilePath);
+                        await processBinFile(entryPath, tasktype);
                     }));
                 } else {
                     console.log(`Ignoré: ${entry.name} car aucun fichier .prf n'a été trouvé dans le même dossier.`);
@@ -5530,17 +5563,41 @@ async function processDirectory(folderPath) {
     }
 }
 
+function check_date(file) {
+    var selectedDate = document.getElementById('datePicker').value;
+    var selectedDateObj = new Date(selectedDate); // Créer un objet Date à partir de la date sélectionnée
+
+    var fileName = file.name.split('/').pop(); // '2024-09-23 12-12-05.bin' extrait depuis 'xxx/xxx/xxx/2024-09-23 12-12-05.bin'
+
+    // Extraire les 10 premiers caractères du nom du fichier (potentiellement la date)
+    var fileDateStr = fileName.substring(0, 10); // '2024-09-23'
+    var fileDateObj;
+
+    // Vérifier si la chaîne extraite est au format 'yyyy-mm-dd'
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fileDateStr)) {
+        // Si oui, créer un objet Date à partir de cette chaîne
+        fileDateObj = new Date(fileDateStr);
+        console.log(fileDateObj);
+    } else {
+        // Sinon, utiliser la date de modification du fichier (lastModified)
+        fileDateObj = new Date(file.lastModified);
+    }
+
+    // Comparer les dates : on garde les fichiers plus récents ou égaux à la date sélectionnée
+    return fileDateObj >= selectedDateObj;
+}
+
 
 let queue = Promise.resolve(); // Initialisation de la file d'attente
 let processingInProgress = false;
 
-async function processBinFile(binFilePath) {
-    queue = queue.then(() => processTask(binFilePath)).catch(error => {
+async function processBinFile(binFilePath,tasktype) {
+    queue = queue.then(() => processTask(binFilePath,tasktype)).catch(error => {
         console.error('Erreur dans la file d\'attente :', error);
     });
 }
 
-async function processTask(binFilePath) {
+async function processTask(binFilePath,tasktype) {
     if (processingInProgress) {
         console.log('Un traitement est déjà en cours. Veuillez patienter.');
         return;
@@ -5552,13 +5609,21 @@ async function processTask(binFilePath) {
     const directoryPath = path.dirname(binFilePath);
     console.log(`bin trouvé ici : ${directoryPath}`);
 
+
+
     try {
         const entries = await fs.readdir(directoryPath, { withFileTypes: true });
 
 
-        const prfFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
 
-        if (prfFile) {
+        const prfFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
+        const amFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.am'));
+
+        if (amFile && (tasktype==1)) {
+            console.log(`Le .am est déjà compilé pour ${binFilePath}`);
+        }
+
+        if (prfFile && (!(amFile) || tasktype == 0)) {
             const prfFilename = entries.find(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf')).name;
             const prfFilePath = path.join(directoryPath, prfFilename);
             const prfContent = await fs.readFile(prfFilePath, 'utf8');
@@ -5621,7 +5686,9 @@ async function processTask(binFilePath) {
             console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
             reset()
         } else {
-            console.log(`Aucun fichier .prf trouvé dans le même répertoire que ${binFilePath}`);
+            if (!(prfFile)) {
+                console.log(`Aucun fichier .prf trouvé dans le même répertoire que ${binFilePath}`);
+            }
         }
     } catch (error) {
         console.error(`Erreur lors du traitement du fichier .bin : ${binFilePath}`, error);

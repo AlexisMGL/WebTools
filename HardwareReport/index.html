@@ -43,11 +43,27 @@
     <!-- Bouton pour ouvrir l'explorateur de fichiers -->
     <input id="openExplorer" type="button" value="Ask Validation" onclick="openFileExplorer()">
 
-    <!-- Compteur pour augmenter ou diminuer la valeur -->
-    <input id="counter" type="number" value="4" min="1" step="1" style="margin-left: 10px; width: 60px;">
+    <!-- Sélecteur de date avec la date d'hier par défaut -->
+    <input id="datePicker" type="date" style="margin-left: 10px; width: 150px;">
+
+    <script>
+        // Fonction pour obtenir la date d'hier au format 'yyyy-mm-dd'
+        function getYesterdayDate() {
+            const today = new Date();
+            today.setDate(today.getDate() - 1);
+            const yesterday = today.toISOString().split('T')[0];
+            return yesterday;
+        }
+
+        // Définir la date d'hier comme valeur par défaut
+        document.getElementById('datePicker').value = getYesterdayDate();
+    </script>
 
     <!-- Bouton pour choisir un dossier -->
-    <input id="selectFolder" type="button" value="Select Folder" onclick="selectFolder()">
+    <input id="selectFolder" type="button" value="Compile Folder" onclick="selectFolder()">
+
+    <!-- Bouton pour choisir un dossier -->
+    <input id="selectFolder2" type="button" value="Complete Missing .am" onclick="selectFolder2()">
 
     <h3 hidden>Firmware</h3>
     <p id="VER"></p>
@@ -60,7 +76,17 @@
                 if (folderPath) {
                     document.getElementById('VER').innerText = `Selected folder: ${folderPath}`;
                     document.getElementById('OpenIn').disabled = false;
-                    processDirectory(folderPath);
+                    processDirectory(folderPath,0);
+                }
+            });
+        }
+
+        function selectFolder2() {
+            ipcRenderer.invoke('select-folder').then((folderPath) => {
+                if (folderPath) {
+                    document.getElementById('VER').innerText = `Selected folder: ${folderPath}`;
+                    document.getElementById('OpenIn').disabled = false;
+                    processDirectory(folderPath,1);
                 }
             });
         }
