@@ -1777,7 +1777,7 @@ function update_minimal_config() {
     }
     document.forms["params"].hidden = false
     document.forms["params"].previousElementSibling.hidden = false
-    document.getElementById("SaveMinimalParams").hidden = false
+    document.getElementById("MinimalParams").hidden = false
 
     const changed = document.getElementById("param_base_changed").checked
 
@@ -5590,11 +5590,21 @@ function check_date(file) {
 
 let queue = Promise.resolve(); // Initialisation de la file d'attente
 let processingInProgress = false;
+let fileCount = 0;
+let totalFiles = 0;
 
 async function processBinFile(binFilePath,tasktype) {
-    queue = queue.then(() => processTask(binFilePath,tasktype)).catch(error => {
-        console.error('Erreur dans la file d\'attente :', error);
-    });
+    totalFiles++;  // On augmente le total de fichiers chaque fois qu'on ajoute un fichier à la file d'attente
+    let currentFile = ++fileCount;  // Incrémente le compteur des fichiers en cours de traitement
+
+    queue = queue
+        .then(() => {
+            console.log(`Fichier ${currentFile}/${totalFiles} de la file d'attente`);
+            return processTask(binFilePath, tasktype);
+        })
+        .catch(error => {
+            console.error('Erreur dans la file d\'attente :', error);
+        });
 }
 
 async function processTask(binFilePath,tasktype) {
@@ -5682,8 +5692,14 @@ async function processTask(binFilePath,tasktype) {
             const combinedData = textBeforeBat + "\n" + processedData;
             const amFilePath = binFilePath.replace('.bin', '.am');
 
-            await fs.writeFile(amFilePath, combinedData, 'utf8');
-            console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
+            if (amFilePath.includes('.am')) {
+                await fs.writeFile(amFilePath, combinedData, 'utf8');
+                console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
+            }
+            else {
+                console.log(`.am bad handling : ${amFilePath}`);
+            }
+            
             reset()
         } else {
             if (!(prfFile)) {
