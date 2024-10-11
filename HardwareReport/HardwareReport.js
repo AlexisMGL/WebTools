@@ -5426,6 +5426,11 @@ function processAlert(files) {
                         <label for="videos-vues">Vidéos visionnées :</label>
                         <input type="text" id="videos-vues" placeholder="Entrez des détails...">
                     </div>
+
+                    <div class="form-group">
+                        <label for="heure">Heure de décollage estimée :</label>
+                        <input type="text" id="coordonnees-pilote" placeholder="Entrez l'heure de takeoff estimée'...">
+                    </div>
                 </body>
                 </html>
                 `;
