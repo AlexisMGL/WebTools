@@ -1777,7 +1777,7 @@ function update_minimal_config() {
     }
     document.forms["params"].hidden = false
     document.forms["params"].previousElementSibling.hidden = false
-    document.getElementById("MinimalParams").hidden = false
+    document.getElementById("SaveMinimalParams").hidden = false
 
     const changed = document.getElementById("param_base_changed").checked
 
