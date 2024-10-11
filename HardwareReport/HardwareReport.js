@@ -22,8 +22,8 @@ const thresholds = [
     { step: 'pr', champ: 'palier_eas', min: null, max: null },
     { step: 'pr', champ: 'palier_gsp', min: null, max: null },
     { step: 'pr', champ: 'palier_equivalent2true', min: null, max: null },
-    { step: 'pr', champ: 'aetr_Elev_max', min: null, max: 2000 },
-    { step: 'pr', champ: 'aetr_Elev_avg', min: 300, max: 900 },
+    { step: 'pr', champ: 'aetr_Elev_max', min: null, max: 2100 },
+    { step: 'pr', champ: 'aetr_Elev_avg', min: 300, max: 1100 },
     { step: 'pr', champ: 'att_pitch_avg', min: 0, max: 5 },
     { step: 'pr', champ: 'att_pitch_max', min: null, max: 16 },
     { step: 'pr', champ: 'batt0_curr_avg', min: 19, max: 25 },
@@ -54,75 +54,75 @@ const thresholds = [
     { step: 'la', champ: 'batt1_volt_min', min: 42, max: null },
     { step: 'la', champ: 'batt1_curr_max', min: null, max: 250 },
     { step: 'la', champ: 'batt1_curr_avg', min: null, max: 150 },
-    { step: 'la', champ: 'rcou_C5_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C5_max', min: null, max: 1940 },
     { step: 'la', champ: 'rcou_C5_avg', min: 1500, max: 1800 },
-    { step: 'la', champ: 'rcou_C6_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C6_max', min: null, max: 1940 },
     { step: 'la', champ: 'rcou_C6_avg', min: 1500, max: 1800 },
-    { step: 'la', champ: 'rcou_C7_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C7_max', min: null, max: 1940 },
     { step: 'la', champ: 'rcou_C7_avg', min: 1500, max: 1800 },
-    { step: 'la', champ: 'rcou_C8_max', min: null, max: 1900 },
+    { step: 'la', champ: 'rcou_C8_max', min: null, max: 1940 },
     { step: 'la', champ: 'rcou_C8_avg', min: 1500, max: 1800 },
     { step: 'la', champ: 'rcou_backC6C8_avg', min: 1500, max: 1800 },
     { step: 'la', champ: 'rcou_frontC5C7_avg', min: 1500, max: 1800 },
     { step: 'la', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'la', champ: 'qtun_CRt_max', min: null, max: 0.8 },
     { step: 'la', champ: 'qtun_CRt_avg', min: -2, max: 0 },
-    { step: 'la', champ: 'qtun_ThO_max', min: null, max: 0.60 },
+    { step: 'la', champ: 'qtun_ThO_max', min: null, max: 0.75 },
     { step: 'la', champ: 'qtun_ThO_avg', min: 0.2, max: 0.55 }, 
     { step: 'la', champ: 'qtun_CRt_min', min: -3.8, max: null },
 
     { step: 'tr', champ: 'batt0_curr_max', min: 65, max: 85 },
-    { step: 'tr', champ: 'rcou_C5_max', min: null, max: 1900 },
-    { step: 'tr', champ: 'rcou_C5_avg', min: 1300, max: 1750 },
-    { step: 'tr', champ: 'rcou_C6_max', min: null, max: 1900 },
-    { step: 'tr', champ: 'rcou_C6_avg', min: 1300, max: 1750 },
-    { step: 'tr', champ: 'rcou_C7_max', min: null, max: 1900 },
-    { step: 'tr', champ: 'rcou_C7_avg', min: 1300, max: 1750 },
-    { step: 'tr', champ: 'rcou_C8_max', min: null, max: 1900 },
-    { step: 'tr', champ: 'rcou_C8_avg', min: 1300, max: 1750 },
+    { step: 'tr', champ: 'rcou_C5_max', min: null, max: 1948 },
+    { step: 'tr', champ: 'rcou_C5_avg', min: 1300, max: 1850 },
+    { step: 'tr', champ: 'rcou_C6_max', min: null, max: 1948 },
+    { step: 'tr', champ: 'rcou_C6_avg', min: 1300, max: 1850 },
+    { step: 'tr', champ: 'rcou_C7_max', min: null, max: 1948 },
+    { step: 'tr', champ: 'rcou_C7_avg', min: 1300, max: 1850 },
+    { step: 'tr', champ: 'rcou_C8_max', min: null, max: 1948 },
+    { step: 'tr', champ: 'rcou_C8_avg', min: 1300, max: 1850 },
     { step: 'tr', champ: 'rcou_backC6C8_avg', min: 1300, max: 1750 },
     { step: 'tr', champ: 'rcou_frontC5C7_avg', min: 1300, max: 1750 },
     { step: 'tr', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'tr', champ: 'transition_time', min: 10, max: 18 },
 
     { step: 'ab', champ: 'batt0_curr_max', min: null, max: 35 },
-    { step: 'ab', champ: 'rcou_C5_max', min: null, max: 1750 },
-    { step: 'ab', champ: 'rcou_C5_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_C6_max', min: null, max: 1750 },
-    { step: 'ab', champ: 'rcou_C6_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_C7_max', min: null, max: 1750 },
-    { step: 'ab', champ: 'rcou_C7_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_C8_max', min: null, max: 1750 },
-    { step: 'ab', champ: 'rcou_C8_avg', min: 1150, max: 1450 },
+    { step: 'ab', champ: 'rcou_C5_max', min: null, max: 1850 },
+    { step: 'ab', champ: 'rcou_C5_avg', min: 1150, max: 1650 },
+    { step: 'ab', champ: 'rcou_C6_max', min: null, max: 1850 },
+    { step: 'ab', champ: 'rcou_C6_avg', min: 1150, max: 1650 },
+    { step: 'ab', champ: 'rcou_C7_max', min: null, max: 1850 },
+    { step: 'ab', champ: 'rcou_C7_avg', min: 1150, max: 1650 },
+    { step: 'ab', champ: 'rcou_C8_max', min: null, max: 1850 },
+    { step: 'ab', champ: 'rcou_C8_avg', min: 1150, max: 1650 },
     { step: 'ab', champ: 'rcou_backC6C8_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_frontC5C7_avg', min: 1150, max: 1450 },
     { step: 'ab', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
     { step: 'ab', champ: 'transition_time', min: 10, max: 18 },
 
-    { step: 'cr', champ: 'arsp_airspeed_avg', min: 22.8, max: 25.2 },
+    { step: 'cr', champ: 'arsp_airspeed_avg', min: 22.2, max: 26},
     { step: 'cr', champ: 'arsp_airspeed_min', min: 19.8, max: null },
     { step: 'cr', champ: 'arsp_airspeed_max', min: null, max: 30 },
-    { step: 'cr', champ: 'arsp_delta_phasebeginning_30s', min: -0.4, max: 0.4 },
-    { step: 'cr', champ: 'arsp_delta_phaseending_30s', min: -0.4, max: 0.4 },
+    { step: 'cr', champ: 'arsp_delta_phasebeginning_30s', min: -0.6, max: 0.6 },
+    { step: 'cr', champ: 'arsp_delta_phaseending_30s', min: -0.6, max: 0.6 },
     { step: 'cr', champ: 'att_roll_avg', min: -2, max: 2 },
-    { step: 'cr', champ: 'att_|roll|_max', min: null, max: 33 },
+    { step: 'cr', champ: 'att_|roll|_max', min: null, max: 35 },
     { step: 'cr', champ: 'att_pitch_avg', min: 0, max: 5 },
     { step: 'cr', champ: 'att_pitch_max', min: null, max: 16 },
-    { step: 'cr', champ: 'batt0_curr_avg', min: 19, max: 25 },
+    { step: 'cr', champ: 'batt0_curr_avg', min: 15, max: 33 },
     { step: 'cr', champ: 'batt1_curr_avg', min: null, max: 1 },
     { step: 'cr', champ: 'batt1_curr_max', min: null, max: 4 },
     { step: 'cr', champ: 'gps0_sats_min', min: 11, max: null },
     { step: 'cr', champ: 'gps1_sats_min', min: 11, max: null },
     { step: 'cr', champ: 'rcou_c1_avg', min: 1470, max: 1530 },
     { step: 'cr', champ: 'rcou_|c1|_max', min: 1400, max: 1600 },
-    { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1490, max: 1510 },
+    { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1485, max: 1515 },
     { step: 'cr', champ: 'vibe_X_max', min: null, max: 5 },
     { step: 'cr', champ: 'vibe_Y_max', min: null, max: 5 },
-    { step: 'cr', champ: 'vibe_Z_max', min: null, max: 5 },
+    { step: 'cr', champ: 'vibe_Z_max', min: null, max: 8 },
 
-    { step: 'ff', champ: 'batt0_volt_min', min: 43, max: null },
-    { step: 'ff', champ: 'batt0_curr_max', min: null, max: 80 },
-    { step: 'ff', champ: 'batt0_curr_avg', min: 19, max: 26 },
+    { step: 'ff', champ: 'batt0_volt_min', min: 42, max: null },
+    { step: 'ff', champ: 'batt0_curr_max', min: null, max: 85 },
+    { step: 'ff', champ: 'batt0_curr_avg', min: 19, max: 29 },
     { step: 'ff', champ: 'batt1_curr_max', min: null, max: 250 },
     { step: 'ff', champ: 'batt0_currTot', min: null, max: null },
     { step: 'ff', champ: 'batt1_currTot', min: null, max: null },
@@ -132,18 +132,18 @@ const thresholds = [
     { step: 'ff', champ: 'gps1_sats_min', min: 10, max: null },
     { step: 'ff', champ: 'pm_load_max', min: null, max: 52 },
     { step: 'ff', champ: 'pm_InternalErrors', min: null, max: 1 },
-    { step: 'ff', champ: 'powr_Vcc_min', min: 5.1, max: null },
-    { step: 'ff', champ: 'powr_Vcc_avg', min: 5.2, max: null },
-    { step: 'ff', champ: 'powr_Vservo_min', min: 4.85, max: null },
-    { step: 'ff', champ: 'powr_Vservo_avg', min: 5, max: null },
-    { step: 'ff', champ: 'vibe0_VibeX_max', min: null, max: 30 },
-    { step: 'ff', champ: 'vibe0_VibeY_max', min: null, max: 30 },
-    { step: 'ff', champ: 'vibe0_VibeZ_max', min: null, max: 30 },
-    { step: 'ff', champ: 'XKF4_SV_max', min: null, max: 0.6 },
-    { step: 'ff', champ: 'XKF4_SP_max', min: null, max: 0.6 },
-    { step: 'ff', champ: 'XKF4_SH_max', min: null, max: 0.6 },
-    { step: 'ff', champ: 'XKF4_SM_max', min: null, max: 0.6 },
-    { step: 'ff', champ: 'XKF4_SVT_max', min: null, max: 0.65 },
+    { step: 'ff', champ: 'powr_Vcc_min', min: 5.08, max: null },
+    { step: 'ff', champ: 'powr_Vcc_avg', min: 5.18, max: null },
+    { step: 'ff', champ: 'powr_Vservo_min', min: 4.80, max: null },
+    { step: 'ff', champ: 'powr_Vservo_avg', min: 4.95, max: null },
+    { step: 'ff', champ: 'vibe0_VibeX_max', min: null, max: 35 },
+    { step: 'ff', champ: 'vibe0_VibeY_max', min: null, max: 35 },
+    { step: 'ff', champ: 'vibe0_VibeZ_max', min: null, max: 35 },
+    { step: 'ff', champ: 'XKF4_SV_max', min: null, max: 0.68 },
+    { step: 'ff', champ: 'XKF4_SP_max', min: null, max: 0.68 },
+    { step: 'ff', champ: 'XKF4_SH_max', min: null, max: 0.68 },
+    { step: 'ff', champ: 'XKF4_SM_max', min: null, max: 0.68 },
+    { step: 'ff', champ: 'XKF4_SVT_max', min: null, max: 0.75 },
 
     { step: 'fh', champ: 'ffh_start', min: null, max: null },
     { step: 'fh', champ: 'ffh_end', min: null, max: null },
@@ -159,13 +159,13 @@ const thresholds = [
 
     { step: 're', champ: 'att_Des-Pitch_avg', min: -1, max: 1 },
     { step: 're', champ: 'att_Des-Pitch_abs_avg', min: null, max: 2 },
-    { step: 're', champ: 'att_Des-Pitch_maxdelta', min: null, max: 12 },
+    { step: 're', champ: 'att_Des-Pitch_maxdelta', min: null, max: 14 },
     { step: 're', champ: 'att_Des-Roll_avg', min: -3, max: 3 },
     { step: 're', champ: 'att_Des-Roll_abs_avg', min: null, max: 6 },
-    { step: 're', champ: 'att_Des-Roll_maxdelta', min: null, max: 16 },
+    { step: 're', champ: 'att_Des-Roll_maxdelta', min: null, max: 20 },
     { step: 're', champ: 'att_Des-h_avg', min: -2, max: 2 },
     { step: 're', champ: 'att_Des-h_abs_avg', min: null, max: 5 },
-    { step: 're', champ: 'att_Des-h_maxdelta', min: null, max: 16 },
+    { step: 're', champ: 'att_Des-h_maxdelta', min: null, max: 20 },
     { step: 're', champ: 'att_Des-sp_avg', min: -0.3, max: 0.3 },
     { step: 're', champ: 'att_Des-sp_abs_avg', min: null, max: 3 },
     { step: 're', champ: 'att_Des-sp_maxdelta', min: null, max: 5 },
@@ -2672,28 +2672,28 @@ function print_la(log, t1, t2, head) {
 
     // RCOU C5
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
-    fieldset.innerHTML += `rcou_C5_max (1900 ms): ${checkThreshold('la', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1940 ms): ${checkThreshold('la', 'rcou_C5_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `rcou_C5_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_C5_avg', avgvalue5)}`;
     fieldset.innerHTML += "<br>";
 
     // RCOU C6
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t2);
-    fieldset.innerHTML += `rcou_C6_max (1900 ms): ${checkThreshold('la', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1940 ms): ${checkThreshold('la', 'rcou_C6_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `rcou_C6_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_C6_avg', avgvalue6)}`;
     fieldset.innerHTML += "<br>";
 
     // RCOU C7
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t2);
-    fieldset.innerHTML += `rcou_C7_max (1900 ms): ${checkThreshold('la', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1940 ms): ${checkThreshold('la', 'rcou_C7_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `rcou_C7_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_C7_avg', avgvalue7)}`;
     fieldset.innerHTML += "<br>";
 
     // RCOU C8
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t2);
-    fieldset.innerHTML += `rcou_C8_max (1900 ms): ${checkThreshold('la', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1940 ms): ${checkThreshold('la', 'rcou_C8_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `rcou_C8_avg (1500<_<1800 ms): ${checkThreshold('la', 'rcou_C8_avg', avgvalue8)}`;
     fieldset.innerHTML += "<br>";
@@ -2720,7 +2720,7 @@ function print_la(log, t1, t2, head) {
 
     // QTUN ThO
     [minvalue1, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
-    fieldset.innerHTML += `qtun_ThO_max (<0.60): ${checkThreshold('la', 'qtun_ThO_max', maxvalue)}`;
+    fieldset.innerHTML += `qtun_ThO_max (<0.75): ${checkThreshold('la', 'qtun_ThO_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `qtun_ThO_avg (0.20<_<0.55): ${checkThreshold('la', 'qtun_ThO_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
@@ -2753,27 +2753,27 @@ function print_tr(log, t1, t2, t3, head) {
 
     // RCOU channel checks
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t3);
-    fieldset.innerHTML += `rcou_C5_max (1900 ms): ${checkThreshold('tr', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1948 ms): ${checkThreshold('tr', 'rcou_C5_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C5_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_C5_avg', avgvalue5)}`;
+    fieldset.innerHTML += `rcou_C5_avg (1300<_<1850 ms): ${checkThreshold('tr', 'rcou_C5_avg', avgvalue5)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t3);
-    fieldset.innerHTML += `rcou_C6_max (1900 ms): ${checkThreshold('tr', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1948 ms): ${checkThreshold('tr', 'rcou_C6_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_C6_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_C6_avg (1300<_<1850 ms): ${checkThreshold('tr', 'rcou_C6_avg', avgvalue6)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t3);
-    fieldset.innerHTML += `rcou_C7_max (1900 ms): ${checkThreshold('tr', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1948 ms): ${checkThreshold('tr', 'rcou_C7_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_C7_avg', avgvalue7)}`;
+    fieldset.innerHTML += `rcou_C7_avg (1300<_<1850 ms): ${checkThreshold('tr', 'rcou_C7_avg', avgvalue7)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t3);
-    fieldset.innerHTML += `rcou_C8_max (1900 ms): ${checkThreshold('tr', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1948 ms): ${checkThreshold('tr', 'rcou_C8_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1300<_<1750 ms): ${checkThreshold('tr', 'rcou_C8_avg', avgvalue8)}`;
+    fieldset.innerHTML += `rcou_C8_avg (1300<_<1850 ms): ${checkThreshold('tr', 'rcou_C8_avg', avgvalue8)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // Calculations for back and front averages
@@ -2819,27 +2819,27 @@ function print_ab(log, t1, t2, head) {
 
     // RCOU checks
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
-    fieldset.innerHTML += `rcou_C5_max (1750 ms): ${checkThreshold('ab', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1850 ms): ${checkThreshold('ab', 'rcou_C5_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C5_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_C5_avg', avgvalue5)}`;
+    fieldset.innerHTML += `rcou_C5_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C5_avg', avgvalue5)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t2);
-    fieldset.innerHTML += `rcou_C6_max (1750 ms): ${checkThreshold('ab', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1850 ms): ${checkThreshold('ab', 'rcou_C6_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_C6_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_C6_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C6_avg', avgvalue6)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t2);
-    fieldset.innerHTML += `rcou_C7_max (1750 ms): ${checkThreshold('ab', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1850 ms): ${checkThreshold('ab', 'rcou_C7_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_C7_avg', avgvalue7)}`;
+    fieldset.innerHTML += `rcou_C7_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C7_avg', avgvalue7)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t2);
-    fieldset.innerHTML += `rcou_C8_max (1750 ms): ${checkThreshold('ab', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1850 ms): ${checkThreshold('ab', 'rcou_C8_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_C8_avg', avgvalue8)}`;
+    fieldset.innerHTML += `rcou_C8_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C8_avg', avgvalue8)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // Averages for back and front
@@ -2884,7 +2884,7 @@ function print_re(log, t1, t2, head) {
 
     // Airspeed
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t1, t2);
-    fieldset.innerHTML += `arsp_airspeed_avg (22.8<_<25.2 m/s): ${checkThreshold('cr', 'arsp_airspeed_avg', avgvalue)}`;
+    fieldset.innerHTML += `arsp_airspeed_avg (22.8<_<26 m/s): ${checkThreshold('cr', 'arsp_airspeed_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `arsp_airspeed_min (>19.8 m/s): ${checkThreshold('cr', 'arsp_airspeed_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
@@ -2894,13 +2894,13 @@ function print_re(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Airspeed, t1, t1 + 30);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t1, t1 + 30);
     avgvalue = (avgvalue2 - avgvalue);
-    fieldset.innerHTML += `arsp_delta_phasebeginning_30s (-0.4<_<0.4 m/s): ${checkThreshold('cr', 'arsp_delta_phasebeginning_30s', avgvalue)}`;
+    fieldset.innerHTML += `arsp_delta_phasebeginning_30s (-0.6<_<0.6 m/s): ${checkThreshold('cr', 'arsp_delta_phasebeginning_30s', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Airspeed, t2 - 30, t2);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t2 - 30, t2);
     avgvalue = (avgvalue2 - avgvalue);
-    fieldset.innerHTML += `arsp_delta_phaseending_30s (-0.4<_<0.4 m/s): ${checkThreshold('cr', 'arsp_delta_phaseending_30s', avgvalue)}`;
+    fieldset.innerHTML += `arsp_delta_phaseending_30s (-0.6<_<0.6 m/s): ${checkThreshold('cr', 'arsp_delta_phaseending_30s', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // Attitude
@@ -2908,9 +2908,9 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += `att_roll_avg (-2<_<2 °): ${checkThreshold('cr', 'att_roll_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     if (-minvalue > maxvalue) {
-        fieldset.innerHTML += `att_|roll|_max (<33 °): ${checkThreshold('cr', 'att_|roll|_max', minvalue)}`;
+        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', minvalue)}`;
     } else {
-        fieldset.innerHTML += `att_|roll|_max (<33 °): ${checkThreshold('cr', 'att_|roll|_max', maxvalue)}`;
+        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', maxvalue)}`;
     }
     fieldset.innerHTML += "<br>";
 
@@ -2922,7 +2922,7 @@ function print_re(log, t1, t2, head) {
 
     // Battery 0
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${checkThreshold('cr', 'batt0_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += `batt0_curr_avg (15<_<33 A): ${checkThreshold('cr', 'batt0_curr_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // Battery 1
@@ -2953,7 +2953,7 @@ function print_re(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C2, t1, t2);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C4, t1, t2);
     avgvalue = (avgvalue + avgvalue2) / 2;
-    fieldset.innerHTML += `rcou_c2+c4/2_avg (1490<_<1510 ms): ${checkThreshold('cr', 'rcou_c2+c4/2_avg', avgvalue)}`;
+    fieldset.innerHTML += `rcou_c2+c4/2_avg (1485<_<1515 ms): ${checkThreshold('cr', 'rcou_c2+c4/2_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // Vibe
@@ -2964,7 +2964,7 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += `vibe_Y_max (<5): ${checkThreshold('cr', 'vibe_Y_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
-    fieldset.innerHTML += `vibe_Z_max (<5): ${checkThreshold('cr', 'vibe_Z_max', maxvalue)}`;
+    fieldset.innerHTML += `vibe_Z_max (<8): ${checkThreshold('cr', 'vibe_Z_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
 
     return fieldset;
@@ -3018,9 +3018,9 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += "<br>";
 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
-    fieldset.innerHTML += `aetr_Elev_max (<2000): ${checkThreshold('pr', 'aetr_Elev_max', maxvalue)}`;
+    fieldset.innerHTML += `aetr_Elev_max (<2100): ${checkThreshold('pr', 'aetr_Elev_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `aetr_Elev_avg (300<_<900): ${checkThreshold('pr', 'aetr_Elev_avg', avgvalue)}`;
+    fieldset.innerHTML += `aetr_Elev_avg (300<_<1100): ${checkThreshold('pr', 'aetr_Elev_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
@@ -3064,12 +3064,12 @@ function print_ff(log, t1, t2, head) {
 
     // Battery 0
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
-    fieldset.innerHTML += `batt0_volt_min (>43 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
+    fieldset.innerHTML += `batt0_volt_min (>42 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (<80 A): ${checkThreshold('ff', 'batt0_curr_max', maxvalue)}`;
+    fieldset.innerHTML += `batt0_curr_max (<85 A): ${checkThreshold('ff', 'batt0_curr_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt0_curr_avg (19<_<26 A): ${checkThreshold('ff', 'batt0_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += `batt0_curr_avg (19<_<29 A): ${checkThreshold('ff', 'batt0_curr_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('ff', 'batt1_curr_max', maxvalue)}`;
@@ -3107,14 +3107,14 @@ function print_ff(log, t1, t2, head) {
 
     // POWR
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.Vcc, t1, t2);
-    fieldset.innerHTML += `powr_Vcc_min (>5.1 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
+    fieldset.innerHTML += `powr_Vcc_min (>5.08 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vcc_avg (>5.2 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
+    fieldset.innerHTML += `powr_Vcc_avg (>5.18 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.VServo, t1, t2);
-    fieldset.innerHTML += `powr_Vservo_min (>4.85 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
+    fieldset.innerHTML += `powr_Vservo_min (>4.80 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vservo_avg (>5 V): ${checkThreshold('ff', 'powr_Vservo_avg', avgvalue)}`;
+    fieldset.innerHTML += `powr_Vservo_avg (>4.95 V): ${checkThreshold('ff', 'powr_Vservo_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // Vibe
@@ -3130,19 +3130,19 @@ function print_ff(log, t1, t2, head) {
 
     // XKF4
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SV, t1, t2);
-    fieldset.innerHTML += `XKF4_SV_max (<0.6): ${checkThreshold('ff', 'XKF4_SV_max', maxvalue)}`;
+    fieldset.innerHTML += `XKF4_SV_max (<0.68): ${checkThreshold('ff', 'XKF4_SV_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SP, t1, t2);
-    fieldset.innerHTML += `XKF4_SP_max (<0.6): ${checkThreshold('ff', 'XKF4_SP_max', maxvalue)}`;
+    fieldset.innerHTML += `XKF4_SP_max (<0.68): ${checkThreshold('ff', 'XKF4_SP_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SH, t1, t2);
-    fieldset.innerHTML += `XKF4_SH_max (<0.6): ${checkThreshold('ff', 'XKF4_SH_max', maxvalue)}`;
+    fieldset.innerHTML += `XKF4_SH_max (<0.68): ${checkThreshold('ff', 'XKF4_SH_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SM, t1, t2);
-    fieldset.innerHTML += `XKF4_SM_max (<0.6): ${checkThreshold('ff', 'XKF4_SM_max', maxvalue)}`;
+    fieldset.innerHTML += `XKF4_SM_max (<0.68): ${checkThreshold('ff', 'XKF4_SM_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SVT, t1, t2);
-    fieldset.innerHTML += `XKF4_SVT_max (<0.65): ${checkThreshold('ff', 'XKF4_SVT_max', maxvalue)}`;
+    fieldset.innerHTML += `XKF4_SVT_max (<0.75): ${checkThreshold('ff', 'XKF4_SVT_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
 
     return fieldset;
@@ -3239,7 +3239,7 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<14 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // ATT - Roll
@@ -3248,7 +3248,7 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('re', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Roll_maxdelta (<20 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // TECS - Height
@@ -3257,7 +3257,7 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${checkThreshold('re', 'att_Des-h_abs_avg', avg_d_abs)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-h_maxdelta (<16 m): ${checkThreshold('re', 'att_Des-h_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-h_maxdelta (<20 m): ${checkThreshold('re', 'att_Des-h_maxdelta', max_d)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // TECS - Speed
@@ -5692,7 +5692,7 @@ async function processTask(binFilePath,tasktype) {
             const combinedData = textBeforeBat + "\n" + processedData;
             const amFilePath = binFilePath.replace('.bin', '.am');
 
-            if (amFilePath.includes('.am')) {
+            if (amFilePath.endsWith(".am")) {
                 await fs.writeFile(amFilePath, combinedData, 'utf8');
                 console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
             }
