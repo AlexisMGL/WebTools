@@ -2091,7 +2091,7 @@ function load_am(log) {
                     "Full Flight Controls": "ff_",
                     "Far From Home (5km) Controls": "fh_",
                     "Response": "re_",
-                    "Parachute Margin": "ch"
+                    "Parachute Margin": "ch_"
                 };
 
                 // Ajouter le bouton pour télécharger le fichier avec le texte extrait
