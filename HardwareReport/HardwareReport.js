@@ -2547,7 +2547,7 @@ function findTOP(time, lat, lng, t1) {
         "BHJ": [-19.672116, 47.314187],     // Behenjy
         "TMM": [-18.1492012, 49.4023289],   // Tamatave (Toamasina)
         "VND": [-23.3470407, 47.5962614],   // Vangaindrano
-        "WAK": [-15.73333, 46.33333]        // Sakara
+        "WAK": [-22.91202751744944, 44.528044921900346]        // Sakara
     };
 
     const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
