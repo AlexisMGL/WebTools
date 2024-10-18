@@ -1862,8 +1862,21 @@ function load_am(log) {
     //Find top
     const gps_0 = log.get_instance("GPS", 0)
     const top = findTOP(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["VTOL Takeoff"])
+
     fs_tm.innerHTML += `TOP: ${top}`;
-    fs_tm.innerHTML += "<br>";  // Add a line break
+    try {
+        if (time_mark["Payload Drop"] != "Message non trouvé") {
+            const [latdrop, lngdrop] = dropPoint(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["Payload Drop"])
+            fs_tm.innerHTML += "<br>";  // Add a line break
+            fs_tm.innerHTML += `Drop_lat: ${latdrop}`;
+            fs_tm.innerHTML += "<br>";  // Add a line break
+            fs_tm.innerHTML += `Drop_lng: ${lngdrop}`;
+            fs_tm.innerHTML += "<br>";  // Add a line break
+        }
+
+    }
+    catch { }
+
     // Display all time_mark pairs
     
 
@@ -2542,12 +2555,12 @@ function findTOP(time, lat, lng, t1) {
     }
 
     const TOPs = {
-        "MWN": [-15.4208580, 49.7245765],   // Maroantsetra
+        "WMN": [-15.4208580, 49.7245765],   // Maroantsetra
         "VVB": [-19.8450000, 48.8086111],   // Mahanoro
         "BHJ": [-19.672116, 47.314187],     // Behenjy
         "TMM": [-18.1492012, 49.4023289],   // Tamatave (Toamasina)
         "VND": [-23.3470407, 47.5962614],   // Vangaindrano
-        "WAK": [-22.91202751744944, 44.528044921900346]        // Sakara
+        "WAK": [-22.91202751744944, 44.528044921900346]        // Sakaraha
     };
 
     const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
@@ -2568,6 +2581,19 @@ function findTOP(time, lat, lng, t1) {
     return closestPoint;
 }
 
+function dropPoint(time, lat, lng, t1) {
+
+    let start = 0;
+
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+    const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
+
+    
+    
+    return [lat0,lng0];
+}
 
 function print_to(log,t1,t2,head) {
     let fieldset = document.createElement("fieldset")
