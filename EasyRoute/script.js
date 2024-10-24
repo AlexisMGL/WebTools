@@ -101,7 +101,7 @@ function processFile() {
         // Initialiser la carte
         const mapDiv = document.createElement('div');
         mapDiv.id = 'map';
-        mapDiv.style.height = '400px';
+        mapDiv.style.height = '1000px';
         mapDiv.style.width = '100%';
         document.body.appendChild(mapDiv);
 
