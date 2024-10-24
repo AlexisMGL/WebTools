@@ -10,6 +10,19 @@ function processFile() {
         return;
     }
 
+    const minDistanceInput = document.getElementById('minDistance').value; // Récupérer la distance minimum depuis l'input
+    const minDistance = parseFloat(minDistanceInput); // Convertir en nombre
+
+    if (!inputFile) {
+        alert('Veuillez selectionner un fichier à traiter.');
+        return;
+    }
+
+    if (isNaN(minDistance) || minDistance <= 0) {
+        alert('Veuillez entrer une distance minimum valide.');
+        return;
+    }
+
     const outputFileName = 'route.waypoints'; // Nom du fichier de sortie
 
     // Lire le fichier d'entrée
@@ -17,7 +30,6 @@ function processFile() {
     reader.onload = function (event) {
         const data = event.target.result;
         const lines = data.split('\n');
-        const minDistance = 4000; // Distance minimum entre deux waypoints en mètres
         const waypoints = [];
         const outputLines = ["QGC WPL 110"]; // En-tête pour QGroundControl
 
@@ -83,6 +95,35 @@ function processFile() {
 
         // Écrire dans le fichier de sortie
         downloadFile(outputLines.join('\n'), outputFileName); // Créer le fichier de sortie
+
+        // Ajouter ce bloc après avoir terminé de traiter la liste des waypoints
+
+        // Initialiser la carte
+        const mapDiv = document.createElement('div');
+        mapDiv.id = 'map';
+        mapDiv.style.height = '400px';
+        mapDiv.style.width = '100%';
+        document.body.appendChild(mapDiv);
+
+        const map = L.map('map').setView([waypoints[0].lat, waypoints[0].lon], 13); // Centrer sur le premier waypoint
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18
+        }).addTo(map);
+
+        // Ajouter les waypoints en tant que marqueurs
+        waypoints.forEach(wp => {
+            L.marker([wp.lat, wp.lon]).addTo(map).bindPopup(`Lat: ${wp.lat}, Lon: ${wp.lon}`);
+        });
+
+        // Tracer la polyligne pour visualiser la route
+        L.polyline(waypoints.map(wp => [wp.lat, wp.lon]), { color: 'blue' }).addTo(map);
+
+        // Centrer la carte pour inclure tous les waypoints
+        const bounds = L.latLngBounds(waypoints.map(wp => [wp.lat, wp.lon]));
+        map.fitBounds(bounds);
+        document.getElementById('map').style.display = 'block';
+
+
     };
 
     reader.readAsText(inputFile);
