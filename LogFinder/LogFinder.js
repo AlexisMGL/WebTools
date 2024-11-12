@@ -259,13 +259,33 @@ function setup_table(logs) {
             if (log.info.crash_dump) {
                 const para = document.createElement("p")
                 tippy_div.appendChild(para)
-                para.appendChild(document.createTextNode("Crash Dump file detected, please report to dev team."))
+                para.appendChild(document.createTextNode("Crash Dump file detected."))
+                para.appendChild(document.createElement("br"))
+                para.appendChild(document.createTextNode("For more information see ArduPilot "))
+
+                const link = document.createElement("a")
+                link.href = "https://ardupilot.org/copter/docs/common-watchdog.html#crash-dump"
+                link.appendChild(document.createTextNode("documentation"))
+                link.style="color:red;"
+
+                para.appendChild(link)
+                para.appendChild(document.createTextNode("."))
             }
 
             if (log.info.watchdog) {
                 const para = document.createElement("p")
                 tippy_div.appendChild(para)
                 para.appendChild(document.createTextNode("Watchdog reboot detected."))
+                para.appendChild(document.createElement("br"))
+                para.appendChild(document.createTextNode("For more information see ArduPilot "))
+            
+                const link = document.createElement("a")
+                link.href = "https://ardupilot.org/copter/docs/common-watchdog.html#independent-watchdog-and-crash-dump"
+                link.appendChild(document.createTextNode("documentation"))
+                link.style="color:red;"
+
+                para.appendChild(link)
+                para.appendChild(document.createTextNode("."))
             }
 
             if (arming_checks_disabled) {
@@ -466,6 +486,12 @@ function setup_table(logs) {
 
             // Add map tool tip
             function tippy_show(instance) {
+
+                if (instance.props.content !== "") {
+                    // Content already loaded
+                    return
+                }
+
                 let tippy_div = document.createElement("div")
                 instance.setContent(tippy_div)
 
@@ -525,6 +551,7 @@ function setup_table(logs) {
         const multiple_rows = board_logs.length > 1
         const size_bottom_calc = multiple_rows ? "sum" : false
         const flight_time_bottom_calc = multiple_rows ? "sum" : false
+        const flight_distance_bottom_calc = multiple_rows ? "sum" : false
         const param_diff_bottom_calc = multiple_rows ? total_param_diff_calc : false
 
         const table = new Tabulator(table_div, {
@@ -548,7 +575,7 @@ function setup_table(logs) {
                 { title: "Size", field: "info.size", formatter:size_format, bottomCalc:size_bottom_calc, bottomCalcFormatter:size_format, width: 90 },
                 { title: "Firmware Version", field:"info.fw_string" },
                 { title: "Flight Time", field:"info.flight_time", formatter:flight_time_format, bottomCalc:flight_time_bottom_calc, bottomCalcFormatter:flight_time_format, width: 105 },
-                { title: "Flight distance", field:"info.distance_traveled", formatter:distance_format, bottomCalc:"sum", bottomCalcFormatter:get_dist_string, width: 125 },
+                { title: "Flight distance", field:"info.distance_traveled", formatter:distance_format, bottomCalc:flight_distance_bottom_calc, bottomCalcFormatter:get_dist_string, width: 125 },
                 { title: "Param Changes", field:"param_diff", formatter:param_diff_format, headerSort:false, width: 110, bottomCalc:param_diff_bottom_calc, bottomCalcFormatter:param_diff_format },
                 { title: "" , headerSort:false, formatter:buttons, width: 185 },
             ],

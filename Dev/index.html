@@ -63,6 +63,51 @@ The tools on this page are either developer focused, or a work in progress, they
     </td>
   </tr>
 
+  <tr>
+    <td>
+      <a href="../SysID" style="margin: 20px; display: inline-block;"><img src="../images/sysid_python_stateSpace.png" style="width:200px; height:200px; background-color: #f0f0f0;"></a>
+    </td>
+    <td style="text-align:left; vertical-align:top; max-width:960px;">
+      <h2>SysID</h2>
+      A tool for identifying state-space or transfer function models for UAV dynamics
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <a href="../TelemetryDashboard" style="margin: 20px; display: inline-block;"><img src="../images/TelemetryDashboard_Icon.png" style="width:200px;"></a>
+    </td>
+    <td style="text-align:left; vertical-align:top; max-width:960px;">
+      <h2>TelemetryDashboard</h2>
+      Telemetry Dashboard allows customizable data displays from a MAVLink telemetry stream. Requires a WebSocket server to forward raw binary MAVLink. Attempts to auto connect to MissionPlanner at <code>ws://127.0.0.1:56781</code>. Latest PyMAVLink can also be used eg: <a href="https://github.com/IamPete1/pymavlink/blob/WebSocket_forwarding_example/examples/mavtcpsniff.py">TCP to WebSocket</a>. 
+      This is read only, MAVLink commands are not sent (including stream rate requests). 
+      This is not a GCS replacement.
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <a href="../AnalyticTune" style="margin: 20px; display: inline-block;"><img src="../images/analytictune_pic.png" style="width:200px; height:200px; background-color: #f0f0f0;"></a>
+    </td>
+    <td style="text-align:left; vertical-align:top; max-width:960px;">
+      <h2>Analytic Tune</h2>
+      A tool for analytically tuning a multirotor or heli using system ID mode data
+    </td>
+  </tr>
+
+  
+  <tr>
+    <td>
+      <a href="../ThrustExpo" style="margin: 20px; display: inline-block;"><img src="../images/ThrustExpo_Icon.png" style="width:200px"></a>
+    </td>
+    <td style="text-align:left; vertical-align:top; max-width:960px;">
+      <h2>Thrust Expo</h2>
+      Use thrust test stand data to analyze motor thrust linearity.
+      Visualizes the relationship between measured thrust and throttle input, along with a plot of the thrust expo curve for optimization of MOT_THST_EXPO to achieve linear thrust response.
+      Can also estimate hover throttle.
+    </td>
+  </tr>
+
 </table>
 
 </body>

@@ -536,61 +536,19 @@ function calculate() {
 
 // Get configured amplitude scale
 function get_amplitude_scale() {
+    const use_DB = document.getElementById("ScaleLog").checked
+    const use_PSD = document.getElementById("ScalePSD").checked
 
-    const use_DB = document.getElementById("ScaleLog").checked;
-    const use_PSD = document.getElementById("ScalePSD").checked;
-
-    var ret = {}
-    if (use_PSD) {
-        ret.fun = function (x) { return array_mul(x,x) } // x.^2
-        ret.scale = function (x) { return array_scale(array_log10(x), 10.0) } // 10 * log10(x)
-        ret.label = "PSD (dB/Hz)"
-        ret.hover = function (axis) { return "%{" + axis + ":.2f} dB/Hz" }
-        ret.window_correction = function(correction, resolution) { return ((correction.energy**2) * 0.5) / resolution }
-        ret.quantization_correction = function(correction) { return 1 / (correction.energy * Math.SQRT1_2) }
-
-    } else if (use_DB) {
-        ret.fun = function (x) { return x }
-        ret.scale = function (x) { return array_scale(array_log10(x), 20.0) } // 20 * log10(x)
-        ret.label = "Amplitude (dB)"
-        ret.hover = function (axis) { return "%{" + axis + ":.2f} dB" }
-        ret.correction_scale = 1.0
-        ret.window_correction = function(correction, resolution) { return correction.linear }
-        ret.quantization_correction = function(correction) { return 1 / correction.linear }
-
-    } else {
-        ret.fun = function (x) { return x }
-        ret.scale = function (x) { return x }
-        ret.label = "Amplitude"
-        ret.hover = function (axis) { return "%{" + axis + ":.2f}" }
-        ret.window_correction = function(correction, resolution) { return correction.linear }
-        ret.quantization_correction = function(correction) { return 1 / correction.linear }
-
-    }
-
-    return ret
+    return fft_amplitude_scale(use_DB, use_PSD)
 }
+
 
 // Get configured frequency scale object
 function get_frequency_scale() {
+    const use_RPM = document.getElementById("freq_Scale_RPM").checked
+    const log_scale = document.getElementById("freq_ScaleLog").checked
 
-    const use_RPM = document.getElementById("freq_Scale_RPM").checked;
-
-    var ret = {}
-    if (use_RPM) {
-        ret.fun = function (x) { return array_scale(x, 60.0) }
-        ret.label = "RPM"
-        ret.hover = function (axis) { return "%{" + axis + ":.2f} RPM" }
-
-    } else {
-        ret.fun = function (x) { return x }
-        ret.label = "Frequency (Hz)"
-        ret.hover = function (axis) { return "%{" + axis + ":.2f} Hz" }
-    }
-
-    ret.type = document.getElementById("freq_ScaleLog").checked ? "log" : "linear"
-
-    return ret
+    return fft_frequency_scale(use_RPM, log_scale)
 }
 
 // Look through time array and return first index before start time
@@ -1332,39 +1290,6 @@ function time_range_changed() {
     Plotly.redraw("FlightData")
 
     document.getElementById('calculate').disabled = false
-}
-
-var last_window_size
-function window_size_inc(event) {
-    if (last_window_size == null) {
-        last_window_size = parseFloat(event.target.defaultValue)
-    }
-    const new_value = parseFloat(event.target.value)
-    const change = parseFloat(event.target.value) - last_window_size
-    if (Math.abs(change) != 1) {
-        // Assume a change of one is comming from the up down buttons, ignore angthing else
-        last_window_size = new_value
-        return
-    }
-    var new_exponent = Math.log2(last_window_size)
-    if (!Number.isInteger(new_exponent)) {
-        // Move to power of two in the selected direction
-        new_exponent = Math.floor(new_exponent)
-        if (change > 0) {
-            new_exponent += 1
-        }
-
-    } else if (change > 0) {
-        // Move up one
-        new_exponent += 1
-
-    } else {
-        // Move down one
-        new_exponent -= 1
-
-    }
-    event.target.value = 2**new_exponent
-    last_window_size = event.target.value
 }
 
 function get_PID_param_names(prefix) {
