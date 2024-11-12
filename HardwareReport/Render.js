@@ -1,8 +1,6 @@
 
 let import_done = []
 var DataflashParser
-
-
 import_done[0] = import('../modules/JsDataflashParser/parser.js').then((mod) => { DataflashParser = mod.default })
 
 // This is the one package we do get from a CDN.
@@ -16,186 +14,6 @@ import_done[1] = import('https://esm.sh/@octokit/request')
 
 let ArduPilot_GitHub_tags
 let octokitRequest_ratelimit_reset
-
-const thresholds = [
-    { step: 'pr', champ: 'palier_tas', min: null, max: null },
-    { step: 'pr', champ: 'palier_eas', min: null, max: null },
-    { step: 'pr', champ: 'palier_gsp', min: null, max: null },
-    { step: 'pr', champ: 'palier_equivalent2true', min: null, max: null },
-    { step: 'pr', champ: 'aetr_Elev_max', min: null, max: 2100 },
-    { step: 'pr', champ: 'aetr_Elev_avg', min: 300, max: 1100 },
-    { step: 'pr', champ: 'att_pitch_avg', min: 0, max: 6 },
-    { step: 'pr', champ: 'att_pitch_max', min: null, max: 16 },
-    { step: 'pr', champ: 'batt0_curr_avg', min: 19, max: 25 },
-    { step: 'pr', champ: 'ctun_ThO_avg', min: 60, max: 77 },
-    { step: 'pr', champ: 'ctun_ThO_max', min: null, max: 97 },
-    { step: 'pr', champ: 'att_Des-h_max_d', min: -15, max: 15 },
-
-    { step: 'to', champ: 'batt1_volt_min', min: 45, max: null },
-    { step: 'to', champ: 'batt1_curr_max', min: null, max: 250 },
-    { step: 'to', champ: 'batt1_curr_avg', min: null, max: 150 },
-    { step: 'to', champ: 'rcou_C5_max', min: null, max: 1980 },
-    { step: 'to', champ: 'rcou_C5_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_C6_max', min: null, max: 1980 },
-    { step: 'to', champ: 'rcou_C6_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_C7_max', min: null, max: 1980 },
-    { step: 'to', champ: 'rcou_C7_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_C8_max', min: null, max: 1980 },
-    { step: 'to', champ: 'rcou_C8_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_backC6C8_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_frontC5C7_avg', min: 1550, max: 1850 },
-    { step: 'to', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
-    { step: 'to', champ: 'qtun_CRt_max', min: null, max: 3.4 },
-    { step: 'to', champ: 'qtun_CRt_avg', min: 1.8, max: 2.2 },
-    { step: 'to', champ: 'qtun_ThO_max', min: null, max: 0.85 },
-    { step: 'to', champ: 'qtun_ThO_avg', min: 0.35, max: 0.65 },
-    { step: 'to', champ: 'qtun_ThH_est', min: 0.10, max: 0.45 },
-
-    { step: 'la', champ: 'batt1_volt_min', min: 42, max: null },
-    { step: 'la', champ: 'batt1_curr_max', min: null, max: 250 },
-    { step: 'la', champ: 'batt1_curr_avg', min: null, max: 150 },
-    { step: 'la', champ: 'rcou_C5_max', min: null, max: 1940 },
-    { step: 'la', champ: 'rcou_C5_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_C6_max', min: null, max: 1940 },
-    { step: 'la', champ: 'rcou_C6_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_C7_max', min: null, max: 1940 },
-    { step: 'la', champ: 'rcou_C7_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_C8_max', min: null, max: 1940 },
-    { step: 'la', champ: 'rcou_C8_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_backC6C8_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_frontC5C7_avg', min: 1300, max: 1800 },
-    { step: 'la', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
-    { step: 'la', champ: 'qtun_CRt_max', min: null, max: 0.8 },
-    { step: 'la', champ: 'qtun_CRt_avg', min: -2, max: 0 },
-    { step: 'la', champ: 'qtun_ThO_max', min: null, max: 0.75 },
-    { step: 'la', champ: 'qtun_ThO_avg', min: 0.2, max: 0.55 }, 
-    { step: 'la', champ: 'qtun_CRt_min', min: -3.8, max: null },
-
-    { step: 'tr', champ: 'batt0_curr_max', min: 65, max: 85 },
-    { step: 'tr', champ: 'rcou_C5_max', min: null, max: 1948 },
-    { step: 'tr', champ: 'rcou_C5_avg', min: 1200, max: 1850 },
-    { step: 'tr', champ: 'rcou_C6_max', min: null, max: 1948 },
-    { step: 'tr', champ: 'rcou_C6_avg', min: 1200, max: 1850 },
-    { step: 'tr', champ: 'rcou_C7_max', min: null, max: 1948 },
-    { step: 'tr', champ: 'rcou_C7_avg', min: 1200, max: 1850 },
-    { step: 'tr', champ: 'rcou_C8_max', min: null, max: 1948 },
-    { step: 'tr', champ: 'rcou_C8_avg', min: 1200, max: 1850 },
-    { step: 'tr', champ: 'rcou_backC6C8_avg', min: 1200, max: 1750 },
-    { step: 'tr', champ: 'rcou_frontC5C7_avg', min: 1200, max: 1750 },
-    { step: 'tr', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
-    { step: 'tr', champ: 'transition_time', min: 10, max: 18 },
-
-    { step: 'ab', champ: 'batt0_curr_max', min: null, max: 35 },
-    { step: 'ab', champ: 'rcou_C5_max', min: null, max: 1850 },
-    { step: 'ab', champ: 'rcou_C5_avg', min: 1150, max: 1650 },
-    { step: 'ab', champ: 'rcou_C6_max', min: null, max: 1850 },
-    { step: 'ab', champ: 'rcou_C6_avg', min: 1150, max: 1650 },
-    { step: 'ab', champ: 'rcou_C7_max', min: null, max: 1850 },
-    { step: 'ab', champ: 'rcou_C7_avg', min: 1150, max: 1650 },
-    { step: 'ab', champ: 'rcou_C8_max', min: null, max: 1850 },
-    { step: 'ab', champ: 'rcou_C8_avg', min: 1150, max: 1650 },
-    { step: 'ab', champ: 'rcou_backC6C8_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_frontC5C7_avg', min: 1150, max: 1450 },
-    { step: 'ab', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
-    { step: 'ab', champ: 'transition_time', min: 10, max: 18 },
-
-    { step: 'cr', champ: 'arsp_airspeed_avg', min: 22.2, max: 26},
-    { step: 'cr', champ: 'arsp_airspeed_min', min: 19.8, max: null },
-    { step: 'cr', champ: 'arsp_airspeed_max', min: null, max: 30 },
-    { step: 'cr', champ: 'arsp_delta_phasebeginning_30s', min: -0.6, max: 0.6 },
-    { step: 'cr', champ: 'arsp_delta_phaseending_30s', min: -0.6, max: 0.6 },
-    { step: 'cr', champ: 'att_roll_avg', min: -3, max: 3 },
-    { step: 'cr', champ: 'att_|roll|_max', min: null, max: 35 },
-    { step: 'cr', champ: 'att_pitch_avg', min: 0, max: 6 },
-    { step: 'cr', champ: 'att_pitch_max', min: null, max: 16 },
-    { step: 'cr', champ: 'batt0_curr_avg', min: 15, max: 33 },
-    { step: 'cr', champ: 'batt1_curr_avg', min: null, max: 1 },
-    { step: 'cr', champ: 'batt1_curr_max', min: null, max: 4 },
-    { step: 'cr', champ: 'gps0_sats_min', min: 10, max: null },
-    { step: 'cr', champ: 'gps1_sats_min', min: 10, max: null },
-    { step: 'cr', champ: 'rcou_c1_avg', min: 1470, max: 1530 },
-    { step: 'cr', champ: 'rcou_|c1|_max', min: 1400, max: 1600 },
-    { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1485, max: 1515 },
-    { step: 'cr', champ: 'vibe_X_max', min: null, max: 5 },
-    { step: 'cr', champ: 'vibe_Y_max', min: null, max: 5 },
-    { step: 'cr', champ: 'vibe_Z_max', min: null, max: 8 },
-
-    { step: 'ff', champ: 'batt0_volt_min', min: 42, max: null },
-    { step: 'ff', champ: 'batt0_curr_max', min: null, max: 85 },
-    { step: 'ff', champ: 'batt0_curr_avg', min: 19, max: 29 },
-    { step: 'ff', champ: 'batt1_curr_max', min: null, max: 250 },
-    { step: 'ff', champ: 'batt0_currTot', min: null, max: null },
-    { step: 'ff', champ: 'batt1_currTot', min: null, max: null },
-    { step: 'ff', champ: 'batt0_consperkm', min: null, max: null },
-    { step: 'ff', champ: 'batt0+1_consperkm', min: null, max: null },
-    { step: 'ff', champ: 'gps0_sats_min', min: 10, max: null },
-    { step: 'ff', champ: 'gps1_sats_min', min: 10, max: null },
-    { step: 'ff', champ: 'pm_load_max', min: null, max: 52 },
-    { step: 'ff', champ: 'pm_InternalErrors', min: null, max: 1 },
-    { step: 'ff', champ: 'powr_Vcc_min', min: 5.08, max: null },
-    { step: 'ff', champ: 'powr_Vcc_avg', min: 5.18, max: null },
-    { step: 'ff', champ: 'powr_Vservo_min', min: 4.80, max: null },
-    { step: 'ff', champ: 'powr_Vservo_avg', min: 4.95, max: null },
-    { step: 'ff', champ: 'vibe0_VibeX_max', min: null, max: 35 },
-    { step: 'ff', champ: 'vibe0_VibeY_max', min: null, max: 35 },
-    { step: 'ff', champ: 'vibe0_VibeZ_max', min: null, max: 35 },
-    { step: 'ff', champ: 'XKF4_SV_max', min: null, max: 0.68 },
-    { step: 'ff', champ: 'XKF4_SP_max', min: null, max: 0.68 },
-    { step: 'ff', champ: 'XKF4_SH_max', min: null, max: 0.68 },
-    { step: 'ff', champ: 'XKF4_SM_max', min: null, max: 0.68 },
-    { step: 'ff', champ: 'XKF4_SVT_max', min: null, max: 0.75 },
-
-    { step: 'fh', champ: 'ffh_start', min: null, max: null },
-    { step: 'fh', champ: 'ffh_end', min: null, max: null },
-    { step: 'fh', champ: 'rfnd_Dist_min', min: 70, max: null },
-    { step: 'fh', champ: 'terr_CHeight_min', min: 70, max: null },
-    { step: 'fh', champ: 'RCIN_C1delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C2delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C4delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C6delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C7delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C8delta_ms', min: null, max: 20 },
-    { step: 'fh', champ: 'RCIN_C13delta_ms', min: null, max: 20 },
-
-    { step: 're', champ: 'att_Des-Pitch_avg', min: -1, max: 1 },
-    { step: 're', champ: 'att_Des-Pitch_abs_avg', min: null, max: 2 },
-    { step: 're', champ: 'att_Des-Pitch_maxdelta', min: null, max: 14 },
-    { step: 're', champ: 'att_Des-Roll_avg', min: -3, max: 3 },
-    { step: 're', champ: 'att_Des-Roll_abs_avg', min: null, max: 6 },
-    { step: 're', champ: 'att_Des-Roll_maxdelta', min: null, max: 30 },
-    { step: 're', champ: 'att_Des-h_avg', min: -2, max: 2 },
-    { step: 're', champ: 'att_Des-h_abs_avg', min: null, max: 5 },
-    { step: 're', champ: 'att_Des-h_maxdelta', min: null, max: 20 },
-    { step: 're', champ: 'att_Des-sp_avg', min: -0.3, max: 0.3 },
-    { step: 're', champ: 'att_Des-sp_abs_avg', min: null, max: 3 },
-    { step: 're', champ: 'att_Des-sp_maxdelta', min: null, max: 5 },
-    { step: 're', champ: 'att_Des-Yaw_avg', min: -5, max: 5 },
-    { step: 're', champ: 'att_Des-Yaw_abs_avg', min: null, max: 10 },
-    { step: 're', champ: 'att_Des-Yaw_maxdelta', min: null, max: 30 },
-
-
-    { step: 'ch', champ: 'tecs_dh_min', min: -6, max: null },
-    { step: 'ch', champ: 'xkf1_VD_max', min: null, max: 6 },
-    { step: 'ch', champ: 'fpar_sinktime_max', min: null, max: 1 },
-
-];
-
-function checkThreshold(step, champ, value) {
-    // Recherche le seuil correspondant dans la base de données
-    const threshold = thresholds.find(th => th.step === step && th.champ === champ);
-    if (!threshold) return "n/a";
-
-    // Vérifie si la valeur est dans les limites définies
-    const withinMin = threshold.min === null || value > threshold.min;
-    const withinMax = threshold.max === null || value < threshold.max;
-
-    if (threshold.min === null && threshold.max === null) {
-        return value !== null ? `${value.toFixed(2)}` : "n/a";
-    }
-
-    return value !== null ? `${value.toFixed(2)} ${withinMin && withinMax ? "\u2705" : "\u274c"}` : "n/a";
-}
-
 async function check_release(hash, paragraph) {
     paragraph.appendChild(document.createElement("br"))
 
@@ -208,7 +26,7 @@ async function check_release(hash, paragraph) {
         const wait = octokitRequest_ratelimit_reset - now
         const wait_m = Math.floor(wait / 60)
         const wait_s = Math.floor(wait % 60)
-        console.log("GitHub API rate limit exceeded, try again in " + wait_m + "m " + wait_s + "s" )
+        console.log("GitHub API rate limit exceeded, try again in " + wait_m + "m " + wait_s + "s")
     }
 
     if (octokitRequest_ratelimit_reset) {
@@ -238,11 +56,11 @@ async function check_release(hash, paragraph) {
                 owner: 'ArduPilot',
                 repo: 'ardupilot',
                 headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
+                    'X-GitHub-Api-Version': '2022-11-28'
                 }
             })
         }
-        catch(err) {
+        catch (err) {
             paragraph.appendChild(document.createTextNode("Version check failed to get whitelist (" + hash + ")"))
             api_error(err)
             return
@@ -263,7 +81,7 @@ async function check_release(hash, paragraph) {
             }
             found_tag = true
 
-            const tag_name = tag.ref.replace(/^(refs\/tags\/)/gm,"")
+            const tag_name = tag.ref.replace(/^(refs\/tags\/)/gm, "")
 
             let link = document.createElement("a")
             link.href = "https://github.com/ArduPilot/ardupilot/tree/" + tag_name
@@ -288,11 +106,11 @@ async function check_release(hash, paragraph) {
             owner: 'ArduPilot',
             repo: 'ardupilot',
             headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
+                'X-GitHub-Api-Version': '2022-11-28'
             }
         })
     }
-    catch(err) {
+    catch (err) {
         paragraph.appendChild(document.createTextNode("Version check failed to get commit (" + hash + ")"))
         api_error(err)
         return
@@ -301,7 +119,7 @@ async function check_release(hash, paragraph) {
     const sha = request.data.sha
 
     paragraph.appendChild(document.createTextNode("Found commit: "))
-    
+
 
     let link = document.createElement("a")
     link.href = request.data.html_url
@@ -315,11 +133,11 @@ async function check_release(hash, paragraph) {
             repo: 'ardupilot',
             commit_sha: sha,
             headers: {
-              'X-GitHub-Api-Version': '2022-11-28'
+                'X-GitHub-Api-Version': '2022-11-28'
             }
-          })
+        })
     }
-    catch(err) {
+    catch (err) {
         paragraph.appendChild(document.createElement("br"))
         paragraph.appendChild(document.createTextNode("Version check failed to get branches."))
         api_error(err)
@@ -363,24 +181,9 @@ function show_watchdog(log) {
 
     const WDOG = log.get("WDOG")
 
-    // The dev-team want to hear about watchdogs dumps.
-    const content = document.createElement("div")
-    content.appendChild(document.createTextNode("Watchdog reboot detected, see Watchdog section."))
-    content.appendChild(document.createElement("br"))
-    content.appendChild(document.createTextNode("For more information see ArduPilot "))
-
-    const link = document.createElement("a")
-    link.href = "https://ardupilot.org/copter/docs/common-watchdog.html#independent-watchdog-and-crash-dump"
-    link.appendChild(document.createTextNode("documentation"))
-
-    content.appendChild(link)
-    content.appendChild(document.createTextNode("."))
-
-    add_warning("exclamation-triangle-red", content)
-
     let watchdogs = []
     for (let i = 0; i < WDOG.TimeUS.length; i++) {
-        let watchdog = { 
+        let watchdog = {
             scheduler_task: WDOG.Tsk[i],
             internal_errors: WDOG.IE[i],
             internal_error_count: WDOG.IEC[i],
@@ -418,7 +221,7 @@ function show_watchdog(log) {
         }
 
         // Check if this has been seen before
-        if (item_compare(watchdogs[watchdogs.length-1], watchdog)) {
+        if (item_compare(watchdogs[watchdogs.length - 1], watchdog)) {
             continue
         }
 
@@ -441,7 +244,7 @@ function show_watchdog(log) {
 
         if (num_watchdogs > 1) {
             let heading = document.createElement("h4")
-            heading.appendChild(document.createTextNode("Watchdog " + (i+1)))
+            heading.appendChild(document.createTextNode("Watchdog " + (i + 1)))
             para.appendChild(heading)
         }
 
@@ -642,11 +445,11 @@ function show_watchdog(log) {
                     stop_bit = parseInt(bits)
                 }
                 let mask = 0
-                for (let i = start_bit; i < stop_bit+1; i++) {
+                for (let i = start_bit; i < stop_bit + 1; i++) {
                     mask |= (1 << i)
                 }
                 let value = (ICSR & mask) >> start_bit
-                let text  = name + ": 0x" + value.toString(16)
+                let text = name + ": 0x" + value.toString(16)
                 if (decoder != null) {
                     text += " " + decoder(value)
                 }
@@ -705,7 +508,7 @@ function show_internal_errors(log) {
         log.messageTypes.PM.expressions.includes("IntE") &&
         log.messageTypes.PM.expressions.includes("ErrL") &&
         log.messageTypes.PM.expressions.includes("ErrC")) {
-        
+
         const PM = log.get("PM")
         const len = PM.TimeUS.length
         for (let i = 0; i < len; i++) {
@@ -764,8 +567,8 @@ function show_internal_errors(log) {
     unique_errors[0].mask_change = unique_errors[0].mask
     unique_errors[0].count_change = unique_errors[0].count
     for (let i = 1; i < unique_errors.length; i++) {
-        unique_errors[i].mask_change = unique_errors[i].mask & (~unique_errors[i-1].mask)
-        unique_errors[i].count_change = unique_errors[i].count - unique_errors[i-1].count
+        unique_errors[i].mask_change = unique_errors[i].mask & (~unique_errors[i - 1].mask)
+        unique_errors[i].count_change = unique_errors[i].count - unique_errors[i - 1].count
     }
 
 
@@ -867,7 +670,7 @@ function show_internal_errors(log) {
         } else {
             // Got the same number of changes in mask as errors, must be 1 to 1
             if (have_line) {
-                para.appendChild(document.createTextNode(" (line " + error.line + ")" ))
+                para.appendChild(document.createTextNode(" (line " + error.line + ")"))
             }
         }
         lines++
@@ -944,31 +747,38 @@ function get_ins_param_names(index) {
     }
 
     const gyro_prefix = prefix + "_GYR" + num
-    let gyro = { offset: get_param_name_vector3(gyro_prefix + "OFFS_"),
-                 id: gyro_prefix + "_ID",
-                 cal_temp: prefix + "_GYR" + full_num + "_CALTEMP" }
+    let gyro = {
+        offset: get_param_name_vector3(gyro_prefix + "OFFS_"),
+        id: gyro_prefix + "_ID",
+        cal_temp: prefix + "_GYR" + full_num + "_CALTEMP"
+    }
 
     const acc_prefix = prefix + "_ACC" + num
-    let accel = { offset: get_param_name_vector3(acc_prefix + "OFFS_"),
-                  scale: get_param_name_vector3(acc_prefix + "SCAL_"),
-                  id: acc_prefix + "_ID",
-                  cal_temp: prefix + "_ACC" + full_num + "_CALTEMP" }
+    let accel = {
+        offset: get_param_name_vector3(acc_prefix + "OFFS_"),
+        scale: get_param_name_vector3(acc_prefix + "SCAL_"),
+        id: acc_prefix + "_ID",
+        cal_temp: prefix + "_ACC" + full_num + "_CALTEMP"
+    }
 
     const tcal_prefix = prefix + "_TCAL" + full_num + "_"
-    let tcal = { enabled: tcal_prefix + "ENABLE",
-                 t_min: tcal_prefix + "TMIN",
-                 t_max: tcal_prefix + "TMAN",
-                 accel: [ get_param_name_vector3(tcal_prefix + "ACC1_"), 
-                          get_param_name_vector3(tcal_prefix + "ACC2_"),
-                          get_param_name_vector3(tcal_prefix + "ACC3_")],
-                 gyro: [ get_param_name_vector3(tcal_prefix + "ACC1_"), 
-                         get_param_name_vector3(tcal_prefix + "ACC2_"),
-                         get_param_name_vector3(tcal_prefix + "ACC3_")],
-                }
+    let tcal = {
+        enabled: tcal_prefix + "ENABLE",
+        t_min: tcal_prefix + "TMIN",
+        t_max: tcal_prefix + "TMAN",
+        accel: [get_param_name_vector3(tcal_prefix + "ACC1_"),
+        get_param_name_vector3(tcal_prefix + "ACC2_"),
+        get_param_name_vector3(tcal_prefix + "ACC3_")],
+        gyro: [get_param_name_vector3(tcal_prefix + "ACC1_"),
+        get_param_name_vector3(tcal_prefix + "ACC2_"),
+        get_param_name_vector3(tcal_prefix + "ACC3_")],
+    }
 
-    return { gyro: gyro, accel: accel, tcal: tcal,
-             pos: get_param_name_vector3(prefix + "_POS" + full_num + "_"),
-             use: prefix + "_USE" + num }
+    return {
+        gyro: gyro, accel: accel, tcal: tcal,
+        pos: get_param_name_vector3(prefix + "_POS" + full_num + "_"),
+        use: prefix + "_USE" + num
+    }
 
 }
 
@@ -1003,14 +813,16 @@ function load_ins(log) {
             }
         }
 
-        return { gyro_id: params[names.gyro.id],
-                 acc_id: params[names.accel.id],
-                 pos: get_param_array(params, names.pos),
-                 use: params[names.use],
-                 acc_cal: param_array_configured(accel_offsets, 0.0) | param_array_configured(accel_scale, 1.0),
-                 gyro_cal: param_array_configured(gyro_offsets, 0.0),
-                 acc_temp_cal: accel_temp_cal,
-                 gyro_temp_cal: gyro_temp_cal  }
+        return {
+            gyro_id: params[names.gyro.id],
+            acc_id: params[names.accel.id],
+            pos: get_param_array(params, names.pos),
+            use: params[names.use],
+            acc_cal: param_array_configured(accel_offsets, 0.0) | param_array_configured(accel_scale, 1.0),
+            gyro_cal: param_array_configured(gyro_offsets, 0.0),
+            acc_temp_cal: accel_temp_cal,
+            gyro_temp_cal: gyro_temp_cal
+        }
     }
 
     for (let i = 0; i < max_num_ins; i++) {
@@ -1092,7 +904,7 @@ function load_ins(log) {
             ins_section.previousElementSibling.hidden = false
             let colum = document.createElement("td")
 
-            colum.appendChild(print_ins(i+1, ins[i]))
+            colum.appendChild(print_ins(i + 1, ins[i]))
             table.appendChild(colum)
         }
     }
@@ -1131,25 +943,27 @@ function load_compass(log) {
         const off_diagonals = get_param_array(params, names.off_diagonals)
         const motor = get_param_array(params, names.motor)
 
-        return { id: id,
-                 use: params[names.use],
-                 external: params[names.external],
-                 offsets_set: param_array_configured(offsets, 0.0),
-                 matrix_set: param_array_configured(diagonals, 1.0) | param_array_configured(off_diagonals, 0.0),
-                 motor_set: param_array_configured(motor, 0.0),
-                 full_inst: true }
+        return {
+            id: id,
+            use: params[names.use],
+            external: params[names.external],
+            offsets_set: param_array_configured(offsets, 0.0),
+            matrix_set: param_array_configured(diagonals, 1.0) | param_array_configured(off_diagonals, 0.0),
+            motor_set: param_array_configured(motor, 0.0),
+            full_inst: true
+        }
     }
 
     let dev_id_start = 0
     for (let i = 0; i < 3; i++) {
-        const prio = get_instance(params, "COMPASS_PRIO" + (i+1) + "_ID")
+        const prio = get_instance(params, "COMPASS_PRIO" + (i + 1) + "_ID")
         if (prio != null) {
             compass[i] = prio
             dev_id_start = i + 1
         }
     }
     for (let i = dev_id_start; i < 7; i++) {
-        const inst_num = (i == 0) ? "" : String(i+1)
+        const inst_num = (i == 0) ? "" : String(i + 1)
         const dev_id_name = "COMPASS_DEV_ID" + inst_num
         if (dev_id_name in params) {
             const id = params[dev_id_name]
@@ -1220,7 +1034,7 @@ function load_compass(log) {
             section.previousElementSibling.hidden = false
             let colum = document.createElement("td")
 
-            colum.appendChild(print_compass(i+1, compass[i]))
+            colum.appendChild(print_compass(i + 1, compass[i]))
             table.appendChild(colum)
         }
     }
@@ -1228,18 +1042,22 @@ function load_compass(log) {
 
 // Load baro params
 function get_baro_param_names(index) {
-    const prefix = "BARO" + (index+1) + "_"
-    const wind_cmp =  prefix + "WCF_"
+    const prefix = "BARO" + (index + 1) + "_"
+    const wind_cmp = prefix + "WCF_"
 
-    return { id: prefix + "DEVID", 
-             gnd_press: prefix + "GND_PRESS",
-             wind_comp: { enabled: wind_cmp + "ENABLE", 
-                          coefficients: [ wind_cmp + "FWD",
-                                          wind_cmp + "BCK",
-                                          wind_cmp + "RGT",
-                                          wind_cmp + "LFT",
-                                          wind_cmp + "UP",
-                                          wind_cmp + "DN"], } }
+    return {
+        id: prefix + "DEVID",
+        gnd_press: prefix + "GND_PRESS",
+        wind_comp: {
+            enabled: wind_cmp + "ENABLE",
+            coefficients: [wind_cmp + "FWD",
+            wind_cmp + "BCK",
+            wind_cmp + "RGT",
+            wind_cmp + "LFT",
+            wind_cmp + "UP",
+            wind_cmp + "DN"],
+        }
+    }
 }
 
 let baro
@@ -1298,7 +1116,7 @@ function load_baro(log) {
     let section = document.getElementById("BARO")
 
     let primary = params["BARO_PRIMARY"]
-    section.appendChild(document.createTextNode("Primary: " + (primary+1)))
+    section.appendChild(document.createTextNode("Primary: " + (primary + 1)))
     section.appendChild(document.createElement("br"))
     section.appendChild(document.createElement("br"))
 
@@ -1311,7 +1129,7 @@ function load_baro(log) {
             have_section = true
             let colum = document.createElement("td")
 
-            colum.appendChild(print_baro(i+1, baro[i]))
+            colum.appendChild(print_baro(i + 1, baro[i]))
             table.appendChild(colum)
         }
     }
@@ -1330,17 +1148,19 @@ function get_airspeed_param_names(index) {
     }
     const prefix = "ARSPD" + num + "_"
 
-    return { id: prefix + "DEVID", 
-             type: prefix + "TYPE",
-             bus: prefix + "BUS",
-             pin: prefix + "PIN",
-             psi_range: prefix + "PSI_RANGE",
-             tube_order: prefix + tube_order_postfix,
-             skip_cal: prefix + "SKIP_CAL",
-             use: prefix + "USE",
-             offset: prefix + "OFFSET",
-             ratio: prefix + "RATIO",
-             auto_cal: prefix + "AUTOCAL"}
+    return {
+        id: prefix + "DEVID",
+        type: prefix + "TYPE",
+        bus: prefix + "BUS",
+        pin: prefix + "PIN",
+        psi_range: prefix + "PSI_RANGE",
+        tube_order: prefix + tube_order_postfix,
+        skip_cal: prefix + "SKIP_CAL",
+        use: prefix + "USE",
+        offset: prefix + "OFFSET",
+        ratio: prefix + "RATIO",
+        auto_cal: prefix + "AUTOCAL"
+    }
 
 }
 
@@ -1392,7 +1212,7 @@ function load_airspeed(log) {
     let section = document.getElementById("ARSPD")
 
     let primary = params["ARSPD_PRIMARY"]
-    section.appendChild(document.createTextNode("Primary: " + (primary+1)))
+    section.appendChild(document.createTextNode("Primary: " + (primary + 1)))
     section.appendChild(document.createElement("br"))
     section.appendChild(document.createElement("br"))
 
@@ -1406,7 +1226,7 @@ function load_airspeed(log) {
 
             let colum = document.createElement("td")
 
-            colum.appendChild(print_airspeed(i+1, airspeed[i]))
+            colum.appendChild(print_airspeed(i + 1, airspeed[i]))
             table.appendChild(colum)
         }
     }
@@ -1437,7 +1257,7 @@ function load_gps(log) {
     }
 
     for (let i = 0; i < max_num_gps; i++) {
-        let index = String(i+1)
+        let index = String(i + 1)
         if (i == 0) {
             index = ""
         }
@@ -1445,25 +1265,29 @@ function load_gps(log) {
         if (type_name in params) {
             const type = params[type_name]
             if (type != 0) {
-                const pos_names = get_param_name_vector3("GPS_POS" + (i+1) + "_")
-                gps[i] = { type: type,
-                           pos: get_param_array(params, pos_names),
-                           node_id: params["GPS_CAN_NODEID" + (i+1)],
-                           moving_base: get_moving_base("GPS_MB" + (i+1) + "_" ) }
+                const pos_names = get_param_name_vector3("GPS_POS" + (i + 1) + "_")
+                gps[i] = {
+                    type: type,
+                    pos: get_param_array(params, pos_names),
+                    node_id: params["GPS_CAN_NODEID" + (i + 1)],
+                    moving_base: get_moving_base("GPS_MB" + (i + 1) + "_")
+                }
             }
             continue
         }
-        const new_prefix = "GPS" + (i+1)
+        const new_prefix = "GPS" + (i + 1)
         const new_type_name = new_prefix + "_TYPE"
         if (new_type_name in params) {
             // New per-instance params for 4.6+
             const type = params[new_type_name]
             if (type != 0) {
                 const pos_names = get_param_name_vector3(new_prefix + "_POS_")
-                gps[i] = { type: type,
-                           pos: get_param_array(params, pos_names),
-                           node_id: params[new_prefix + "_CAN_NODEID"],
-                           moving_base: get_moving_base(new_prefix + "_MB_") }
+                gps[i] = {
+                    type: type,
+                    pos: get_param_array(params, pos_names),
+                    node_id: params[new_prefix + "_CAN_NODEID"],
+                    moving_base: get_moving_base(new_prefix + "_MB_")
+                }
             }
         }
     }
@@ -1491,7 +1315,7 @@ function load_gps(log) {
         let fieldset = document.createElement("fieldset")
 
         let heading = document.createElement("legend")
-        heading.innerHTML = "GPS " + (inst+1)
+        heading.innerHTML = "GPS " + (inst + 1)
         fieldset.appendChild(heading)
 
         // Try and decode the type param
@@ -1576,7 +1400,7 @@ const max_num_rangefinder = 10
 function load_rangefinder() {
 
     for (let i = 0; i < max_num_rangefinder; i++) {
-        let index = String(i+1)
+        let index = String(i + 1)
         if (i == 9) {
             index = "A"
         }
@@ -1586,8 +1410,10 @@ function load_rangefinder() {
             const type = params[type_name]
             if (type != 0) {
                 const pos_prefix = prefix + "POS_"
-                rangefinder[i] = { type: type,
-                                   pos: get_param_array(params, get_param_name_vector3(pos_prefix)) }
+                rangefinder[i] = {
+                    type: type,
+                    pos: get_param_array(params, get_param_name_vector3(pos_prefix))
+                }
             }
         }
     }
@@ -1605,8 +1431,10 @@ function load_flow() {
         const type = params[type_name]
         if (type != 0) {
             const pos_prefix = prefix + "POS_"
-            flow[0] = { type: type,
-                        pos: get_param_array(params, get_param_name_vector3(pos_prefix)) }
+            flow[0] = {
+                type: type,
+                pos: get_param_array(params, get_param_name_vector3(pos_prefix))
+            }
         }
     }
 
@@ -1623,8 +1451,10 @@ function load_viso() {
         const type = params[type_name]
         if (type != 0) {
             const pos_prefix = prefix + "POS_"
-            viso[0] = { type: type,
-                        pos: get_param_array(params, get_param_name_vector3(pos_prefix)) }
+            viso[0] = {
+                type: type,
+                pos: get_param_array(params, get_param_name_vector3(pos_prefix))
+            }
         }
     }
 
@@ -1692,9 +1522,9 @@ function update_pos_plot() {
     let plot = document.getElementById("POS_OFFSETS")
     const have_plot = max_offset > 0
     if (have_plot) {
-        Sensor_Offset.layout.scene.xaxis.range = [ -max_offset,  max_offset ]
-        Sensor_Offset.layout.scene.yaxis.range = [  max_offset, -max_offset ]
-        Sensor_Offset.layout.scene.zaxis.range = [  max_offset, -max_offset ]
+        Sensor_Offset.layout.scene.xaxis.range = [-max_offset, max_offset]
+        Sensor_Offset.layout.scene.yaxis.range = [max_offset, -max_offset]
+        Sensor_Offset.layout.scene.zaxis.range = [max_offset, -max_offset]
 
         Plotly.redraw(plot)
 
@@ -1845,9 +1675,9 @@ function load_params(log) {
 
     update_pos_plot()
 
-    // Add warning if arming checks are disabled
+    // Be annoying if arming checks are disabled
     if (("ARMING_CHECK" in params) && (params.ARMING_CHECK == 0)) {
-        add_warning("exclamation-triangle-orange", document.createTextNode("Arming checks disabled"))
+        alert("Arming checks disabled")
     }
 
 }
@@ -1863,7 +1693,7 @@ function load_am(log) {
     const MSG = log.get("MSG")
     MSG_time = TimeUS_to_seconds(MSG.TimeUS)
     Messages = MSG.Message
-    
+
 
     let time_mark = {}
 
@@ -1873,177 +1703,107 @@ function load_am(log) {
     let heading = document.createElement("legend")
     heading.innerHTML = "Time Reader"
     fs_tm.appendChild(heading)
-
-    //Find top
-    const gps_0 = log.get_instance("GPS", 0)
-    const top = findTOP(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["VTOL Takeoff"])
-
-    fs_tm.innerHTML += `TOP: ${top}`;
-    try {
-        if (time_mark["Payload Drop"] != "Message non trouvé") {
-            const [latdrop, lngdrop] = dropPoint(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["Payload Drop"])
-            fs_tm.innerHTML += "<br>";  // Add a line break
-            fs_tm.innerHTML += `Drop_lat: ${latdrop}`;
-            fs_tm.innerHTML += "<br>";  // Add a line break
-            fs_tm.innerHTML += `Drop_lng: ${lngdrop}`;
-            fs_tm.innerHTML += "<br>";  // Add a line break
-        }
-
-    }
-    catch { }
-
     // Display all time_mark pairs
-    
-
     Object.keys(time_mark).forEach(key => {
         const time = time_mark[key];
         if (key == "Lane switch") {
-            fs_tm.innerHTML += `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)} ${time == "Message non trouvé" ? "\u2705" : "\u274c"}`;
+            fs_tm.innerHTML += `${key}: ${time == "Message non trouv�" ? time : time.toFixed(0)} ${time == "Message non trouv�" ? "\u2705" : "\u274c"}`;
             fs_tm.innerHTML += "<br>";  // Add a line break
         }
         else {
-            fs_tm.innerHTML += `${key}: ${time == "Message non trouvé" ? time : time.toFixed(0)}`;
+            fs_tm.innerHTML += `${key}: ${time == "Message non trouv�" ? time : time.toFixed(0)}`;
             fs_tm.innerHTML += "<br>";  // Add a line break
         }
 
     });
-    const time = (time_mark["Throttle disarmed"] - time_mark["VTOL Takeoff"])/60;
+    const time = (time_mark["Throttle disarmed"] - time_mark["VTOL Takeoff"]) / 60;
     fs_tm.innerHTML += `Flight Time (min): ${time !== null ? time.toFixed(2) : "n/a"}`;
     fs_tm.innerHTML += "<br>";  // Add a line break
     am_section.appendChild(fs_tm);
-    
+
 
     // Section 2 : Now I create alert based on those sequences
 
     let table_ve = document.createElement("table")
     am_section.appendChild(table_ve)
 
-    if (time_mark["Transition start"] == "Message non trouvé") {
-        time_max_alt = find_max_alt_time(log);
-        time_last_arm = time_mark["Throttle armed"]
-        let column_to = document.createElement("td")
-        column_to.appendChild(print_to(log, time_last_arm, time_max_alt, "VTOL Climb"));
-        table_ve.appendChild(column_to)
-        let column_la = document.createElement("td")
-        column_la.appendChild(print_la(log, time_max_alt, time_mark["Throttle disarmed"], "VTOL Descent"));
-        table_ve.appendChild(column_la)
-        // Création de la troisième colonne pour l'image
-        let column_img = document.createElement("td")
-        let preloadImage = document.getElementById('preloadedImage');
-        let imageClone = preloadImage.cloneNode(true); // Cloner l'image
-        imageClone.style.display = 'block'; // Rendre l'image visible
-        imageClone.style.width = "75%";  // Ajuster la largeur
-        imageClone.style.height = "auto"; // Conserver le ratio d'aspect
-        imageClone.style.verticalAlign = "middle"; // Aligner verticalement
+    let column_to = document.createElement("td")
+    column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"], "VTOL TakeOff"))
+    table_ve.appendChild(column_to)
+    let column_la = document.createElement("td")
+    column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
+    table_ve.appendChild(column_la)
+    // Cr�ation de la troisi�me colonne pour l'image
+    let column_img = document.createElement("td")
+    var preloadImage = document.getElementById('preloadedImage');
+    preloadImage.style.display = 'block'; // Rendre l'image visible
+    preloadImage.style.width = "75%";  // Ajuster la largeur
+    preloadImage.style.height = "auto"; // Conserver le ratio d'aspect
+    preloadImage.style.verticalAlign = "middle"; // Aligner verticalement
+    column_img.style.verticalAlign = "middle" // Aligner la cellule avec les autres
+    column_img.appendChild(preloadImage)
+    table_ve.appendChild(column_img)
 
-        column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
-        column_img.appendChild(imageClone); // Ajouter le clone
-        table_ve.appendChild(column_img); // Ajouter la colonne à la table
+    let table_trans = document.createElement("table")
+    am_section.appendChild(table_trans)
+
+    let column_tr = document.createElement("td")
+    column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"], "Transition"))
+    table_trans.appendChild(column_tr)
+    let column_ab = document.createElement("td")
+    column_ab.appendChild(print_ab(log, time_mark["Start airbrake"], time_mark["Start full VTOL land"], "Airbrake"))
+    table_trans.appendChild(column_ab)
+
+
+    let table_seq = document.createElement("table")
+    am_section.appendChild(table_seq)
+    let table_pl = document.createElement("table")
+    am_section.appendChild(table_pl)
+
+    let [t11, t12, h1, t21, t22, h2] = find_palier(log, time_mark)
+    if (time_mark["Payload Drop"] == "Message non trouv�") {
+        // Flight Test
+        let column_re = document.createElement("td")
+        column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Return cruise"))
+        table_seq.appendChild(column_re)
+        let column_pltest = document.createElement("td")
+        column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
+        table_seq.appendChild(column_pltest)
     }
-
     else {
-        let column_to = document.createElement("td")
-        column_to.appendChild(print_to(log, time_mark["VTOL Takeoff"], time_mark["Transition start"], "VTOL TakeOff"))
-        table_ve.appendChild(column_to)
-        let column_la = document.createElement("td")
-        column_la.appendChild(print_la(log, time_mark["Start full VTOL land"], time_mark["Throttle disarmed"], "VTOL Landing"))
-        table_ve.appendChild(column_la)
-        // Création de la troisième colonne pour l'image
-        let column_img = document.createElement("td")
-        let preloadImage = document.getElementById('preloadedImage');
-        let imageClone = preloadImage.cloneNode(true); // Cloner l'image
-        imageClone.style.display = 'block'; // Rendre l'image visible
-        imageClone.style.width = "75%";  // Ajuster la largeur
-        imageClone.style.height = "auto"; // Conserver le ratio d'aspect
-        imageClone.style.verticalAlign = "middle"; // Aligner verticalement
-
-        column_img.style.verticalAlign = "middle"; // Aligner la cellule avec les autres
-        column_img.appendChild(imageClone); // Ajouter le clone
-        table_ve.appendChild(column_img); // Ajouter la colonne à la table
-        let table_trans = document.createElement("table")
-        am_section.appendChild(table_trans)
-
-        let column_tr = document.createElement("td")
-        column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"], "Transition"))
-        table_trans.appendChild(column_tr)
-        let column_ab = document.createElement("td")
-        column_ab.appendChild(print_ab(log, time_mark["Start airbrake"], time_mark["Start full VTOL land"], "Airbrake"))
-        table_trans.appendChild(column_ab)
-
-
-        let table_seq = document.createElement("table")
-        am_section.appendChild(table_seq)
-        let table_pl = document.createElement("table")
-        am_section.appendChild(table_pl)
-
-        let [t11, t12, h1, t21, t22, h2] = find_palier(log, time_mark)
-        if (time_mark["Payload Drop"] == "Message non trouvé") {
-            // Flight Test
-            let column_re = document.createElement("td")
-            column_re.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Start airbrake"], "Return cruise"))
-            table_seq.appendChild(column_re)
-            let column_pltest = document.createElement("td")
-            column_pltest.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
-            table_seq.appendChild(column_pltest)
-        }
-        else {
-            let column_aw = document.createElement("td")
-            column_aw.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Payload Drop"], "Away cruise"))
-            table_seq.appendChild(column_aw)
-            let column_re = document.createElement("td")
-            column_re.appendChild(print_re(log, time_mark["Payload Drop"], time_mark["Start airbrake"], "Return cruise"))
-            table_seq.appendChild(column_re)
-            let column_plaw = document.createElement("td")
-            column_plaw.appendChild(print_pl(log, t11, t12, h1, "Palier Away"))
-            table_pl.appendChild(column_plaw)
-            let column_plre = document.createElement("td")
-            column_plre.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
-            table_pl.appendChild(column_plre)
-        }
-
+        let column_aw = document.createElement("td")
+        column_aw.appendChild(print_re(log, time_mark["Cruise start"], time_mark["Payload Drop"], "Away cruise"))
+        table_seq.appendChild(column_aw)
+        let column_re = document.createElement("td")
+        column_re.appendChild(print_re(log, time_mark["Payload Drop"], time_mark["Start airbrake"], "Return cruise"))
+        table_seq.appendChild(column_re)
+        let column_plaw = document.createElement("td")
+        column_plaw.appendChild(print_pl(log, t11, t12, h1, "Palier Away"))
+        table_pl.appendChild(column_plaw)
+        let column_plre = document.createElement("td")
+        column_plre.appendChild(print_pl(log, t21, t22, h2, "Palier Return"))
+        table_pl.appendChild(column_plre)
     }
 
     let table_ff = document.createElement("table")
     am_section.appendChild(table_ff)
 
     let column_ff = document.createElement("td")
-
-    if (time_mark["Transition start"] == "Message non trouvé") {
-        column_ff.appendChild(print_ff(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Full Flight Controls"))
-        table_ff.appendChild(column_ff)
-    }
-    else {
-        column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
-        table_ff.appendChild(column_ff)
-    }
+    column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
+    table_ff.appendChild(column_ff)
     let column_ffh = document.createElement("td")
-    try {
-        column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"));
-        table_ff.appendChild(column_ffh);
-    } catch (error) {
-        console.error("An error occurred:", error);
-        // Tu peux aussi faire autre chose ici, comme ignorer l'erreur ou ajouter un log spécifique.
-    }
+    column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"))
+    table_ff.appendChild(column_ffh)
     let column_ffresp = document.createElement("td")
+    column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+    table_ff.appendChild(column_ffresp)
     let column_para = document.createElement("td")
-    if (time_mark["Transition start"] == "Message non trouvé") {
-        column_ffresp.appendChild(print_ffrespv(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
-        table_ff.appendChild(column_ffresp)
-        column_para.appendChild(print_para(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Parachute Margin"))
-        table_ff.appendChild(column_para)
-    }
-    else {
-        column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
-        table_ff.appendChild(column_ffresp)
-        column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
-        table_ff.appendChild(column_para)
-    }
-    
-
-    
+    column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
+    table_ff.appendChild(column_para)
 
 
-    
+
+
     //let data_sk = {}
 
     //data_sk.x = time
@@ -2063,11 +1823,11 @@ function load_am(log) {
 
 
 
-    // Section 3 : Extraction du texte de am_section et téléchargement du fichier
+    // Section 3 : Extraction du texte de am_section et t�l�chargement du fichier
 
     let save_section = document.getElementById("SaveData")
 
-    // Création du bouton pour déclencher le téléchargement
+    // Cr�ation du bouton pour d�clencher le t�l�chargement
     const downloadButton = document.createElement("button");
     downloadButton.innerText = "Save data to txt";
     downloadButton.onclick = function () {
@@ -2079,21 +1839,25 @@ function load_am(log) {
         a.click();
     };
 
-    // Ajout du bouton à la section am_section
+    // Ajout du bouton � la section am_section
     downloadButton.style.marginRight = "10px"; // Espacement entre les boutons
     save_section.appendChild(downloadButton);
 
-    // Création du bouton pour sélectionner un fichier .txt
+    // Cr�ation du bouton pour s�lectionner un fichier .txt
     const fileInputButton = document.createElement("button");
     fileInputButton.innerText = "prf Reader";
 
-    // Création de l'input de type file (invisible) pour sélectionner le fichier
+    // Cr�ation de l'input de type file (invisible) pour s�lectionner le fichier
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".txt";
     fileInput.style.display = "none";
 
     fileInputButton.onclick = () => fileInput.click();
+
+    const fs = require('fs');
+    const path = require('path');
+
 
     fileInput.onchange = function (event) {
         const file0 = event.target.files[0];
@@ -2103,11 +1867,11 @@ function load_am(log) {
                 const fileContent = e.target.result;
 
                 // Extraire le texte avant "Bat1"
-                const textBeforeBat = fileContent.split(/Bat1/)[0];
+                const textBeforeBat = fileContent.split(/Bat1:/)[0];
 
-                // Définir les préfixes pour chaque section
+                // D�finir les pr�fixes pour chaque section
                 const prefixes = {
-                    "Time Reader": "ti_",
+                    "Time Reader": "tr_",
                     "VTOL TakeOff": "to_",
                     "VTOL Landing": "la_",
                     "Transition": "tr_",
@@ -2119,10 +1883,10 @@ function load_am(log) {
                     "Full Flight Controls": "ff_",
                     "Far From Home (5km) Controls": "fh_",
                     "Response": "re_",
-                    "Parachute Margin": "ch_"
+                    "Parachute Margin": "pa_"
                 };
 
-                // Ajouter le bouton pour télécharger le fichier avec le texte extrait
+                // Ajouter le bouton pour t�l�charger le fichier avec le texte extrait
                 const downloadButton = document.createElement("button");
                 downloadButton.innerText = "Save to .am";
                 downloadButton.onclick = function () {
@@ -2131,18 +1895,18 @@ function load_am(log) {
                     let sectionPrefix = "";
                     const processedData = data.map(line => {
                         if (!line.includes(':')) {
-                            // Identifier le début d'une nouvelle section
+                            // Identifier le d�but d'une nouvelle section
                             sectionPrefix = prefixes[line.trim()] || "";
                             return line; // Conserver le nom de la section
                         } else {
-                            // Supprimer les parenthèses et leur contenu
+                            // Supprimer les parenth�ses et leur contenu
                             let lineWithoutParentheses = line.replace(/\(.*?\)/g, '').trim();
-                            // Remplacer les symboles par ceux souhaités
+                            // Remplacer les symboles par ceux souhait�s
                             lineWithoutParentheses = lineWithoutParentheses
                                 .replace(/\u2705/g, ': \u2705')
                                 .replace(/\u274C/g, ': \u274C');
 
-                            // Séparer la valeur du signe et ajouter le suffixe '_a' si nécessaire
+                            // S�parer la valeur du signe et ajouter le suffixe '_a' si n�cessaire
                             const [value, alert] = lineWithoutParentheses.split(/: (\u2705|\u274C)/);
                             const valueLine = sectionPrefix + value.trim();
                             let alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
@@ -2150,7 +1914,7 @@ function load_am(log) {
                             // Supprimer tout ce qui se trouve entre le premier ':' et le dernier '_a'
                             alertLine = alertLine.replace(/:(.*?_a)/, '_a');
 
-                            // Modifier alertLine en fonction du symbole présent
+                            // Modifier alertLine en fonction du symbole pr�sent
                             if (alert === '\u2705') {
                                 alertLine = alertLine.replace('\u2705', 'OK');
                             } else if (alert === '\u274C') {
@@ -2162,13 +1926,11 @@ function load_am(log) {
                     }).join('\n');
 
                     const combinedData = textBeforeBat + "\n" + processedData;
-                    // Passer fs, path, et le chemin du fichier .prf à save_text_2
-                    // save_text_2(combinedData, ".am", file0.path);
-                    const blob = new Blob([combinedData], { type: 'text/plain' });
-                    save_text(blob, ".am");
+                    // Passer fs, path, et le chemin du fichier .prf � save_text_2
+                    save_text_2(combinedData, ".am", file0.path);
                 };
 
-                // Ajout du bouton de téléchargement à la section am_section
+                // Ajout du bouton de t�l�chargement � la section am_section
                 save_section.appendChild(downloadButton);
             };
             reader.readAsText(file0);
@@ -2182,7 +1944,7 @@ function load_am(log) {
 
 
 
-    // Ajout du bouton de sélection de fichier à la section am_section
+    // Ajout du bouton de s�lection de fichier � la section am_section
     fileInputButton.style.marginRight = "10px"; // Espacement entre les boutons
     save_section.appendChild(fileInputButton);
     save_section.appendChild(fileInput);
@@ -2211,8 +1973,8 @@ function load_am(log) {
     //            lines.forEach(line => {
     //                if (line.trim()) {
     //                    let csvLine = line.replace(/:\s+/g, ','); // Remplacer les deux-points par des virgules
-    //                    csvLine = csvLine.replace("\u2705", ',OK'); // Transformer "âœ…" en ",OK"
-    //                    csvLine = csvLine.replace("\u274c", ',NOK'); // Transformer "âŒ" en ",NOK"
+    //                    csvLine = csvLine.replace("\u2705", ',OK'); // Transformer "✅" en ",OK"
+    //                    csvLine = csvLine.replace("\u274c", ',NOK'); // Transformer "❌" en ",NOK"
     //                    csvContent += csvLine + '\n';
     //                }
     //            });
@@ -2234,7 +1996,7 @@ function load_am(log) {
     //    }
     //};
 
-    //// Ajout du bouton de conversion à la section save_section
+    //// Ajout du bouton de conversion � la section save_section
     //save_section.appendChild(convertToCSVButton);
     //save_section.appendChild(fileInputCSV);
 
@@ -2261,7 +2023,6 @@ function findMaxPair(dataxy) {
 function findMessageTimes(MSG_time, MSG) {
 
     const time_mark = {
-        "Throttle armed": null,
         "VTOL Takeoff": null,
         "Transition start": null,
         "Transition end": null,
@@ -2277,7 +2038,7 @@ function findMessageTimes(MSG_time, MSG) {
         const message = MSG[i];
         const time = MSG_time[i];
 
-        // Vérifier les premiers messages
+        // V�rifier les premiers messages
         if (time_mark["VTOL Takeoff"] === null && message.includes("1 VTOLTakeoff")) {
             time_mark["VTOL Takeoff"] = time;
         }
@@ -2294,10 +2055,7 @@ function findMessageTimes(MSG_time, MSG) {
             time_mark["Lane switch"] = time;
         }
 
-        // Vérifier les derniers messages
-        if (message.includes("Throttle armed")) {
-            time_mark["Throttle armed"] = time;
-        }
+        // V�rifier les derniers messages
         if (message.includes("SetServo")) {
             time_mark["Payload Drop"] = time;
         }
@@ -2312,10 +2070,10 @@ function findMessageTimes(MSG_time, MSG) {
         }
     }
 
-    // Si une clé est encore null, cela signifie que le message n'a pas été trouvé
+    // Si une cl� est encore null, cela signifie que le message n'a pas �t� trouv�
     Object.keys(time_mark).forEach(key => {
         if (time_mark[key] === null) {
-            time_mark[key] = "Message non trouvé";
+            time_mark[key] = "Message non trouv�";
         }
     });
 
@@ -2326,7 +2084,7 @@ function find_palier(log, time_mark) {
 
     let [t1, t2] = [time_mark["Cruise start"], time_mark["Payload Drop"]]
     let [t3, t4] = [time_mark["Payload Drop"], time_mark["Start airbrake"]]
-    if (time_mark["Payload Drop"] == "Message non trouvé") {
+    if (time_mark["Payload Drop"] == "Message non trouv�") {
         t3 = t1
     }
     let [t11, t12, h1] = find_max_interval(log, t1, t2)
@@ -2335,7 +2093,7 @@ function find_palier(log, time_mark) {
 
 }
 
-// Fonction pour trouver l'intervalle le plus long où dh est quasi nul
+// Fonction pour trouver l'intervalle le plus long o� dh est quasi nul
 function find_max_interval(log, start_time, end_time) {
 
     const tecs = log.get("TECS")
@@ -2355,13 +2113,13 @@ function find_max_interval(log, start_time, end_time) {
     for (let i = 0; i < time.length; i++) {
         if (time[i] >= start_time && time[i] <= end_time) {
             if (dh[i] > -0.1 && dh[i] < 0.1) {
-                // Début d'une nouvelle séquence ou continuation de la séquence actuelle
+                // D�but d'une nouvelle s�quence ou continuation de la s�quence actuelle
                 if (current_start === null) {
                     current_start = time[i];
                 }
                 current_duration += (i > 0) ? (time[i] - time[i - 1]) : 0;
 
-                // Vérifier si c'est la plus longue séquence
+                // V�rifier si c'est la plus longue s�quence
                 if (current_duration > max_duration) {
                     max_start = current_start;
                     hdem_start = hdem[i];
@@ -2369,7 +2127,7 @@ function find_max_interval(log, start_time, end_time) {
                     max_duration = current_duration;
                 }
             } else {
-                // Fin de la séquence actuelle
+                // Fin de la s�quence actuelle
                 current_start = null;
                 current_duration = 0;
             }
@@ -2389,17 +2147,17 @@ function findMinMaxAvgValue(time, values, t1, t2) {
     let start = 0;
     let end = time.length - 1;
 
-    // Trouver le premier indice où le temps est >= t1
+    // Trouver le premier indice o� le temps est >= t1
     while (start < time.length && time[start] < t1) {
         start++;
     }
 
-    // Trouver le dernier indice où le temps est <= t2
+    // Trouver le dernier indice o� le temps est <= t2
     while (end >= 0 && time[end] > t2) {
         end--;
     }
 
-    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    // Parcourir la plage trouv�e pour obtenir min, max et la somme pour la moyenne
     for (let i = start; i <= end; i++) {
         if (time[i] >= t1 && time[i] <= t2) {
             if (values[i] < minValue) {
@@ -2416,7 +2174,7 @@ function findMinMaxAvgValue(time, values, t1, t2) {
     // Calculer la moyenne
     let avgValue = count > 0 ? sum / count : null;
 
-    // Gérer les cas où aucun temps n'est dans l'intervalle
+    // G�rer les cas o� aucun temps n'est dans l'intervalle
     if (minValue === Infinity) minValue = null;
     if (maxValue === -Infinity) maxValue = null;
 
@@ -2431,17 +2189,17 @@ function findMinMaxFirst(time, values, t1, t2) {
     let first = Infinity;
     let end = time.length - 1;
 
-    // Trouver le premier indice où le temps est >= t1
+    // Trouver le premier indice o� le temps est >= t1
     while (start < time.length && time[start] < t1) {
         start++;
     }
 
-    // Trouver le dernier indice où le temps est <= t2
+    // Trouver le dernier indice o� le temps est <= t2
     while (end >= 0 && time[end] > t2) {
         end--;
     }
 
-    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    // Parcourir la plage trouv�e pour obtenir min, max et la somme pour la moyenne
     for (let i = start; i <= end; i++) {
         if (time[i] >= t1 && time[i] <= t2) {
             if (first == Infinity) {
@@ -2457,7 +2215,7 @@ function findMinMaxFirst(time, values, t1, t2) {
     }
 
 
-    // Gérer les cas où aucun temps n'est dans l'intervalle
+    // G�rer les cas o� aucun temps n'est dans l'intervalle
     if (minValue === Infinity) minValue = null;
     if (first === Infinity) first = null;
     if (maxValue === -Infinity) maxValue = null;
@@ -2475,20 +2233,20 @@ function findDeltas(time, values1, values2, t1, t2) {
     let lowpass = 0;
     let end = time.length - 1;
 
-    // Trouver le premier indice où le temps est >= t1
+    // Trouver le premier indice o� le temps est >= t1
     while (start < time.length && time[start] < t1) {
         start++;
     }
 
-    // Trouver le dernier indice où le temps est <= t2
+    // Trouver le dernier indice o� le temps est <= t2
     while (end >= 0 && time[end] > t2) {
         end--;
     }
 
-    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    // Parcourir la plage trouv�e pour obtenir min, max et la somme pour la moyenne
     for (let i = start; i <= end; i++) {
         if (time[i] >= t1 && time[i] <= t2) {
-            lowpass = 0.95*lowpass + 0.05*Math.abs(values2[i] - values1[i]); //value lowpassed on ~20 values
+            lowpass = 0.95 * lowpass + 0.05 * Math.abs(values2[i] - values1[i]); //value lowpassed on ~20 values
             if (lowpass > maxDelta) {
                 maxDelta = lowpass
             }
@@ -2502,45 +2260,12 @@ function findDeltas(time, values1, values2, t1, t2) {
     let avg_d = count > 0 ? sumd / count : null;
     let avg_d_abs = count > 0 ? sumdabs / count : null;
 
-    // Gérer les cas où aucun temps n'est dans l'intervalle
+    // G�rer les cas o� aucun temps n'est dans l'intervalle
     if (maxDelta === -Infinity) maxValue = null;
 
     return [avg_d, avg_d_abs, maxDelta];
 }
 
-function find_max_alt_time(log) {
-
-    terr = log.get("TERR");
-    time = TimeUS_to_seconds(terr.TimeUS)
-    alt = terr.CHeight
-
-    let maxAlt = alt[0];
-    let maxIndex = 0;
-
-    for (let i = 1; i < alt.length; i++) {
-        if (alt[i] > maxAlt) {
-            maxAlt = alt[i];
-            maxIndex = i;
-        }
-    }
-
-    return time[maxIndex];
-}
-
-function find_last_arm_time(log) {
-    arm = log.get("ARM");
-    armstate = TimeUS_to_seconds(arm.TimeUS)
-    time = arm.ArmState
-    let lastArmTime = null;
-
-    for (let i = 0; i < armstate.length; i++) {
-        if (armstate[i] === 1) {
-            lastArmTime = time[i];
-        }
-    }
-
-    return lastArmTime;
-}
 
 function findFFH(time, east_m, north_m, t1, t2) {
 
@@ -2561,56 +2286,8 @@ function findFFH(time, east_m, north_m, t1, t2) {
     return [time[start], time[end]];
 }
 
-function findTOP(time, lat, lng, t1) {
 
-    let start = 0;
-
-    while (start < time.length && time[start] < t1) {
-        start++;
-    }
-
-    const TOPs = {
-        "WMN": [-15.4208580, 49.7245765],   // Maroantsetra
-        "VVB": [-19.8450000, 48.8086111],   // Mahanoro
-        "BHJ": [-19.672116, 47.314187],     // Behenjy
-        "TMM": [-18.1492012, 49.4023289],   // Tamatave (Toamasina)
-        "VND": [-23.3470407, 47.5962614],   // Vangaindrano
-        "WAK": [-22.91202751744944, 44.528044921900346]        // Sakaraha
-    };
-
-    const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
-
-    let closestPoint = null;
-    let minSquaredDistance = Infinity;
-
-    // Boucle pour trouver le point le plus proche
-    for (const [point, [lat1, lng1]] of Object.entries(TOPs)) {
-        if (lat1 !== null && lng1 !== null) {
-            const squaredDistance = (lat1 - lat0) ** 2 + (lng1 - lng0) ** 2;
-            if (squaredDistance < minSquaredDistance) {
-                minSquaredDistance = squaredDistance;
-                closestPoint = point;
-            }
-        }
-    }
-    return closestPoint;
-}
-
-function dropPoint(time, lat, lng, t1) {
-
-    let start = 0;
-
-    while (start < time.length && time[start] < t1) {
-        start++;
-    }
-    const [lat0, lng0] = [lat[start] / 10 ** 7, lng[start] / 10 ** 7]; // Coordonnées à t1
-
-    
-    
-    return [lat0,lng0];
-}
-
-function print_to(log,t1,t2,head) {
+function print_to(log, t1, t2, head) {
     let fieldset = document.createElement("fieldset")
 
     let heading = document.createElement("legend")
@@ -2627,58 +2304,58 @@ function print_to(log,t1,t2,head) {
 
     // batt 1 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
-    fieldset.innerHTML += `batt1_volt_min (>45 V): ${checkThreshold('to', 'batt1_volt_min', minvalue)}`;
+    fieldset.innerHTML += `batt1_volt_min (>45 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 45 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // batt 1 curr
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
-    fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('to', 'batt1_curr_max', maxvalue)}`;
+    fieldset.innerHTML += `batt1_curr_max (<250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
-    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${checkThreshold('to', 'batt1_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add another line break
     //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
-    fieldset.innerHTML += `rcou_C5_max (1980 ms): ${checkThreshold('to', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1980 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1980) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C5_avg (1550<_<1850 ms): ${checkThreshold('to', 'rcou_C5_avg', avgvalue5)}`;
+    fieldset.innerHTML += `rcou_C5_avg (1650<_<1850 ms): ${avgvalue5 !== null ? avgvalue5.toFixed(2) : "n/a"} ${avgvalue5 !== null && (1650 < avgvalue5) && (avgvalue5 < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t2);
-    fieldset.innerHTML += `rcou_C6_max (1980 ms): ${checkThreshold('to', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1980 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1980) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1550<_<1850 m): ${checkThreshold('to', 'rcou_C6_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_C6_avg (1650<_<1850 m): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1650 < avgvalue6) && (avgvalue6 < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t2);
-    fieldset.innerHTML += `rcou_C7_max (1980 ms): ${checkThreshold('to', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1980 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1980) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1550<_<1850 m): ${checkThreshold('to', 'rcou_C7_avg', avgvalue7)}`;
+    fieldset.innerHTML += `rcou_C7_avg (1650<_<1850 m): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1650 < avgvalue7) && (avgvalue7 < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t2);
-    fieldset.innerHTML += `rcou_C8_max (1980 ms): ${checkThreshold('to', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1980 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1980) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1550<_<1850 m): ${checkThreshold('to', 'rcou_C8_avg', avgvalue8)}`;
+    fieldset.innerHTML += `rcou_C8_avg (1650<_<1850 m): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1650 < avgvalue8) && (avgvalue8 < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = (avgvalue6 + avgvalue8) / 2
-    fieldset.innerHTML += `rcou_backC6C8_avg (1550<_<1850 m): ${checkThreshold('to', 'rcou_backC6C8_avg', avgvalue)}`;
+    fieldset.innerHTML += `rcou_back(C6C8)_avg (1650<_<1850 m): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1650 < avgvalue) && (avgvalue < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    avgvalue6 = (avgvalue5 + avgvalue7) / 2
-    fieldset.innerHTML += `rcou_frontC5C7_avg (1550<_<1850 m): ${checkThreshold('to', 'rcou_frontC5C7_avg', avgvalue6)}`;
+    avgvalue = (avgvalue5 + avgvalue7) / 2
+    fieldset.innerHTML += `rcou_front(C5C7)_avg (1650<_<1850 m): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1650 < avgvalue) && (avgvalue < 1850) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    avgvalue8 = (avgvalue - avgvalue6) / 2
-    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('to', 'rcou_motordeseq_avg', avgvalue8)}`;
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     //QTUN
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
-    fieldset.innerHTML += `qtun_CRt_max (<3.4 m/s): ${checkThreshold('to', 'qtun_CRt_max', maxvalue)}`;
+    fieldset.innerHTML += `qtun_CRt_max (<3.4 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 3.4) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `qtun_CRt_avg (1.8<_<2.2 m/s): ${checkThreshold('to', 'qtun_CRt_avg', avgvalue)}`;
+    fieldset.innerHTML += `qtun_CRt_avg (1.8<_<2.2 m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1.8 < avgvalue) && (avgvalue < 2.2) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
-    fieldset.innerHTML += `qtun_ThO_max (<0.85): ${checkThreshold('to', 'qtun_ThO_max', maxvalue)}`;
+    fieldset.innerHTML += `qtun_ThO_max (<0.85): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.85) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `qtun_ThO_avg (0.35<_<0.65): ${checkThreshold('to', 'qtun_ThO_avg', avgvalue)}`;
+    fieldset.innerHTML += `qtun_ThO_avg (0.35<_<0.65): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.35 < avgvalue) && (avgvalue < 0.65) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     avgvalue = qtun.ThH[1]
-    fieldset.innerHTML += `qtun_ThH_est (0.10<_<0.45): ${checkThreshold('to', 'qtun_ThH_est', avgvalue)}`;
+    fieldset.innerHTML += `qtun_ThH_est (0.10<_<0.45): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.10 < avgvalue) && (avgvalue < 0.45) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     return fieldset
@@ -2701,143 +2378,120 @@ function print_la(log, t1, t2, head) {
 
     // batt 1 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
-    fieldset.innerHTML += `batt1_volt_min (>42 V): ${checkThreshold('la', 'batt1_volt_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt1_volt_min (>42 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && minvalue > 42 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
     // batt 1 curr
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
-    fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('la', 'batt1_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${checkThreshold('la', 'batt1_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt1_curr_max (<250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && maxvalue < 250 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add another line break
+    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && avgvalue < 150 ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add another line break
 
-    // RCOU C5
+    //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
-    fieldset.innerHTML += `rcou_C5_max (1940 ms): ${checkThreshold('la', 'rcou_C5_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `rcou_C5_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_C5_avg', avgvalue5)}`;
-    fieldset.innerHTML += "<br>";
-
-    // RCOU C6
+    fieldset.innerHTML += `rcou_C5_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `rcou_C5_avg (1500<_<1800 ms): ${avgvalue5 !== null ? avgvalue5.toFixed(2) : "n/a"} ${avgvalue5 !== null && (1500 < avgvalue5) && (avgvalue5 < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t2);
-    fieldset.innerHTML += `rcou_C6_max (1940 ms): ${checkThreshold('la', 'rcou_C6_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `rcou_C6_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_C6_avg', avgvalue6)}`;
-    fieldset.innerHTML += "<br>";
-
-    // RCOU C7
+    fieldset.innerHTML += `rcou_C6_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `rcou_C6_avg (1500<_<1800 ms): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1500 < avgvalue6) && (avgvalue6 < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t2);
-    fieldset.innerHTML += `rcou_C7_max (1940 ms): ${checkThreshold('la', 'rcou_C7_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `rcou_C7_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_C7_avg', avgvalue7)}`;
-    fieldset.innerHTML += "<br>";
-
-    // RCOU C8
+    fieldset.innerHTML += `rcou_C7_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `rcou_C7_avg (1500<_<1800 ms): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1500 < avgvalue7) && (avgvalue7 < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t2);
-    fieldset.innerHTML += `rcou_C8_max (1940 ms): ${checkThreshold('la', 'rcou_C8_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `rcou_C8_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_C8_avg', avgvalue8)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `rcou_C8_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `rcou_C8_avg (1500<_<1800 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1500 < avgvalue8) && (avgvalue8 < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue = (avgvalue6 + avgvalue8) / 2
+    fieldset.innerHTML += `rcou_back(C6C8)_avg (1500<_<1800 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1500 < avgvalue) && (avgvalue < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue = (avgvalue5 + avgvalue7) / 2
+    fieldset.innerHTML += `rcou_front(C5C7)_avg (1500<_<1800 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1500 < avgvalue) && (avgvalue < 1800) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    // Combined averages
-    avgvalue = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_backC6C8_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_backC6C8_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    avgvalue6 = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_frontC5C7_avg (1300<_<1800 ms): ${checkThreshold('la', 'rcou_frontC5C7_avg', avgvalue6)}`;
-    fieldset.innerHTML += "<br>";
-
-    avgvalue8 = (avgvalue - avgvalue6) / 2;
-    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('la', 'rcou_motordeseq_avg', avgvalue8)}`;
-    fieldset.innerHTML += "<br>";
-
-    // QTUN CRt
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
-    fieldset.innerHTML += `qtun_CRt_max (<0.8 m/s): ${checkThreshold('la', 'qtun_CRt_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `qtun_CRt_avg (-2<_<0 m/s): ${checkThreshold('la', 'qtun_CRt_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // QTUN ThO
-    [minvalue1, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
-    fieldset.innerHTML += `qtun_ThO_max (<0.75): ${checkThreshold('la', 'qtun_ThO_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `qtun_ThO_avg (0.20<_<0.55): ${checkThreshold('la', 'qtun_ThO_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // CRt last
-    fieldset.innerHTML += `qtun_CRt_min (>-3.8 m/s): ${checkThreshold('la', 'qtun_CRt_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //QTUN
+    [minvalue1, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt, t1, t2);
+    fieldset.innerHTML += `qtun_CRt_max (<0.8 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.8) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `qtun_CRt_avg (-2<_<0 m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (-2 < avgvalue) && (avgvalue < 0) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(qtun.TimeUS), qtun.ThO, t1, t2);
+    fieldset.innerHTML += `qtun_ThO_max (<0.60): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.60) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `qtun_ThO_avg (0.20<_<0.55): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0.20 < avgvalue) && (avgvalue < 0.50) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `qtun_CRt_min (>-3.8 m/s): ${minvalue1 !== null ? minvalue1.toFixed(2) : "n/a"} ${minvalue1 !== null && (-3.8 < minvalue1) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
     return fieldset
 }
 
 function print_tr(log, t1, t2, t3, head) {
-    // t1 and t2 are bounds between wp2 and set speed. t3 is used to calculate transition time.
-    let fieldset = document.createElement("fieldset");
+    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
+    let fieldset = document.createElement("fieldset")
 
-    let heading = document.createElement("legend");
-    heading.innerHTML = head;
-    fieldset.appendChild(heading);
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
 
-    const bat_0 = log.get_instance("BAT", 0);
-    const rcou = log.get("RCOU");
+    const bat_0 = log.get_instance("BAT", 0)
+    const rcou = log.get("RCOU")
 
-    let time = TimeUS_to_seconds(bat_0.TimeUS);
-    let bat_0_curr = bat_0.Curr;
+    let time = TimeUS_to_seconds(bat_0.TimeUS)
+    let bat_0_curr = bat_0.Curr
 
-    // batt 0 current max
+    // batt 0 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (65<_<85 A): ${checkThreshold('tr', 'batt0_curr_max', maxvalue)}`;
+    fieldset.innerHTML += `batt0_curr_max (65<_<85 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (65 < maxvalue) && (maxvalue < 85) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // RCOU channel checks
+    //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t3);
-    fieldset.innerHTML += `rcou_C5_max (1948 ms): ${checkThreshold('tr', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C5_avg (1200<_<1850 ms): ${checkThreshold('tr', 'rcou_C5_avg', avgvalue5)}`;
+    fieldset.innerHTML += `rcou_C5_avg (1300<_<1750 ms): ${avgvalue5 !== null ? avgvalue5.toFixed(2) : "n/a"} ${avgvalue5 !== null && (1300 < avgvalue5) && (avgvalue5 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t3);
-    fieldset.innerHTML += `rcou_C6_max (1948 ms): ${checkThreshold('tr', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1200<_<1850 ms): ${checkThreshold('tr', 'rcou_C6_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_C6_avg (1300<_<1750 ms): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1300 < avgvalue6) && (avgvalue6 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t3);
-    fieldset.innerHTML += `rcou_C7_max (1948 ms): ${checkThreshold('tr', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1200<_<1850 ms): ${checkThreshold('tr', 'rcou_C7_avg', avgvalue7)}`;
+    fieldset.innerHTML += `rcou_C7_avg (1300<_<1750 ms): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1300 < avgvalue7) && (avgvalue7 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t3);
-    fieldset.innerHTML += `rcou_C8_max (1948 ms): ${checkThreshold('tr', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1900 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1900) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1200<_<1850 ms): ${checkThreshold('tr', 'rcou_C8_avg', avgvalue8)}`;
+    fieldset.innerHTML += `rcou_C8_avg (1300<_<1750 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1300 < avgvalue8) && (avgvalue8 < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // Calculations for back and front averages
-    const avgvalueBack = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_backC6C8_avg (1200<_<1750 ms): ${checkThreshold('tr', 'rcou_backC6C8_avg', avgvalueBack)}`;
+    avgvalue = (avgvalue6 + avgvalue8) / 2
+    fieldset.innerHTML += `rcou_back(C6C8)_avg (1300<_<1750 s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    const avgvalueFront = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_frontC5C7_avg (1200<_<1750 ms): ${checkThreshold('tr', 'rcou_frontC5C7_avg', avgvalueFront)}`;
+    avgvalue6 = (avgvalue5 + avgvalue7) / 2
+    fieldset.innerHTML += `rcou_front(C5C7)_avg (1300<_<1750 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1300 < avgvalue) && (avgvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;
-    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('tr', 'rcou_motordeseq_avg', motordeseqAvg)}`;
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
-    // Transition time
-    const transitionTime = t3 - t1;
-    fieldset.innerHTML += `transition time (10<_<18 s): ${checkThreshold('tr', 'transition_time', transitionTime)}`;
+    time = (t3 - t1)
+    fieldset.innerHTML += `transition time (10<_<18 s): ${time !== null ? time.toFixed(2) : "n/a"} ${time !== null && (10 < time) && (time < 18) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
-    return fieldset;
+
+    return fieldset
 }
-
 
 function print_ab(log, t1, t2, head) {
     // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
@@ -2853,47 +2507,40 @@ function print_ab(log, t1, t2, head) {
     let time = TimeUS_to_seconds(bat_0.TimeUS)
     let bat_0_curr = bat_0.Curr
 
-    // batt 0 current max
+    // batt 0 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (_<35 A): ${checkThreshold('ab', 'batt0_curr_max', maxvalue)}`;
+    fieldset.innerHTML += `batt0_curr_max (_<35 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 35) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
-    // RCOU checks
+    // RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
-    fieldset.innerHTML += `rcou_C5_max (1850 ms): ${checkThreshold('ab', 'rcou_C5_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C5_max (1750 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C5_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C5_avg', avgvalue5)}`;
+    fieldset.innerHTML += `rcou_C5_avg (1150<_<1450 ms): ${avgvalue5 !== null ? avgvalue5.toFixed(2) : "n/a"} ${avgvalue5 !== null && (1150 < avgvalue5) && (avgvalue5 < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue6] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C6, t1, t2);
-    fieldset.innerHTML += `rcou_C6_max (1850 ms): ${checkThreshold('ab', 'rcou_C6_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C6_max (1750 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C6_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C6_avg', avgvalue6)}`;
+    fieldset.innerHTML += `rcou_C6_avg (1150<_<1450 ms): ${avgvalue6 !== null ? avgvalue6.toFixed(2) : "n/a"} ${avgvalue6 !== null && (1150 < avgvalue6) && (avgvalue6 < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue7] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C7, t1, t2);
-    fieldset.innerHTML += `rcou_C7_max (1850 ms): ${checkThreshold('ab', 'rcou_C7_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C7_max (1750 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C7_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C7_avg', avgvalue7)}`;
+    fieldset.innerHTML += `rcou_C7_avg (1150<_<1450 ms): ${avgvalue7 !== null ? avgvalue7.toFixed(2) : "n/a"} ${avgvalue7 !== null && (1150 < avgvalue7) && (avgvalue7 < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue8] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C8, t1, t2);
-    fieldset.innerHTML += `rcou_C8_max (1850 ms): ${checkThreshold('ab', 'rcou_C8_max', maxvalue)}`;
+    fieldset.innerHTML += `rcou_C8_max (1750 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1750) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `rcou_C8_avg (1150<_<1650 ms): ${checkThreshold('ab', 'rcou_C8_avg', avgvalue8)}`;
+    fieldset.innerHTML += `rcou_C8_avg (1150<_<1450 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (1150 < avgvalue8) && (avgvalue8 < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // Averages for back and front
-    const avgvalueBack = (avgvalue6 + avgvalue8) / 2;
-    fieldset.innerHTML += `rcou_backC6C8_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_backC6C8_avg', avgvalueBack)}`;
+    avgvalue = (avgvalue6 + avgvalue8) / 2
+    fieldset.innerHTML += `rcou_back(C6C8)_avg (1150<_<1450 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1150 < avgvalue) && (avgvalue < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    const avgvalueFront = (avgvalue5 + avgvalue7) / 2;
-    fieldset.innerHTML += `rcou_frontC5C7_avg (1150<_<1450 ms): ${checkThreshold('ab', 'rcou_frontC5C7_avg', avgvalueFront)}`;
+    avgvalue = (avgvalue5 + avgvalue7) / 2
+    fieldset.innerHTML += `rcou_front(C5C7)_avg (1150<_<1450 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1150 < avgvalue) && (avgvalue < 1450) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;
-    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('ab', 'rcou_motordeseq_avg', motordeseqAvg)}`;
+    avgvalue8 = -(avgvalue - avgvalue6) / 2
+    fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${avgvalue8 !== null ? avgvalue8.toFixed(2) : "n/a"} ${avgvalue8 !== null && (-100 < avgvalue8) && (avgvalue8 < 200) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
@@ -2920,171 +2567,167 @@ function print_re(log, t1, t2, head) {
     const gps_1 = log.get_instance("GPS", 1)
 
     let time = TimeUS_to_seconds(bat_0.TimeUS)
-    let bat_0_curr = bat_0.Curr 
+    let bat_0_curr = bat_0.Curr
     let bat_1_curr = bat_1.Curr
 
-    // Airspeed
+    //Airspeed
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t1, t2);
-    fieldset.innerHTML += `arsp_airspeed_avg (22.8<_<26 m/s): ${checkThreshold('cr', 'arsp_airspeed_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `arsp_airspeed_min (>19.8 m/s): ${checkThreshold('cr', 'arsp_airspeed_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `arsp_airspeed_max (<30 m/s): ${checkThreshold('cr', 'arsp_airspeed_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `arsp_airspeed_avg (22.8<_<25.2 m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (22.8 < avgvalue) && (avgvalue < 25.2) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `arsp_airspeed_min (>19.8 m/s): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (19.8 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `arsp_airspeed_max (<30 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 30) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Airspeed, t1, t1 + 30);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t1, t1 + 30);
-    avgvalue = (avgvalue2 - avgvalue);
-    fieldset.innerHTML += `arsp_delta_phasebeginning_30s (-0.6<_<0.6 m/s): ${checkThreshold('cr', 'arsp_delta_phasebeginning_30s', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    avgvalue = (avgvalue2 - avgvalue)
+    fieldset.innerHTML += `arsp_delta_phasebeginning_30s (-0.4<_<0.4 m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (-0.4 < avgvalue) && (avgvalue < 0.4) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Airspeed, t2 - 30, t2);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_1.TimeUS), arspd_1.Airspeed, t2 - 30, t2);
-    avgvalue = (avgvalue2 - avgvalue);
-    fieldset.innerHTML += `arsp_delta_phaseending_30s (-0.6<_<0.6 m/s): ${checkThreshold('cr', 'arsp_delta_phaseending_30s', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    avgvalue = (avgvalue2 - avgvalue)
+    fieldset.innerHTML += `arsp_delta_phaseending_30s (-0.4<_<0.4 m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (-0.4 < avgvalue) && (avgvalue < 0.4) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    // Attitude
+    //Attitude
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Roll, t1, t2);
-    fieldset.innerHTML += `att_roll_avg (-3<_<3 °): ${checkThreshold('cr', 'att_roll_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `att_roll_avg (-2<_<2 �): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (-2 < avgvalue) && (avgvalue < 2) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     if (-minvalue > maxvalue) {
-        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', minvalue)}`;
-    } else {
-        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', maxvalue)}`;
+        fieldset.innerHTML += `att_|roll|_max (<33 �): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (-minvalue < 33) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
     }
-    fieldset.innerHTML += "<br>";
-
+    else {
+        fieldset.innerHTML += `att_|roll|_max (<33 �): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 32) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    }
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
-    fieldset.innerHTML += `att_pitch_avg (0<_<6 °): ${checkThreshold('cr', 'att_pitch_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `att_pitch_max (<16 °): ${checkThreshold('cr', 'att_pitch_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // Battery 0
+    fieldset.innerHTML += `att_pitch_avg (0<_<5 �): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0 < avgvalue) && (avgvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_pitch_max (<16 �): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 16) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // batt 0 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_0_curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_avg (15<_<33 A): ${checkThreshold('cr', 'batt0_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (19 < avgvalue) && (avgvalue < 25) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    // Battery 1
+    // batt 1
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1_curr, t1, t2);
-    fieldset.innerHTML += `batt1_curr_avg (<1 A): ${checkThreshold('cr', 'batt1_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt1_curr_max (<4 A): ${checkThreshold('cr', 'batt1_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt1_curr_avg (<1 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (avgvalue < 1) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `batt1_curr_max (<4 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 4) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    // GPS
+    //GPS
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
-    fieldset.innerHTML += `gps0_sats_min (> 10 sats): ${checkThreshold('cr', 'gps0_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_1.TimeUS), gps_1.NSats, t1, t2);
-    fieldset.innerHTML += `gps1_sats_min (> 10 sats): ${checkThreshold('cr', 'gps1_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `gps0_sats_min (> 11 sats): ${minvalue !== null ? minvalue.toFixed(0) : "n/a"} ${minvalue !== null && (10.5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_1.NSats, t1, t2);
+    fieldset.innerHTML += `gps1_sats_min (> 11 sats): ${minvalue !== null ? minvalue.toFixed(0) : "n/a"} ${minvalue !== null && (10.5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    // RCOU
+
+
+    //RCOU
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C1, t1, t2);
-    fieldset.innerHTML += `rcou_c1_avg (1470<_<1530 ms): ${checkThreshold('cr', 'rcou_c1_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `rcou_c1_avg (1470<_< 1530 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1470 < avgvalue) && (avgvalue < 1530) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     if ((1500 - minvalue) > (maxvalue - 1500)) {
-        fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${checkThreshold('cr', 'rcou_|c1|_max', minvalue)}`;
-    } else {
-        fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${checkThreshold('cr', 'rcou_|c1|_max', maxvalue)}`;
+        fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (1400 < minvalue) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line brea
     }
-    fieldset.innerHTML += "<br>";
+    else {
+        fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 1600) ? "\u2705" : "\u274c"}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    }
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C2, t1, t2);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C4, t1, t2);
-    avgvalue = (avgvalue + avgvalue2) / 2;
-    fieldset.innerHTML += `rcou_c2+c4/2_avg (1485<_<1515 ms): ${checkThreshold('cr', 'rcou_c2+c4/2_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // Vibe
+    avgvalue = (avgvalue + avgvalue2) / 2
+    fieldset.innerHTML += `rcou_c2+c4/2_avg (1490<_< 1510 ms): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (1490 < avgvalue) && (avgvalue < 1510) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // vibe
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeX, t1, t2);
-    fieldset.innerHTML += `vibe_X_max (<5): ${checkThreshold('cr', 'vibe_X_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `vibe_X_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeY, t1, t2);
-    fieldset.innerHTML += `vibe_Y_max (<5): ${checkThreshold('cr', 'vibe_Y_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `vibe_Y_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
-    fieldset.innerHTML += `vibe_Z_max (<8): ${checkThreshold('cr', 'vibe_Z_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    return fieldset;
+    fieldset.innerHTML += `vibe_Z_max (<5): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
 
     return fieldset
 }
 
 function print_pl(log, t1, t2, h, head) {
-    let fieldset = document.createElement("fieldset");
+    // t1 and t2 are bounds between wp2 and set speed. t3 to calculate time of transition
+    let fieldset = document.createElement("fieldset")
 
-    let heading = document.createElement("legend");
-    heading.innerHTML = head;
-    fieldset.appendChild(heading);
+    let heading = document.createElement("legend")
+    heading.innerHTML = head
+    fieldset.appendChild(heading)
 
-    const bat_0 = log.get_instance("BAT", 0);
-    const gps_0 = log.get_instance("GPS", 0);
-    const arsp_1 = log.get_instance("ARSP", 1);
-    const tecs = log.get("TECS");
-    const att = log.get("ATT");
-    const ctun = log.get("CTUN");
-    const aetr = log.get("AETR");
+    const bat_0 = log.get_instance("BAT", 0)
+    const gps_0 = log.get_instance("GPS", 0)
+    const arsp_1 = log.get_instance("ARSP", 1)
+    const tecs = log.get("TECS")
+    const att = log.get("ATT")
+    const ctun = log.get("CTUN")
+    const aetr = log.get("AETR")
 
-    let time = TimeUS_to_seconds(bat_0.TimeUS);
+    let time = TimeUS_to_seconds(bat_0.TimeUS)
 
+    //Palier data
     fieldset.innerHTML += `palier_start (s): ${t1 !== null ? t1.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `palier_end (s): ${t2 !== null ? t2.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `palier_alt (m): ${h !== null ? h.toFixed(0) : "n/a"}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += "<br>";  // Add a line break
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.spdem, t1, t2);
-    fieldset.innerHTML += `palier_tas (m/s): ${checkThreshold('pr', 'palier_tas', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `palier_tas (m/s): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arsp_1.TimeUS), arsp_1.Airspeed, t1, t2);
-    fieldset.innerHTML += `palier_eas (m/s) : ${checkThreshold('pr', 'palier_eas', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `palier_eas (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    fieldset.innerHTML += `palier_gsp (m/s) : ${checkThreshold('pr', 'palier_gsp', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `palier_gsp (m/s) : ${avgvalue !== null ? avgvalue.toFixed(1) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.E2T, t1, t2);
-    fieldset.innerHTML += `palier_equivalent2true : ${checkThreshold('pr', 'palier_equivalent2true', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    time = (t2 - t1) / 60;
+    fieldset.innerHTML += `palier_equivalent2true : ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    time = (t2 - t1) / 60
     fieldset.innerHTML += `palier_duration (min) : ${time !== null ? time.toFixed(2) : "n/a"}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //AETR
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(aetr.TimeUS), aetr.Elev, t1, t2);
-    fieldset.innerHTML += `aetr_Elev_max (<2100): ${checkThreshold('pr', 'aetr_Elev_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `aetr_Elev_avg (300<_<1100): ${checkThreshold('pr', 'aetr_Elev_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `aetr_Elev_max (<2000): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 2000) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `aetr_Elev_avg (300<_<900): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (300 < avgvalue) && (avgvalue < 900) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //Attitude
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
-    fieldset.innerHTML += `att_pitch_avg (0<_<6 °): ${checkThreshold('pr', 'att_pitch_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `att_pitch_max (<16 °): ${checkThreshold('pr', 'att_pitch_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `att_pitch_avg (0<_<5 �): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (0 < avgvalue) && (avgvalue < 5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `att_pitch_max (<16 �): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 16) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    // batt 0 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${checkThreshold('pr', 'batt0_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `batt0_curr_avg (19<_<25 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (19 < avgvalue) && (avgvalue < 25) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //CTUN
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ctun.TimeUS), ctun.ThO, t1, t2);
-    fieldset.innerHTML += `ctun_ThO_avg (60<_<77 %): ${checkThreshold('pr', 'ctun_ThO_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `ctun_ThO_max (<97 %): ${checkThreshold('pr', 'ctun_ThO_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
+    fieldset.innerHTML += `ctun_ThO_avg (60<_<77 %): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (60 < avgvalue) && (avgvalue < 77) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `ctun_ThO_max (<90 %): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 90) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //TECS
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
-    fieldset.innerHTML += `att_Des-h_max_d (-15<_<15 m): ${checkThreshold('pr', 'att_Des-h_max_d', max_d)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (-12 < max_d) && (max_d < 12) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
-    return fieldset;
+    return fieldset
 }
 
 function print_ff(log, t1, t2, head) {
@@ -3103,90 +2746,83 @@ function print_ff(log, t1, t2, head) {
     const powr = log.get("POWR")
     const pm = log.get("PM")
 
-    // Battery 0
+    //Bat
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
-    fieldset.innerHTML += `batt0_volt_min (>42 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt0_volt_min (>43 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (43 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (<85 A): ${checkThreshold('ff', 'batt0_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt0_curr_avg (19<_<29 A): ${checkThreshold('ff', 'batt0_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt0_curr_max (<80 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 80) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `batt0_curr_avg (19<_<26 A): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (avgvalue > 19) && (avgvalue < 26) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
-    fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('ff', 'batt1_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt1_curr_max (< 250 A): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 250) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.CurrTot, t1, t2);
-    fieldset.innerHTML += `batt0_currTot (mAh): ${checkThreshold('ff', 'batt0_currTot', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt0_currTot (mAh): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue1, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.CurrTot, t1, t2);
-    fieldset.innerHTML += `batt1_currTot (mAh): ${checkThreshold('ff', 'batt1_currTot', maxvalue1)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `batt1_currTot (mAh): ${maxvalue1 !== null ? maxvalue1.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue2, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    minvalue = (maxvalue) / (0.001 * avgvalue * (t2 - t1));
-    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${checkThreshold('ff', 'batt0_consperkm', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1));
-    fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${checkThreshold('ff', 'batt0+1_consperkm', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // GPS
+    minvalue = (maxvalue) / (0.001 * avgvalue * (t2 - t1)) //Conso horaire batt_0
+    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1)) //Conso horaire batt_tot
+    fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //GPS
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
-    fieldset.innerHTML += `gps0_sats_min (>10 sats): ${checkThreshold('ff', 'gps0_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_1.TimeUS), gps_1.NSats, t1, t2);
-    fieldset.innerHTML += `gps1_sats_min (>10 sats): ${checkThreshold('ff', 'gps1_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // PM
+    fieldset.innerHTML += `gps0_sats_min (> 10 sats): ${minvalue !== null ? minvalue.toFixed(0) : "n/a"} ${minvalue !== null && (9.5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_1.NSats, t1, t2);
+    fieldset.innerHTML += `gps1_sats_min (> 10 sats): ${minvalue !== null ? minvalue.toFixed(0) : "n/a"} ${minvalue !== null && (9.5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //PM
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.Load, t1, t2);
     maxvalue = maxvalue / 10;
-    fieldset.innerHTML += `pm_load_max (<52 %): ${checkThreshold('ff', 'pm_load_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `pm_load_max (<52 %): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 52) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.IntE, t1, t2);
-    fieldset.innerHTML += `pm_InternalErrors (<1): ${checkThreshold('ff', 'pm_InternalErrors', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // POWR
+    fieldset.innerHTML += `pm_InternalErrors (<1): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 0.5) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //POWR
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.Vcc, t1, t2);
-    fieldset.innerHTML += `powr_Vcc_min (>5.08 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vcc_avg (>5.18 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `powr_Vcc_min (>5.1 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (5.1 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `powr_Vcc_avg (>5.2 V): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (5.2 < avgvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.VServo, t1, t2);
-    fieldset.innerHTML += `powr_Vservo_min (>4.80 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vservo_avg (>4.95 V): ${checkThreshold('ff', 'powr_Vservo_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // Vibe
+    fieldset.innerHTML += `powr_Vservo_min (>4.85 V): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (4.85 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    fieldset.innerHTML += `powr_Vservo_avg (>5 V): ${avgvalue !== null ? avgvalue.toFixed(2) : "n/a"} ${avgvalue !== null && (5 < avgvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //Vibe
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeX, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeX_max (<30): ${checkThreshold('ff', 'vibe0_VibeX_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `vibe0_VibeX_max (< 30): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 30) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeY, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeY_max (<30): ${checkThreshold('ff', 'vibe0_VibeY_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `vibe0_VibeY_max (< 30): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 30) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeZ_max (<30): ${checkThreshold('ff', 'vibe0_VibeZ_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    // XKF4
+    fieldset.innerHTML += `vibe0_VibeZ_max (< 30): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 30) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+    //Xkf4
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SV, t1, t2);
-    fieldset.innerHTML += `XKF4_SV_max (<0.68): ${checkThreshold('ff', 'XKF4_SV_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `XKF4_SV_max (< 0.6): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.6) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SP, t1, t2);
-    fieldset.innerHTML += `XKF4_SP_max (<0.68): ${checkThreshold('ff', 'XKF4_SP_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `XKF4_SP_max (< 0.6): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.6) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SH, t1, t2);
-    fieldset.innerHTML += `XKF4_SH_max (<0.68): ${checkThreshold('ff', 'XKF4_SH_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `XKF4_SH_max (< 0.6): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.6) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SM, t1, t2);
-    fieldset.innerHTML += `XKF4_SM_max (<0.68): ${checkThreshold('ff', 'XKF4_SM_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    fieldset.innerHTML += `XKF4_SM_max (< 0.6): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.6) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SVT, t1, t2);
-    fieldset.innerHTML += `XKF4_SVT_max (<0.75): ${checkThreshold('ff', 'XKF4_SVT_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-
-    return fieldset;
+    fieldset.innerHTML += `XKF4_SVT_max (< 0.65): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 0.65) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
 
     return fieldset
 }
@@ -3198,63 +2834,54 @@ function print_ffh(log, t1, t2, head) {
     let heading = document.createElement("legend")
     heading.innerHTML = head
     fieldset.appendChild(heading)
-    
+
     const rfnd_0 = log.get_instance("RFND", 0)
     const terr = log.get("TERR")
     const rcin = log.get("RCIN")
     const xkf1_0 = log.get_instance("XKF1", 0)
     let [start_ffh, end_ffh] = findFFH(TimeUS_to_seconds(xkf1_0.TimeUS), xkf1_0.PN, xkf1_0.PE, t1, t2)
 
-    // FFH
+    //FFH
     fieldset.innerHTML += `ffh_start (s): ${start_ffh !== null ? start_ffh.toFixed(0) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
     fieldset.innerHTML += `ffh_end (s): ${end_ffh !== null ? end_ffh.toFixed(0) : "n/a"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // RFND
+    //RFND
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rfnd_0.TimeUS), rfnd_0.Dist, start_ffh, end_ffh);
-    fieldset.innerHTML += `rfnd_Dist_min (>70 m): ${checkThreshold('fh', 'rfnd_Dist_min', minvalue)}`;
+    fieldset.innerHTML += `rfnd_Dist_min (>70 m): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (70 < minvalue) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // TERR
+    //TERR
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(terr.TimeUS), terr.CHeight, start_ffh, end_ffh);
-    fieldset.innerHTML += `terr_CHeight_min (>70 m): ${checkThreshold('fh', 'terr_CHeight_min', minvalue)}`;
+    fieldset.innerHTML += `terr_CHeight_min (>70 m): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (70 < minvalue) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // RCIN
+    //RCIN
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C1, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C1delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C1delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C1delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C2, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C2delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C2delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C2delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C4, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C4delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C4delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C4delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C6, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C6delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C6delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C6delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C7, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C7delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C7delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C7delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C8, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C8delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C8delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C8delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcin.TimeUS), rcin.C13, start_ffh, end_ffh);
     avgvalue = maxvalue - minvalue;
-    fieldset.innerHTML += `RCIN_C13delta_ms (< 20 ms): ${checkThreshold('fh', 'RCIN_C13delta_ms', avgvalue)}`;
+    fieldset.innerHTML += `RCIN_C13delta_ms (< 20 ms): ${avgvalue !== null ? avgvalue.toFixed(0) : "n/a"} ${avgvalue !== null && (avgvalue < 20) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
 
@@ -3274,83 +2901,34 @@ function print_ffresp(log, t1, t2, t3, t4, head) {
     const att = log.get("ATT")
     const tecs = log.get("TECS")
 
-    // ATT - Pitch
     let [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Pitch, att.DesPitch, t1, t2);
-    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Pitch_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 �): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-1 < avg_d) && (avg_d < 1) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 �): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 3) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<14 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 �): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 12) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // ATT - Roll
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Roll, att.DesRoll, t1, t2);
-    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${checkThreshold('re', 'att_Des-Roll_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 �): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-3 < avg_d) && (avg_d < 3) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('re', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 �): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 6) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_maxdelta (<30 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-Roll_maxdelta (<16 �): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // TECS - Height
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t3, t4);
-    fieldset.innerHTML += `att_Des-h_avg (-2<_<2 m): ${checkThreshold('re', 'att_Des-h_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-h_avg (-2<_<2 m): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-2 < avg_d) && (avg_d < 2) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${checkThreshold('re', 'att_Des-h_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-h_abs_avg (<5 m): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 5) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-h_maxdelta (<20 m): ${checkThreshold('re', 'att_Des-h_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-h_maxdelta (<16 m): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    // TECS - Speed
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.sp, tecs.spdem, t3, t4);
-    fieldset.innerHTML += `att_Des-sp_avg (-0.3<_<0.3 m/s): ${checkThreshold('re', 'att_Des-sp_avg', avg_d)}`;
+    fieldset.innerHTML += `att_Des-sp_avg (-0.3<_<0.3 m/s): ${avg_d !== null ? avg_d.toFixed(2) : "n/a"} ${avg_d !== null && (-0.3 < avg_d) && (avg_d < 0.3) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-sp_abs_avg (<3 m/s): ${checkThreshold('re', 'att_Des-sp_abs_avg', avg_d_abs)}`;
+    fieldset.innerHTML += `att_Des-sp_abs_avg (<3 m/s): ${avg_d_abs !== null ? avg_d_abs.toFixed(2) : "n/a"} ${avg_d_abs !== null && (avg_d_abs < 5) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${checkThreshold('re', 'att_Des-sp_maxdelta', max_d)}`;
+    fieldset.innerHTML += `att_Des-sp_maxdelta (<5 m/s): ${max_d !== null ? max_d.toFixed(2) : "n/a"} ${max_d !== null && (max_d < 16) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
-    return fieldset
-}
-
-function print_ffrespv(log, t1, t2, t3, t4, head) {
-    // response (regulation)
-    let fieldset = document.createElement("fieldset")
-
-    let heading = document.createElement("legend")
-    heading.innerHTML = head
-    fieldset.appendChild(heading)
-
-    const att = log.get("ATT")
-
-    // ATT - Pitch
-    let [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Pitch, att.DesPitch, t1, t2);
-    fieldset.innerHTML += `att_Des-Pitch_avg (-1<_<1 °): ${checkThreshold('re', 'att_Des-Pitch_avg', avg_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_abs_avg (<2 °): ${checkThreshold('re', 'att_Des-Pitch_abs_avg', avg_d_abs)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Pitch_maxdelta (<12 °): ${checkThreshold('re', 'att_Des-Pitch_maxdelta', max_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-
-    // ATT - Roll
-    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Roll, att.DesRoll, t1, t2);
-    fieldset.innerHTML += `att_Des-Roll_avg (-3<_<3 °): ${checkThreshold('re', 'att_Des-Roll_avg', avg_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_abs_avg (<6 °): ${checkThreshold('re', 'att_Des-Roll_abs_avg', avg_d_abs)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Roll_maxdelta (<30 °): ${checkThreshold('re', 'att_Des-Roll_maxdelta', max_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-
-    // ATT - Yaw
-    [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(att.TimeUS), att.Yaw, att.DesYaw, t1, t2);
-    fieldset.innerHTML += `att_Des-Yaw_avg (-5<_<5 °): ${checkThreshold('re', 'att_Des-Yaw_avg', avg_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Yaw_abs_avg (<10 °): ${checkThreshold('re', 'att_Des-Yaw_abs_avg', avg_d_abs)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-    fieldset.innerHTML += `att_Des-Yaw_maxdelta (<30 °): ${checkThreshold('re', 'att_Des-Yaw_maxdelta', max_d)}`;
-    fieldset.innerHTML += "<br>";  // Add a line break
-
-
 
     return fieldset
 }
@@ -3367,29 +2945,23 @@ function print_para(log, t1, t2, head) {
     const xkf1_0 = log.get_instance("XKF1", 0)
     const fpar = log.get("FPAR")
 
-    try {
-        let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
-        fieldset.innerHTML += `tecs_dh_min (>-6 m/s): ${checkThreshold('ch', 'tecs_dh_min', minvalue)}`;
-        fieldset.innerHTML += "<br>";  // Add a line break
-    }
-    catch (error) {
-        console.error('Error handling file:', error);
-    }
-    // TECS
-    
 
+    // TECS
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
+    fieldset.innerHTML += `tecs_dh_min (>-5 m/s): ${minvalue !== null ? minvalue.toFixed(2) : "n/a"} ${minvalue !== null && (-5 < minvalue) ? "\u2705" : "\u274c"}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
     // XKF1
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf1_0.TimeUS), xkf1_0.VD, t1, t2);
-    fieldset.innerHTML += `xkf1_VD_max (<6 m/s): ${checkThreshold('ch', 'xkf1_VD_max', maxvalue)}`;
+    fieldset.innerHTML += `xkf1_VD_max (<5 m/s): ${maxvalue !== null ? maxvalue.toFixed(2) : "n/a"} ${maxvalue !== null && (maxvalue < 5) ? "\u2705" : "\u274c"}`;
     fieldset.innerHTML += "<br>";  // Add a line break
-
     // FPAR
     if (fpar != null) {
         [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(fpar.TimeUS), fpar.sink_time, t1, t2);
-        fieldset.innerHTML += `fpar_sinktime_max (<1 ms):  ${checkThreshold('ch', 'fpar_sinktime_max', maxvalue)}`;
+        fieldset.innerHTML += `fpar_sinktime_max (<1 ms): ${maxvalue !== null ? maxvalue.toFixed(0) : "n/a"} ${maxvalue !== null && (maxvalue < 1) ? "\u2705" : "\u274c"}`;
         fieldset.innerHTML += "<br>";  // Add a line break
-    } else {
-        fieldset.innerHTML += `fpar_sinktime_max (<1 ms): ${"n/a"}`;
+    }
+    else {
+        fieldset.innerHTML += `fpar_sinktime_max (<1 ms): ${"n/a"} ${(0 < 1) ? "\u2705" : "\u274c"}`;
         fieldset.innerHTML += "<br>";  // Add a line break
     }
 
@@ -3442,18 +3014,18 @@ function load_can(log) {
             }
 
             // New obj
-            let can_obj = { 
+            let can_obj = {
                 name: CAND.Name[i],
                 version: CAND.Major[i] + "." + CAND.Minor[i],
                 UID1: CAND.UID1[i],
                 UID2: CAND.UID2[i],
-                hash: CAND.Version[i].toString(16).padStart(8, '0')
+                hash: CAND.Version[i].toString(16)
             }
 
             // Check for duplicates
             let found = false
             for (const existing of can[driver][node_id]) {
-                if ((existing.name == can_obj.name) && 
+                if ((existing.name == can_obj.name) &&
                     (existing.version == can_obj.version) &&
                     (existing.UID1 == can_obj.UID1) &&
                     (existing.UID2 == can_obj.UID2) &&
@@ -3553,7 +3125,7 @@ function load_waypoints(log) {
         link.title = "download file"
         link.innerHTML = mission_name
         link.href = "#"
-        link.addEventListener('click', function() {
+        link.addEventListener('click', function () {
             let text = "QGC WPL 110\n"
 
             let count = 0
@@ -3562,7 +3134,7 @@ function load_waypoints(log) {
                     continue
                 }
                 count++
-    
+
                 text += mission[j].sequence + "\t"
                 text += "0\t"
                 text += mission[j].frame + "\t"
@@ -3571,16 +3143,16 @@ function load_waypoints(log) {
                 text += mission[j].param2.toFixed(8) + "\t"
                 text += mission[j].param3.toFixed(8) + "\t"
                 text += mission[j].param4.toFixed(8) + "\t"
-                text += (mission[j].latitude / 10**7).toFixed(8) + "\t"
-                text += (mission[j].longitude / 10**7).toFixed(8) + "\t"
+                text += (mission[j].latitude / 10 ** 7).toFixed(8) + "\t"
+                text += (mission[j].longitude / 10 ** 7).toFixed(8) + "\t"
                 text += (mission[j].altitude).toFixed(6) + "\t"
                 text += "1\n"
             }
-    
+
             if (mission.command_total != count) {
                 alert("Mission incomplete")
             }
-    
+
             var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
             saveAs(blob, mission_name)
         })
@@ -3594,22 +3166,22 @@ function load_waypoints(log) {
         let missions = []
         let mission_inst = 0
         for (let i = 0; i < CMD.CTot.length; i++) {
-            const item = { 
-                command_total : CMD.CTot[i],
-                sequence      : CMD.CNum[i],
-                command       : CMD.CId[i],
-                param1        : CMD.Prm1[i],
-                param2        : CMD.Prm2[i],
-                param3        : CMD.Prm3[i],
-                param4        : CMD.Prm4[i],
-                latitude      : CMD.Lat[i],
-                longitude     : CMD.Lng[i],
-                altitude      : CMD.Alt[i],
-                frame         : CMD.Frame[i]
+            const item = {
+                command_total: CMD.CTot[i],
+                sequence: CMD.CNum[i],
+                command: CMD.CId[i],
+                param1: CMD.Prm1[i],
+                param2: CMD.Prm2[i],
+                param3: CMD.Prm3[i],
+                param4: CMD.Prm4[i],
+                latitude: CMD.Lat[i],
+                longitude: CMD.Lng[i],
+                altitude: CMD.Alt[i],
+                frame: CMD.Frame[i]
             }
 
             const index = item.sequence
-            if ((missions[mission_inst] != null) && 
+            if ((missions[mission_inst] != null) &&
                 ((item.command_total != missions[mission_inst].command_total) || !item_compare(item, missions[mission_inst][index]))) {
                 // Item does not match existing mission, start a new one
                 mission_inst++
@@ -3682,23 +3254,23 @@ function load_waypoints(log) {
                     continue
             }
 
-            const item = { 
-                command_total : FNCE.Tot[i],
-                sequence      : FNCE.Seq[i] + 1, // Offset by 1 since home it not included
-                command       : command,
-                param1        : p1,
-                param2        : 0,
-                param3        : 0,
-                param4        : 0,
-                latitude      : FNCE.Lat[i],
-                longitude     : FNCE.Lng[i],
-                altitude      : 0,
-                frame         : 0
+            const item = {
+                command_total: FNCE.Tot[i],
+                sequence: FNCE.Seq[i] + 1, // Offset by 1 since home it not included
+                command: command,
+                param1: p1,
+                param2: 0,
+                param3: 0,
+                param4: 0,
+                latitude: FNCE.Lat[i],
+                longitude: FNCE.Lng[i],
+                altitude: 0,
+                frame: 0
             }
 
             const index = item.sequence
-            if ((fences[fence_inst] != null) && 
-                ((item.command_total != fences[fence_inst].command_total) || !item_compare(item,fences[fence_inst][index]))) {
+            if ((fences[fence_inst] != null) &&
+                ((item.command_total != fences[fence_inst].command_total) || !item_compare(item, fences[fence_inst][index]))) {
                 // Item does not match existing fence, start a new one
                 fence_inst++
             }
@@ -3746,7 +3318,7 @@ function load_waypoints(log) {
                 const AP_alt_frame = (flags & 0b00011000) >> 3
 
                 if (alt_frame_valid) {
-                    switch(AP_alt_frame) {
+                    switch (AP_alt_frame) {
                         case 0: // Location::AltFrame::ABSOLUTE
                             alt_frame = 0 // MAV_FRAME_GLOBAL
                             break
@@ -3766,22 +3338,22 @@ function load_waypoints(log) {
                 }
             }
 
-            const item = { 
-                command_total : RALY.Tot[i],
-                sequence      : RALY.Seq[i] + 1, // Offset by 1 since home it not included
-                command       : 5100, // MAV_CMD_NAV_RALLY_POINT
-                param1        : 0,
-                param2        : 0,
-                param3        : 0,
-                param4        : 0,
-                latitude      : RALY.Lat[i],
-                longitude     : RALY.Lng[i],
-                altitude      : RALY.Alt[i],
-                frame         : alt_frame
+            const item = {
+                command_total: RALY.Tot[i],
+                sequence: RALY.Seq[i] + 1, // Offset by 1 since home it not included
+                command: 5100, // MAV_CMD_NAV_RALLY_POINT
+                param1: 0,
+                param2: 0,
+                param3: 0,
+                param4: 0,
+                latitude: RALY.Lat[i],
+                longitude: RALY.Lng[i],
+                altitude: RALY.Alt[i],
+                frame: alt_frame
             }
 
             const index = item.sequence
-            if ((rallypoints[rallyinst] != null) && 
+            if ((rallypoints[rallyinst] != null) &&
                 ((item.command_total != rallypoints[rallyinst].command_total) || !item_compare(item, rallypoints[rallyinst][index]))) {
                 // Item does not match existing points, start a new set
                 rallyinst++
@@ -3848,8 +3420,7 @@ function plot_data_rate(log) {
         for (const inst of Object.keys(log.messageTypes.UART.instances)) {
 
             // convert baud rate param value into baudrate
-            function map_baudrate(rate)
-            {
+            function map_baudrate(rate) {
                 if (rate == null) {
                     return
                 }
@@ -3859,39 +3430,39 @@ function plot_data_rate(log) {
                     rate = 57
                 }
                 switch (rate) {
-                    case 1:    return 1200
-                    case 2:    return 2400
-                    case 4:    return 4800
-                    case 9:    return 9600
-                    case 19:   return 19200
-                    case 38:   return 38400
-                    case 57:   return 57600
-                    case 100:  return 100000
-                    case 111:  return 111100
-                    case 115:  return 115200
-                    case 230:  return 230400
-                    case 256:  return 256000
-                    case 460:  return 460800
-                    case 500:  return 500000
-                    case 921:  return 921600
-                    case 1500:  return 1500000
-                    case 2000:  return 2000000
+                    case 1: return 1200
+                    case 2: return 2400
+                    case 4: return 4800
+                    case 9: return 9600
+                    case 19: return 19200
+                    case 38: return 38400
+                    case 57: return 57600
+                    case 100: return 100000
+                    case 111: return 111100
+                    case 115: return 115200
+                    case 230: return 230400
+                    case 256: return 256000
+                    case 460: return 460800
+                    case 500: return 500000
+                    case 921: return 921600
+                    case 1500: return 1500000
+                    case 2000: return 2000000
                 }
-            
+
                 if (rate > 2000) {
                     // assume it is a direct baudrate. This allows for users to
                     // set an exact baudrate as long as it is over 2000 baud
                     return rate
                 }
-            
+
                 // otherwise allow any other kbaud rate
                 return rate * 1000
             }
 
             const serial_protocols = {
                 "-1": "None",
-                 "0": "None",
-                 "1": "MAVLink1",
+                "0": "None",
+                "1": "MAVLink1",
                 "10": "FrSky SPort Passthrough (OpenTX)",
                 "11": "Lidar360",
                 "13": "Beacon",
@@ -3901,7 +3472,7 @@ function plot_data_rate(log) {
                 "17": "Devo Telemetry",
                 "18": "OpticalFlow",
                 "19": "RobotisServo",
-                 "2": "MAVLink2",
+                "2": "MAVLink2",
                 "20": "NMEA Output",
                 "21": "WindVane",
                 "22": "SLCAN",
@@ -3912,7 +3483,7 @@ function plot_data_rate(log) {
                 "27": "HottTelem",
                 "28": "Scripting",
                 "29": "Crossfire VTX",
-                 "3": "Frsky D",
+                "3": "Frsky D",
                 "30": "Generator",
                 "31": "Winch",
                 "32": "MSP",
@@ -3923,7 +3494,7 @@ function plot_data_rate(log) {
                 "37": "SmartAudio",
                 "38": "FETtecOneWire",
                 "39": "Torqeedo",
-                 "4": "Frsky SPort",
+                "4": "Frsky SPort",
                 "40": "AIS",
                 "41": "CoDevESC",
                 "42": "DisplayPort",
@@ -3931,10 +3502,10 @@ function plot_data_rate(log) {
                 "44": "IRC Tramp",
                 "45": "DDS XRCE",
                 "46": "IMUDATA",
-                 "5": "GPS",
-                 "7": "Alexmos Gimbal Serial",
-                 "8": "Gimbal",
-                 "9": "Rangefinder"
+                "5": "GPS",
+                "7": "Alexmos Gimbal Serial",
+                "8": "Gimbal",
+                "9": "Rangefinder"
             }
 
             // Get protocol and baud rate
@@ -3978,21 +3549,21 @@ function plot_data_rate(log) {
                 const bytes_per_sec = baud / 10
 
                 const limit_name = "Baud limit"
-                const limit_x = [time[0], time[time.length-1]]
+                const limit_x = [time[0], time[time.length - 1]]
                 const limit_y = [bytes_per_sec, bytes_per_sec]
 
-                data.push({ x: limit_x, y: limit_y, name: limit_name, meta: limit_name, mode: 'lines', hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} B/s", line: { dash: "dot", color: "#000000" },})
+                data.push({ x: limit_x, y: limit_y, name: limit_name, meta: limit_name, mode: 'lines', hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} B/s", line: { dash: "dot", color: "#000000" }, })
             }
 
-            const layout = { 
-                legend: {itemclick: false, itemdoubleclick: false }, 
+            const layout = {
+                legend: { itemclick: false, itemdoubleclick: false },
                 margin: { b: 50, l: 60, r: 50, t: 20 },
-                xaxis: { title: {text: "Time (s)" } },
-                yaxis: { title: {text: "Data rate (bytes/second)"}}
+                xaxis: { title: { text: "Time (s)" } },
+                yaxis: { title: { text: "Data rate (bytes/second)" } }
             }
 
             const plot_div = add_datarate(title)
-            Plotly.newPlot(plot_div, data, layout, {displaylogo: false});
+            Plotly.newPlot(plot_div, data, layout, { displaylogo: false });
 
         }
     }
@@ -4006,7 +3577,7 @@ function plot_data_rate(log) {
 
             const options = params["CAN_D" + driver_inst + "_UC_OPTION"]
             let FD = false
-            if ((options != null) && ((options & (1<<2)) != 0)) {
+            if ((options != null) && ((options & (1 << 2)) != 0)) {
                 FD = true
             }
 
@@ -4014,7 +3585,7 @@ function plot_data_rate(log) {
             for (let i = 1; i < 10; i++) {
                 const driver = params["CAN_P" + i + "_DRIVER"]
                 if (driver == driver_inst) {
-                    if (!FD) { 
+                    if (!FD) {
                         bitrate = parseInt(params["CAN_P" + i + "_BITRATE"])
                     } else {
                         bitrate = parseInt(params["CAN_P" + i + "_FDBITRATE"]) * 1000000
@@ -4025,7 +3596,7 @@ function plot_data_rate(log) {
 
             let title = "DroneCAN " + inst
             if (bitrate != null) {
-                title += ": " + (bitrate/1000000) + "Mbit/s"
+                title += ": " + (bitrate / 1000000) + "Mbit/s"
             }
 
             // Converting bitrate into a frame rate is a bit complicated.
@@ -4051,10 +3622,10 @@ function plot_data_rate(log) {
             let tx = new Array(len - 1)
             let rx = new Array(len - 1)
             let total = new Array(len - 1)
-            for (let i = 0; i<(len - 1); i++) {
-                const dt = time[i+1] - time[i]
-                tx[i] = (CANS_inst.T[i+1] - CANS_inst.T[i]) / dt
-                rx[i] = (CANS_inst.R[i+1] - CANS_inst.R[i]) / dt
+            for (let i = 0; i < (len - 1); i++) {
+                const dt = time[i + 1] - time[i]
+                tx[i] = (CANS_inst.T[i + 1] - CANS_inst.T[i]) / dt
+                rx[i] = (CANS_inst.R[i + 1] - CANS_inst.R[i]) / dt
                 total[i] = tx[i] + rx[i]
             }
 
@@ -4072,21 +3643,21 @@ function plot_data_rate(log) {
 
             if (max_frame_limit != null) {
                 const limit_name = "Worst case limit"
-                const limit_x = [time[0], time[time.length-1]]
+                const limit_x = [time[0], time[time.length - 1]]
                 const limit_y = [max_frame_limit, max_frame_limit]
 
-                data.push({ x: limit_x, y: limit_y, name: limit_name, meta: limit_name, mode: 'lines', hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} f/s", line: { dash: "dot", color: "#000000" },})
+                data.push({ x: limit_x, y: limit_y, name: limit_name, meta: limit_name, mode: 'lines', hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} f/s", line: { dash: "dot", color: "#000000" }, })
             }
 
-            const layout = { 
-                legend: {itemclick: false, itemdoubleclick: false }, 
+            const layout = {
+                legend: { itemclick: false, itemdoubleclick: false },
                 margin: { b: 50, l: 60, r: 50, t: 20 },
-                xaxis: { title: {text: "Time (s)" } },
-                yaxis: { title: {text: "Data rate (CAN frames/second)"}}
+                xaxis: { title: { text: "Time (s)" } },
+                yaxis: { title: { text: "Data rate (CAN frames/second)" } }
             }
 
             const plot_div = add_datarate(title)
-            Plotly.newPlot(plot_div, data, layout, {displaylogo: false});
+            Plotly.newPlot(plot_div, data, layout, { displaylogo: false });
 
             if (max_frame_limit != null) {
                 // Add a note to make the limit less scary
@@ -4098,33 +3669,6 @@ function plot_data_rate(log) {
             }
         }
     }
-}
-
-// Add a new warning to the top of the page
-function add_warning(image, content) {
-    const warning_section = document.getElementById("warnings")
-    warning_section.hidden = false
-    warning_section.previousElementSibling.hidden = false
-
-    const table = document.createElement("table")
-    warning_section.appendChild(table)
-
-    const row = document.createElement("tr")
-    table.appendChild(row)
-
-    const icon_cell = document.createElement("td")
-    row.appendChild(icon_cell)
-
-    const img = document.createElement("img")
-    img.style.width = "40px"
-    img.style.verticalAlign = "bottom"
-    img.src = "../images/" + image + ".svg"
-    icon_cell.appendChild(img)
-
-    const content_cell = document.createElement("td")
-    row.appendChild(content_cell)
-
-    content_cell.appendChild(content)
 }
 
 // micro seconds to seconds helpers
@@ -4169,9 +3713,9 @@ async function load_log(log_file) {
             // Already seen this param with a different value record change
             if (!(name in param_changes)) {
                 // Add original value
-                param_changes[name] = [{time: param_time[name], value: params[name]}]
+                param_changes[name] = [{ time: param_time[name], value: params[name] }]
             }
-            param_changes[name].push({time, value})
+            param_changes[name].push({ time, value })
         }
 
         params[name] = value
@@ -4251,15 +3795,15 @@ async function load_log(log_file) {
             para.appendChild(document.createElement("br"))
         }
 
-        const total_errors =  Math.max(...IOMC.Nerr)
+        const total_errors = Math.max(...IOMC.Nerr)
         para.appendChild(document.createTextNode("Flight Controller errors: " + total_errors + " " + (total_errors == 0 ? "\u2705" : "\u274C")))
         para.appendChild(document.createElement("br"))
 
-        const IOMCU_total_errors =  Math.max(...IOMC.Nerr2)
+        const IOMCU_total_errors = Math.max(...IOMC.Nerr2)
         para.appendChild(document.createTextNode("IOMCU errors: " + IOMCU_total_errors + " " + (IOMCU_total_errors == 0 ? "\u2705" : "\u274C")))
         para.appendChild(document.createElement("br"))
 
-        const delayed_packets =  Math.max(...IOMC.NDel)
+        const delayed_packets = Math.max(...IOMC.NDel)
         para.appendChild(document.createTextNode("Delayed packets: " + delayed_packets + " " + (delayed_packets == 0 ? "\u2705" : "\u274C")))
     }
 
@@ -4296,8 +3840,8 @@ async function load_log(log_file) {
             if ("instances" in log.messageTypes.IMU) {
                 for (const inst of Object.keys(log.messageTypes.IMU.instances)) {
                     const i = parseFloat(inst)
-                    Temperature.data[3+i].x = TimeUS_to_seconds(log.get_instance("IMU", inst, "TimeUS"))
-                    Temperature.data[3+i].y = log.get_instance("IMU", inst, "T")
+                    Temperature.data[3 + i].x = TimeUS_to_seconds(log.get_instance("IMU", inst, "TimeUS"))
+                    Temperature.data[3 + i].y = log.get_instance("IMU", inst, "T")
                 }
             }
         }
@@ -4356,7 +3900,7 @@ async function load_log(log_file) {
 
         performance_load.data[0].x = time
         performance_load.data[0].y = array_scale(PM.Load, 1 / 10)
-        
+
         Plotly.redraw(plot)
 
         // Memory
@@ -4391,12 +3935,14 @@ async function load_log(log_file) {
         for (const inst of Object.keys(log.messageTypes.STAK.instances)) {
             // Assume id, priority and name do not change
             const STAK_inst = log.get_instance("STAK", inst)
-            stack.push({ id: parseFloat(inst), 
-                         priority: STAK_inst.Pri[0],
-                         name: STAK_inst.Name[0],
-                         time: TimeUS_to_seconds(STAK_inst.TimeUS),
-                         total_size: STAK_inst.Total,
-                         free: STAK_inst.Free})
+            stack.push({
+                id: parseFloat(inst),
+                priority: STAK_inst.Pri[0],
+                name: STAK_inst.Name[0],
+                time: TimeUS_to_seconds(STAK_inst.TimeUS),
+                total_size: STAK_inst.Total,
+                free: STAK_inst.Free
+            })
         }
 
         // Sort by priority, most important first
@@ -4417,12 +3963,12 @@ async function load_log(log_file) {
         plot = document.getElementById("stack_mem")
         plot_visibility(plot, false)
         Plotly.purge(plot)
-        Plotly.newPlot(plot, stack_mem.data, stack_mem.layout, {displaylogo: false});
+        Plotly.newPlot(plot, stack_mem.data, stack_mem.layout, { displaylogo: false });
 
         plot = document.getElementById("stack_pct")
         plot_visibility(plot, false)
         Plotly.purge(plot)
-        Plotly.newPlot(plot, stack_pct.data, stack_pct.layout, {displaylogo: false});
+        Plotly.newPlot(plot, stack_pct.data, stack_pct.layout, { displaylogo: false });
 
     }
 
@@ -4450,26 +3996,9 @@ async function load_log(log_file) {
                 link.title = "download file"
                 link.innerHTML = name
                 link.href = "#"
-                link.addEventListener('click', function() { saveAs(new Blob([contents]), name) })
+                link.addEventListener('click', function () { saveAs(new Blob([contents]), name) })
 
                 para.appendChild(link)
-
-                if (name.endsWith("crash_dump.bin")) {
-                    // The dev-team want to hear about crash dumps.
-                    const content = document.createElement("div")
-                    content.appendChild(document.createTextNode("Crash dump file detected."))
-                    content.appendChild(document.createElement("br"))
-                    content.appendChild(document.createTextNode("For more information see ArduPilot "))
-
-                    const link = document.createElement("a")
-                    link.href = "https://ardupilot.org/copter/docs/common-watchdog.html#crash-dump"
-                    link.appendChild(document.createTextNode("documentation"))
-
-                    content.appendChild(link)
-                    content.appendChild(document.createTextNode("."))
-
-                    add_warning("exclamation-triangle-red", content)
-                }
 
             }
         }
@@ -4544,7 +4073,7 @@ async function load_log(log_file) {
             if (inst == 2) {
                 // Ignore blended instance
                 continue
-            } 
+            }
 
             const time_us = log.get_instance("GPS", inst, "TimeUS")
             const status = log.get_instance("GPS", inst, "Status")
@@ -4555,7 +4084,7 @@ async function load_log(log_file) {
             const drift_ms = new Array(len).fill(NaN)
             let first
             let have_drift = false
-            for (let i = 0; i<len; i++) {
+            for (let i = 0; i < len; i++) {
                 if (status[i] < 3) {
                     // Fix not good enough for valid time
                     continue
@@ -4614,9 +4143,9 @@ async function load_log(log_file) {
             const time_range_ms = (end_us - start_us) * 0.001
 
             // Set full scale to +-1000ppm so expected jitter does not look bad
-            const min_drift = time_range_ms * 1000 * 10**-6
+            const min_drift = time_range_ms * 1000 * 10 ** -6
             if (max_drift < min_drift) {
-                plot.layout.yaxis.range = [ -min_drift,  min_drift ]
+                plot.layout.yaxis.range = [-min_drift, min_drift]
                 plot.layout.yaxis.autorange = false
             }
 
@@ -4652,65 +4181,6 @@ async function load(e) {
 
 }
 
-
-async function load_2(e) {
-    reset();
-
-    let file;
-
-    if (typeof e === 'string') {
-        const filePath = e;
-        try {
-            const fileExists = await fs.stat(filePath);
-            if (!fileExists) {
-                console.log('File does not exist.');
-                return;
-            }
-
-            file = {
-                name: path.basename(filePath),
-                path: filePath,
-                async text() {
-                    return await fs.readFile(filePath, 'utf8');
-                }
-            };
-        } catch (error) {
-            console.error('Error handling file:', error);
-            return;
-        }
-    } else {
-        file = e.files[0];
-    }
-
-    if (file.name.toLowerCase().endsWith(".bin")) {
-        let reader = new FileReader();
-        return new Promise((resolve, reject) => {
-            reader.onload = function (e) {
-                loading_call(() => {
-                    try {
-                        let log = new DataflashParser();
-                        log.processData(reader.result, []);
-                        load_am(log);
-                        resolve(); // Résoudre la promesse ici une fois le traitement terminé
-                    } catch (error) {
-                        reject(error); // Rejeter la promesse en cas d'erreur
-                    }
-                });
-            };
-
-            if (typeof e === 'string') {
-                fs.readFile(file.path).then(buffer => {
-                    reader.readAsArrayBuffer(new Blob([buffer]));
-                }).catch(error => {
-                    reject(error);
-                });
-            } else {
-                reader.readAsArrayBuffer(file);
-            }
-        });
-    }
-}
-
 let Sensor_Offset = {}
 let Temperature = {}
 let Board_Voltage = {}
@@ -4736,8 +4206,7 @@ function reset() {
         section.previousElementSibling.hidden = true
     }
 
-
-    setup_section(document.getElementById("warnings"))
+    setup_section(document.getElementById("AM"))
     setup_section(document.getElementById("VER"))
     setup_section(document.getElementById("FC"))
     setup_section(document.getElementById("WDOG"))
@@ -4889,16 +4358,16 @@ function reset() {
             continue
         }
         const SR_prefix = "SR" + i + "_"
-        const SR_names = [ SR_prefix + "RAW_SENS", 
-                           SR_prefix + "EXT_STAT",
-                           SR_prefix + "RC_CHAN",
-                           SR_prefix + "RAW_CTRL",
-                           SR_prefix + "POSITION",
-                           SR_prefix + "EXTRA1",
-                           SR_prefix + "EXTRA2",
-                           SR_prefix + "EXTRA3",
-                           SR_prefix + "PARAMS",
-                           SR_prefix + "ADSB"]
+        const SR_names = [SR_prefix + "RAW_SENS",
+        SR_prefix + "EXT_STAT",
+        SR_prefix + "RC_CHAN",
+        SR_prefix + "RAW_CTRL",
+        SR_prefix + "POSITION",
+        SR_prefix + "EXTRA1",
+        SR_prefix + "EXTRA2",
+        SR_prefix + "EXTRA3",
+        SR_prefix + "PARAMS",
+        SR_prefix + "ADSB"]
         setup_minimal_param("param_stream_" + i, SR_names)
     }
 
@@ -4908,32 +4377,32 @@ function reset() {
     const offset_hover = "<extra></extra>%{meta}<br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>Z: %{z:.2f} m"
 
     let name = "GC"
-    Sensor_Offset.data[0] = { x: [0], y: [0], z: [0], mode: "markers", type: 'scatter3d', name: name, meta: name, marker: {color: 'rgb(0,0,0)'}, showlegend: false, hovertemplate: "<extra></extra>CG"}
+    Sensor_Offset.data[0] = { x: [0], y: [0], z: [0], mode: "markers", type: 'scatter3d', name: name, meta: name, marker: { color: 'rgb(0,0,0)' }, showlegend: false, hovertemplate: "<extra></extra>CG" }
 
     for (let i = 0; i < max_num_ins; i++) {
-        name = "IMU " + (i+1)
+        name = "IMU " + (i + 1)
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
     }
 
     for (let i = 0; i < max_num_gps; i++) {
         // Push two point for each GPS to allow ploting of master and slave
-        name = "GPS " + (i+1)
+        name = "GPS " + (i + 1)
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
     }
 
     for (let i = 0; i < max_num_rangefinder; i++) {
-        name = "Rangefinder " + (i+1)
+        name = "Rangefinder " + (i + 1)
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
     }
 
     for (let i = 0; i < max_num_flow; i++) {
-        name = "FLOW " + (i+1)
+        name = "FLOW " + (i + 1)
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
     }
 
     for (let i = 0; i < max_num_viso; i++) {
-        name = "VISO " + (i+1)
+        name = "VISO " + (i + 1)
         Sensor_Offset.data.push({ mode: "markers", type: 'scatter3d', name: name, meta: name, visible: false, hovertemplate: offset_hover })
     }
 
@@ -4942,38 +4411,40 @@ function reset() {
 
     // X
     const x_color = 'rgb(0,0,255)'
-    Sensor_Offset.data.push({type: "cone", x: [origin_size], y: [0], z: [0], u: [origin_size], v: [0], w: [0], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale:[[0, x_color], [1, x_color]]})
-    Sensor_Offset.data.push({type: 'scatter3d', mode: 'lines', x: [0,origin_size], y: [0,0], z: [0,0], showlegend: false, hoverinfo: "none", line: {color: x_color, width: 10 }})
+    Sensor_Offset.data.push({ type: "cone", x: [origin_size], y: [0], z: [0], u: [origin_size], v: [0], w: [0], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale: [[0, x_color], [1, x_color]] })
+    Sensor_Offset.data.push({ type: 'scatter3d', mode: 'lines', x: [0, origin_size], y: [0, 0], z: [0, 0], showlegend: false, hoverinfo: "none", line: { color: x_color, width: 10 } })
 
     // Y
     const y_color = 'rgb(255,0,0)'
-    Sensor_Offset.data.push({type: "cone", x: [0], y: [origin_size], z: [0], u: [0], v: [origin_size], w: [0], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale:[[0, y_color], [1, y_color]]})
-    Sensor_Offset.data.push({type: 'scatter3d', mode: 'lines', x: [0,0], y: [0,origin_size], z: [0,0], showlegend: false, hoverinfo: "none", line: {color: y_color, width: 10 }})
+    Sensor_Offset.data.push({ type: "cone", x: [0], y: [origin_size], z: [0], u: [0], v: [origin_size], w: [0], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale: [[0, y_color], [1, y_color]] })
+    Sensor_Offset.data.push({ type: 'scatter3d', mode: 'lines', x: [0, 0], y: [0, origin_size], z: [0, 0], showlegend: false, hoverinfo: "none", line: { color: y_color, width: 10 } })
 
     // Z
     const z_color = 'rgb(0,255,0)'
-    Sensor_Offset.data.push({type: "cone", x: [0], y: [0], z: [origin_size], u: [0], v: [0], w: [origin_size], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale:[[0, z_color], [1, z_color]]})
-    Sensor_Offset.data.push({type: 'scatter3d', mode: 'lines', x: [0,0], y: [0,0], z: [0,origin_size], showlegend: false, hoverinfo: "none", line: {color: z_color, width: 10 }})
+    Sensor_Offset.data.push({ type: "cone", x: [0], y: [0], z: [origin_size], u: [0], v: [0], w: [origin_size], sizemode: "raw", sizeref: cone_size, showscale: false, hoverinfo: "none", colorscale: [[0, z_color], [1, z_color]] })
+    Sensor_Offset.data.push({ type: 'scatter3d', mode: 'lines', x: [0, 0], y: [0, 0], z: [0, origin_size], showlegend: false, hoverinfo: "none", line: { color: z_color, width: 10 } })
 
     Sensor_Offset.layout = {
-        scene: { xaxis: {title: { text: "X offset, forward (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
-                 yaxis: {title: { text: "Y offset, right (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
-                 zaxis: {title: { text: "Z offset, down (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
-                 aspectratio: { x:0.75, y:0.75, z:0.75 },
-                 camera: {eye: { x:-1.25, y:1.25, z:1.25 }}},
+        scene: {
+            xaxis: { title: { text: "X offset, forward (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
+            yaxis: { title: { text: "Y offset, right (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
+            zaxis: { title: { text: "Z offset, down (m)" }, zeroline: false, showline: true, mirror: true, showspikes: false },
+            aspectratio: { x: 0.75, y: 0.75, z: 0.75 },
+            camera: { eye: { x: -1.25, y: 1.25, z: 1.25 } }
+        },
         showlegend: true,
-        legend: {itemclick: false, itemdoubleclick: false },
+        legend: { itemclick: false, itemdoubleclick: false },
         margin: { b: 50, l: 50, r: 50, t: 20 },
     }
 
     let plot = document.getElementById("POS_OFFSETS")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, Sensor_Offset.data, Sensor_Offset.layout, {displaylogo: false});
+    Plotly.newPlot(plot, Sensor_Offset.data, Sensor_Offset.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Temperature plot
     const time_scale_label = "Time (s)"
-    const temp_hover_tmmplate = "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} °C"
+    const temp_hover_tmmplate = "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} �C"
     Temperature.data = []
 
     name = "heater target"
@@ -4985,19 +4456,20 @@ function reset() {
     name = "MCU"
     Temperature.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: temp_hover_tmmplate })
     for (let i = 0; i < max_num_ins; i++) {
-        name = "IMU " + (i+1)
+        name = "IMU " + (i + 1)
         Temperature.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: temp_hover_tmmplate })
     }
 
-    Temperature.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Temperature (°C)" } }
-                         }
+    Temperature.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Temperature (�C)" } }
+    }
 
     plot = document.getElementById("Temperature")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, Temperature.data, Temperature.layout, {displaylogo: false});
+    Plotly.newPlot(plot, Temperature.data, Temperature.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
 
@@ -5005,7 +4477,7 @@ function reset() {
     const voltage_hover_tmmplate = "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} V"
     Board_Voltage.data = []
 
-    Board_Voltage.data.push({ line: {color: "transparent"}, fill: "toself", type: "scatter", showlegend: false, hoverinfo: 'none' })
+    Board_Voltage.data.push({ line: { color: "transparent" }, fill: "toself", type: "scatter", showlegend: false, hoverinfo: 'none' })
 
     name = "servo"
     Board_Voltage.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: voltage_hover_tmmplate })
@@ -5016,14 +4488,16 @@ function reset() {
     name = "MCU"
     Board_Voltage.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: voltage_hover_tmmplate })
 
-    Board_Voltage.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                             margin: { b: 50, l: 50, r: 50, t: 20 },
-                             xaxis: { title: {text: time_scale_label } },
-                             yaxis: { title: {text: "Voltage" }, rangemode: "tozero" } }
+    Board_Voltage.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Voltage" }, rangemode: "tozero" }
+    }
 
     plot = document.getElementById("Board_Voltage")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, Board_Voltage.data, Board_Voltage.layout, {displaylogo: false});
+    Plotly.newPlot(plot, Board_Voltage.data, Board_Voltage.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Performace load
@@ -5031,29 +4505,31 @@ function reset() {
 
     performance_load.data = [{ mode: 'lines', hovertemplate: "<extra></extra>%{x:.2f} s<br>%{y:.2f} %" }]
 
-    performance_load.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Load (%)" } }
-                         }
+    performance_load.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Load (%)" } }
+    }
 
     plot = document.getElementById("performance_load")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, performance_load.data, performance_load.layout, {displaylogo: false});
+    Plotly.newPlot(plot, performance_load.data, performance_load.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Performace memory
     performance_mem.data = [{ mode: 'lines', hovertemplate: "<extra></extra>%{x:.2f} s<br>%{y:.2f} B" }]
 
-    performance_mem.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 60, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Free memory (bytes)" } }
-                         }
+    performance_mem.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 60, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Free memory (bytes)" } }
+    }
 
     plot = document.getElementById("performance_mem")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, performance_mem.data, performance_mem.layout, {displaylogo: false});
+    Plotly.newPlot(plot, performance_mem.data, performance_mem.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Performace time
@@ -5067,36 +4543,39 @@ function reset() {
     name = "Average"
     performance_time.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: performance_time_hover })
 
-    performance_time.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Loop rate (Hz)" } }
-                         }
+    performance_time.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Loop rate (Hz)" } }
+    }
 
     plot = document.getElementById("performance_time")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, performance_time.data, performance_time.layout, {displaylogo: false});
+    Plotly.newPlot(plot, performance_time.data, performance_time.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Stack
     document.getElementById("Stack").hidden = true
 
     // Memory
-    stack_mem.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Free memory (bytes)" } }
-                         }
+    stack_mem.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Free memory (bytes)" } }
+    }
 
     plot = document.getElementById("stack_mem")
     plot_visibility(plot, true)
 
     // Percentage
-    stack_pct.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Memory usage (%)" } }
-                         }
+    stack_pct.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Memory usage (%)" } }
+    }
 
     plot = document.getElementById("stack_pct")
     plot_visibility(plot, true)
@@ -5107,15 +4586,16 @@ function reset() {
     // Log dropped packets
     log_dropped.data = [{ mode: 'lines', hovertemplate: "<extra></extra>%{x:.2f} s<br>%{y:.2f}" }]
 
-    log_dropped.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                           margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Dropped messages" } }
-                         }
+    log_dropped.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Dropped messages" } }
+    }
 
     plot = document.getElementById("log_dropped")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, log_dropped.data, log_dropped.layout, {displaylogo: false});
+    Plotly.newPlot(plot, log_dropped.data, log_dropped.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Log free buffer space
@@ -5132,33 +4612,37 @@ function reset() {
     name = "Minimum"
     log_buffer.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: log_buffer_hover })
 
-    log_buffer.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                          margin: { b: 50, l: 50, r: 50, t: 20 },
-                           xaxis: { title: {text: time_scale_label } },
-                           yaxis: { title: {text: "Free Buffer Space (bytes)" } }
-                        }
+    log_buffer.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "Free Buffer Space (bytes)" } }
+    }
 
     plot = document.getElementById("log_buffer")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, log_buffer.data, log_buffer.layout, {displaylogo: false});
+    Plotly.newPlot(plot, log_buffer.data, log_buffer.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Log Composition
-    log_stats.data = [ { type: 'pie', textposition: 'inside', textinfo: "label+percent",
-                         hovertemplate: '%{label}<br>%{value:,i} Bytes<br>%{percent}<extra></extra>'} ]
-    log_stats.layout = { showlegend: false,
-                         margin: { b: 10, l: 50, r: 50, t: 10 },
-                         }
+    log_stats.data = [{
+        type: 'pie', textposition: 'inside', textinfo: "label+percent",
+        hovertemplate: '%{label}<br>%{value:,i} Bytes<br>%{percent}<extra></extra>'
+    }]
+    log_stats.layout = {
+        showlegend: false,
+        margin: { b: 10, l: 50, r: 50, t: 10 },
+    }
 
     plot = document.getElementById("log_stats")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, log_stats.data, log_stats.layout, {displaylogo: false});
+    Plotly.newPlot(plot, log_stats.data, log_stats.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     // Clock drift
     clock_drift.data = []
-    clock_drift.layout = { 
-        legend: { itemclick: false, itemdoubleclick: false }, 
+    clock_drift.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
         margin: { b: 50, l: 50, r: 50, t: 20 },
         xaxis: { title: { text: time_scale_label } },
         yaxis: { title: { text: "Clock drift (ms)" } }
@@ -5166,7 +4650,7 @@ function reset() {
 
     plot = document.getElementById("clock_drift")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, clock_drift.data, clock_drift.layout, {displaylogo: false});
+    Plotly.newPlot(plot, clock_drift.data, clock_drift.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
 }
@@ -5196,8 +4680,8 @@ async function initial_load() {
 
     fetch("board_types.txt")
         .then((res) => {
-        return res.text();
-    }).then((data) => load_board_types(data));
+            return res.text();
+        }).then((data) => load_board_types(data));
 }
 
 function save_text(text, file_postfix) {
@@ -5215,29 +4699,26 @@ function save_text(text, file_postfix) {
 }
 
 function save_text_2(text, file_postfix, prfFilePath) {
-    // Obtenir le répertoire du fichier `.prf`
-    const path = require('path');
+    // Obtenir le r�pertoire du fichier `.prf`
     let prfDirectory = path.dirname(prfFilePath);
 
-    // Récupérer le nom du fichier `.prf`
-    // let log_file_name = path.basename(prfFilePath, path.extname(prfFilePath));
-    let log_file_name = document.getElementById("fileItem").value.replace(/.*[\/\\]/, '')
-
+    // R�cup�rer le nom du fichier `.prf`
+    let log_file_name = path.basename(prfFilePath, path.extname(prfFilePath));
 
     if (log_file_name.length === 0) {
         log_file_name = "log";
     }
 
-    // Générer le nom du fichier `.am`
-    const amFileName = (log_file_name.substr(0, log_file_name.lastIndexOf('.')) || log_file_name) + file_postfix
+    // G�n�rer le nom du fichier `.am`
+    const amFileName = log_file_name + file_postfix;
 
     // Construire le chemin complet pour le fichier `.am`
     const amFilePath = path.join(prfDirectory, amFileName);
 
     try {
-        // Sauvegarder le fichier dans le même répertoire que le fichier `.prf`
+        // Sauvegarder le fichier dans le m�me r�pertoire que le fichier `.prf`
         fs.writeFileSync(amFilePath, text, 'utf8');
-        console.log('Fichier enregistré avec succès sous ' + amFilePath);
+        console.log('Fichier enregistr� avec succ�s sous ' + amFilePath);
     } catch (error) {
         console.error('Erreur lors de la sauvegarde du fichier:', error);
     }
@@ -5309,527 +4790,3 @@ function save_minimal_parameters() {
 
 }
 
-// CREATE ALERT
-
-function sortFilesByDateDescending(files) {
-    // Fonction pour extraire la date d'un nom de fichier et la convertir en objet Date
-    function extractDate(fileName) {
-        // Supposer que le format est toujours "yyyy-mm-dd hh-mm-ss.am"
-        // Retirer l'extension .am
-        const baseName = fileName.replace('.am', '');
-        // Convertir le reste en format de date
-        const date = new Date(baseName.replace(/-/g, '/').replace(/ /, 'T'));
-        return date;
-    }
-
-    // Trier les fichiers par date décroissante
-    files.sort((a, b) => {
-        const dateA = extractDate(a.name);
-        const dateB = extractDate(b.name);
-        return dateB - dateA; // Pour décroissant
-    });
-
-    return files;
-}
-
-function sortFilesByDate(files) {
-    // Fonction pour extraire et construire un nombre basé sur les chiffres du nom de fichier
-    function extractNumericValue(filename) {
-        // Extraire tous les chiffres du nom de fichier et les concaténer
-        const numbers = filename.match(/\d+/g); // Trouver tous les groupes de chiffres
-        if (numbers) {
-            return parseInt(numbers.join(''), 10); // Concaténer les chiffres et les convertir en nombre
-        }
-        return -1; // Retourner -1 si aucun chiffre n'est trouvé (pour les fichiers non pertinents)
-    }
-
-    // Trier les fichiers en fonction du nombre extrait en ordre décroissant
-    files.sort((a, b) => {
-        const valueA = extractNumericValue(a.name);
-        const valueB = extractNumericValue(b.name);
-        return valueB - valueA; // Tri décroissant
-    });
-
-    return files;
-}
-
-function processAlert(files) {
-    var droneID = "";
-    var TOP = "";
-
-    // Récupérer la date sélectionnée dans le datePicker
-    var selectedDate = document.getElementById('datePicker').value;
-    var selectedDateObj = new Date(selectedDate); // Créer un objet Date à partir de la date sélectionnée
-
-    // Filtrer les fichiers avec une date >= à la date sélectionnée
-    files = files.filter(function (file) {
-        // Extraire uniquement le nom du fichier sans le chemin
-        var fileName = file.name.split('/').pop(); // '2024-09-23 12-12-05.bin' extrait depuis 'xxx/xxx/xxx/2024-09-23 12-12-05.bin'
-
-        // Extraire les 10 premiers caractères du nom du fichier (potentiellement la date)
-        var fileDateStr = fileName.substring(0, 10); // '2024-09-23'
-        var fileDateObj;
-
-        // Vérifier si la chaîne extraite est au format 'yyyy-mm-dd'
-        if (/^\d{4}-\d{2}-\d{2}$/.test(fileDateStr)) {
-            // Si oui, créer un objet Date à partir de cette chaîne
-            fileDateObj = new Date(fileDateStr);
-            console.log(fileDateObj);
-        } else {
-            // Sinon, utiliser la date de modification du fichier (lastModified)
-            fileDateObj = new Date(file.lastModified);
-        }
-
-        // Comparer les dates : on garde les fichiers plus récents ou égaux à la date sélectionnée
-        return fileDateObj >= selectedDateObj;
-    });
-
-    // Ici, tu peux continuer le reste de ta logique avec les fichiers filtrés
-    console.log(files); // Vérification des fichiers filtrés
-
-    // Fonction pour lire un fichier et exécuter un callback avec le contenu
-    function readFile(file) {
-        return new Promise((resolve, reject) => {
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                resolve(event.target.result);
-            };
-            reader.onerror = function () {
-                reject(new Error('Erreur lors de la lecture du fichier.'));
-            };
-            reader.readAsText(file);
-        });
-    }
-
-
-    // Lire le premier fichier pour obtenir droneID et TOP
-    readFile(files[0]).then(fileContent => {
-        var lines = fileContent.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes('Drone ID')) {
-                droneID = lines[i].split(':')[1].trim();
-            }
-            if (lines[i].includes('TOP')) {
-                TOP = lines[i].split(':')[1].trim();
-            }
-        }
-
-        // Lire les autres fichiers
-        var fileReadPromises = files.map(file => readFile(file));
-
-        Promise.all(fileReadPromises).then(fileContents => {
-            var currentDateTime = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-
-            var newWindowContent = `
-                <html>
-                <head>
-                    <title>Demande TakeOff</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 20px;
-                        }
-                        h1, h2 {
-                            border-bottom: 1px solid #ccc;
-                            padding-bottom: 5px;
-                            margin-bottom: 20px;
-                        }
-                        .form-group {
-                            display: grid;
-                            grid-template-columns: auto 1fr;
-                            align-items: center;
-                            margin-bottom: 10px;
-                        }
-                        .form-group label {
-                            margin: 0;
-                        }
-                        .form-group input[type="text"] {
-                            width: 100%;
-                            padding: 8px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                        }
-                        pre {
-                            background-color: #f4f4f4;
-                            padding: 10px;
-                            border-radius: 5px;
-                        }
-                        .text-group {
-                            display: flex;
-                            align-items: center;
-                            margin-bottom: 10px;
-                        }
-                        .text-group label {
-                            margin-right: 8px;
-                            width: 200px; /* Width for labels to align with textboxes */
-                        }
-                        .text-group input[type="text"] {
-                            flex: 1;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>DEMANDE D’AUTORISATION DE DÉCOLLAGE</h1>
-   
-    
-
-    
-                    <p><strong>DESTINATAIRE :</strong> RDOA</p>
-                    <p><strong>DE :</strong> AIRLOG</p>
-    
-                    <p><strong>DATE/HEURE :</strong> ${currentDateTime}</p>
-    
-                    <h2>DÉTAILS DE L'OPÉRATEUR DE DRONE :</h2>
-
-                    <div class="form-group">
-                        <label for="drone">Drones :</label>
-                        <input type="text" id="drone" placeholder="Quels sont les drones concernés...">
-                    </div>
-    
-                    <div class="form-group">
-                        <label for="nom-pilote">Nom du pilote :</label>
-                        <input type="text" id="nom-pilote" placeholder="Entrez le nom du pilote...">
-                    </div>
-    
-                    <div class="form-group">
-                        <label for="coordonnees-pilote">Coordonnées du pilote :</label>
-                        <input type="text" id="coordonnees-pilote" placeholder="Entrez les coordonnées du pilote...">
-                    </div>
-    
-                    <div class="form-group">
-                        <label for="lieu-decollage">Lieu de décollage : ${TOP}</label>
-                    </div>
-    
-                    <h2>DÉTAILS DE L'AUTORISATION :</h2>
-    
-                    <div class="text-group">
-                        <label for="log-prf-uploades">Log et Prf Uploadés :</label>
-                        <input type="text" id="log-prf-uploades" placeholder="Entrez des détails...">
-                    </div>
-    
-                    <div class="text-group">
-                        <label for="videos-vues">Vidéos visionnées :</label>
-                        <input type="text" id="videos-vues" placeholder="Entrez des détails...">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="heure">Heure de décollage estimée :</label>
-                        <input type="text" id="coordonnees-pilote" placeholder="Entrez l'heure de takeoff estimée'...">
-                    </div>
-                </body>
-                </html>
-                `;
-
-            fileContents.forEach((fileContent, index) => {
-                var lines = fileContent.split('\n');
-                var fileTitle = files[index].name.replace('.am', '');
-
-                //newWindowContent += `<h2>${fileTitle}</h2>`;
-
-                var alertlines = [];
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('Drone ID')) {
-                        droneID = lines[i].split(':')[1].trim();
-                    }
-                    if (lines[i].includes('ALERT')) {
-                        // alertlines.push(lines[i - 1]);
-                        alertlines.push(addThresholdInfo(lines[i - 1]));
-                    }
-                    if (lines[i].includes('Destination')) {
-                        alertlines.push(lines[i]);
-                    }
-                    if (lines[i].includes('Flight Time')) {
-                        alertlines.push(lines[i]);
-                    }
-                }
-
-                newWindowContent += `<br><br>`; // Ajouter deux sauts de ligne
-                var fileTitle = files[index].name.replace('.am', ' '+ droneID);
-
-                newWindowContent += `<h2>${fileTitle}</h2>`;
-                if (alertlines.length > 0) {
-                    newWindowContent += `<pre>${alertlines.join('\n')}</pre>`;
-                }
-            });
-
-            newWindowContent += `</body></html>`;
-
-            var newWindow = window.open('', '_blank');
-            newWindow.document.write(newWindowContent);
-            newWindow.document.close();
-        }).catch(error => {
-            console.error('Erreur lors de la lecture des fichiers:', error);
-        });
-    }).catch(error => {
-        console.error('Erreur lors de la lecture du premier fichier:', error);
-    });
-}
-
-function addThresholdInfo(line) {
-
-    var templine = line.replace("pa_", "pr_").replace("ca_", "cr_");
-
-    for (const threshold of thresholds) {
-        const step_champ = `${threshold.step}_${threshold.champ}`;
-        if (templine.startsWith(step_champ)) {
-            let minStr = threshold.min !== null ? threshold.min : '';
-            let maxStr = threshold.max !== null ? threshold.max : '';
-            // Insert (min, max) before the first ':' in the line
-            const parts = line.split(':');
-            if (parts.length > 1 && (threshold.min !== null || threshold.max !== null)) {
-                return `${parts[0]} (${minStr}, ${maxStr}):${parts.slice(1).join(':')}`;
-            }
-        }
-        
-    }
-    return line;
-}
-
-
-
-
-
-
-const fs = require('fs').promises; // Utiliser les promesses
-const path = require('path');
-
-
-
-
-
-// ELECTRON load all
-
-
-async function selectFolderAndProcess() {
-    try {
-        // Request the main process to open the dialog
-        const folderPath = await ipcRenderer.invoke('select-folder');
-
-        if (!folderPath) {
-            console.log('Aucun dossier sélectionné');
-            return;
-        }
-
-        console.log('Dossier sélectionné:', folderPath);
-        await processDirectory(folderPath);
-    } catch (error) {
-        console.error('Erreur lors de la sélection du dossier ou du traitement:', error);
-    }
-}
-
-
-async function processDirectory(folderPath,tasktype) {
-    try {
-        // Lire le contenu du dossier
-        const entries = await fs.readdir(folderPath, { withFileTypes: true });
-
-        // Filter for .prf files
-        const prfFiles = entries.filter(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
-        const prfFilePaths = prfFiles.map(file => path.join(folderPath, file.name));
-        const prfExists = prfFilePaths.length > 0;
-        console.log(`Fichiers .prf trouvés: ${prfFilePaths.join(', ')}`);
-
-        await Promise.all(entries.map(async (entry) => {
-            const entryPath = path.join(folderPath, entry.name);
-
-            if (entry.isDirectory()) {
-                // Traitement des sous-répertoires
-                await processDirectory(entryPath, tasktype); // récursif
-            } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.bin')) {
-
-                if (prfExists && check_date(entry)) {
-                    // Traitement du fichier .bin
-                    console.log(`Traitement du fichier .bin: ${entryPath}`);
-                    await Promise.all(prfFilePaths.map(async prfFilePath => {
-                        await processBinFile(entryPath, tasktype);
-                    }));
-                } else {
-                    console.log(`Ignoré: ${entry.name} car aucun fichier .prf n'a été trouvé dans le même dossier.`);
-                }
-            }
-        }));
-    } catch (error) {
-        console.error('Erreur lors du traitement du répertoire', error);
-    }
-}
-
-function check_date(file) {
-    var selectedDate = document.getElementById('datePicker').value;
-    var selectedDateObj = new Date(selectedDate); // Créer un objet Date à partir de la date sélectionnée
-
-    var fileName = file.name.split('/').pop(); // '2024-09-23 12-12-05.bin' extrait depuis 'xxx/xxx/xxx/2024-09-23 12-12-05.bin'
-
-    // Extraire les 10 premiers caractères du nom du fichier (potentiellement la date)
-    var fileDateStr = fileName.substring(0, 10); // '2024-09-23'
-    var fileDateObj;
-
-    // Vérifier si la chaîne extraite est au format 'yyyy-mm-dd'
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fileDateStr)) {
-        // Si oui, créer un objet Date à partir de cette chaîne
-        fileDateObj = new Date(fileDateStr);
-        console.log(fileDateObj);
-    } else {
-        // Sinon, utiliser la date de modification du fichier (lastModified)
-        fileDateObj = new Date(file.lastModified);
-    }
-
-    // Comparer les dates : on garde les fichiers plus récents ou égaux à la date sélectionnée
-    return fileDateObj >= selectedDateObj;
-}
-
-
-let queue = Promise.resolve(); // Initialisation de la file d'attente
-let processingInProgress = false;
-let fileCount = 0;
-let totalFiles = 0;
-
-async function processBinFile(binFilePath,tasktype) {
-    totalFiles++;  // On augmente le total de fichiers chaque fois qu'on ajoute un fichier à la file d'attente
-    let currentFile = ++fileCount;  // Incrémente le compteur des fichiers en cours de traitement
-
-    queue = queue
-        .then(() => {
-            console.log(`Fichier ${currentFile}/${totalFiles} de la file d'attente`);
-            return processTask(binFilePath, tasktype);
-        })
-        .catch(error => {
-            console.error('Erreur dans la file d\'attente :', error);
-        });
-}
-
-async function processTask(binFilePath,tasktype) {
-    if (processingInProgress) {
-        console.log('Un traitement est déjà en cours. Veuillez patienter.');
-        return;
-    }
-    reset();
-    processingInProgress = true;
-   
-
-    const directoryPath = path.dirname(binFilePath);
-    console.log(`bin trouvé ici : ${directoryPath}`);
-
-
-
-    try {
-        const entries = await fs.readdir(directoryPath, { withFileTypes: true });
-
-
-
-        const prfFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf'));
-        const amFile = entries.some(entry => entry.isFile() && entry.name.toLowerCase().includes('.am'));
-
-        if (amFile && (tasktype==1)) {
-            console.log(`Le .am est déjà compilé pour ${binFilePath}`);
-        }
-
-        if (prfFile && (!(amFile) || tasktype == 0)) {
-            const prfFilename = entries.find(entry => entry.isFile() && entry.name.toLowerCase().includes('.prf')).name;
-            const prfFilePath = path.join(directoryPath, prfFilename);
-            const prfContent = await fs.readFile(prfFilePath, 'utf8');
-
-            // Votre logique de traitement du contenu
-            const textBeforeBat = prfContent.split(/Bat1/)[0];
-            const prefixes = {
-                "Time Reader": "ti_",
-                "VTOL TakeOff": "to_",
-                "VTOL Landing": "la_",
-                "Transition": "tr_",
-                "Airbrake": "ab_",
-                "Away cruise": "ca_",
-                "Return cruise": "cr_",
-                "Palier Away": "pa_",
-                "Palier Return": "pr_",
-                "Full Flight Controls": "ff_",
-                "Far From Home (5km) Controls": "fh_",
-                "Response": "re_",
-                "Parachute Margin": "ch_"
-            };
-
-            await handleFileProcessing(binFilePath); // Attendre que load_2 se termine
-            const am_section = document.getElementById("AM");
-            const amSection = am_section.innerText;
-
-            const data = amSection.split('\n');
-            let sectionPrefix = "";
-
-            const processedData = data.map(line => {
-                if (!line.includes(':')) {
-                    sectionPrefix = prefixes[line.trim()] || "";
-                    return line;
-                } else {
-                    let lineWithoutParentheses = line.replace(/\(.*?\)/g, '').trim();
-                    lineWithoutParentheses = lineWithoutParentheses
-                        .replace(/\u2705/g, ': \u2705')
-                        .replace(/\u274C/g, ': \u274C');
-
-                    const [value, alert] = lineWithoutParentheses.split(/: (\u2705|\u274C)/);
-                    const valueLine = sectionPrefix + value.trim();
-                    let alertLine = alert ? sectionPrefix + value.trim() + "_a : " + alert : "";
-
-                    alertLine = alertLine.replace(/:(.*?_a)/, '_a');
-
-                    if (alert === '\u2705') {
-                        alertLine = alertLine.replace('\u2705', 'OK');
-                    } else if (alert === '\u274C') {
-                        alertLine = alertLine.replace('\u274C', 'ALERT');
-                    }
-
-                    return alert ? valueLine + "\n" + alertLine : valueLine;
-                }
-            }).join('\n');
-
-            const combinedData = textBeforeBat + "\n" + processedData;
-            const amFilePath = binFilePath.replace('.bin', '.am');
-
-            if (amFilePath.endsWith(".am")) {
-                await fs.writeFile(amFilePath, combinedData, 'utf8');
-                console.log(`Fichier .am généré et sauvegardé : ${amFilePath}`);
-            }
-            else {
-                console.log(`.am bad handling : ${amFilePath}`);
-            }
-            
-            reset()
-        } else {
-            if (!(prfFile)) {
-                console.log(`Aucun fichier .prf trouvé dans le même répertoire que ${binFilePath}`);
-            }
-        }
-    } catch (error) {
-        console.error(`Erreur lors du traitement du fichier .bin : ${binFilePath}`, error);
-    } finally {
-        processingInProgress = false;
-        
-    }
-}
-
-
-async function handleFile(e) {
-    try {
-        // e est un chemin de fichier
-        const filePath = e;
-
-        // Vérifiez si le fichier existe
-        const fileExists = await fs.stat(filePath);
-        if (!fileExists) {
-            console.log('File does not exist.');
-            return;
-        }
-
-        // Lire le contenu du fichier
-        const fileContent = await fs.readFile(filePath);
-        console.log('File content:', fileContent);
-
-        // Vous pouvez maintenant traiter le contenu du fichier comme nécessaire
-    } catch (error) {
-        console.error('Error handling file:', error);
-    }
-}
-
-async function handleFileProcessing(binFilePath) {
-    await load_2(binFilePath); // Attendre que load_2 se termine
-
-    const am_section = document.getElementById("AM");
-    console.log('load_2 is complete, and am_section is ready:', am_section);
-}
