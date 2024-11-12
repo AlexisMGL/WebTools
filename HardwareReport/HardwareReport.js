@@ -3066,7 +3066,7 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += "<br>";
 
     [avg_d, avg_d_abs, max_d] = findDeltas(TimeUS_to_seconds(tecs.TimeUS), tecs.h, tecs.hdem, t1, t2);
-    fieldset.innerHTML += `att_Des-h_max_d (-12<_<12 m): ${checkThreshold('pr', 'att_Des-h_max_d', max_d)}`;
+    fieldset.innerHTML += `att_Des-h_max_d (-15<_<15 m): ${checkThreshold('pr', 'att_Des-h_max_d', max_d)}`;
     fieldset.innerHTML += "<br>";
 
     return fieldset;
