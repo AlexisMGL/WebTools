@@ -24,12 +24,12 @@ const thresholds = [
     { step: 'pr', champ: 'palier_equivalent2true', min: null, max: null },
     { step: 'pr', champ: 'aetr_Elev_max', min: null, max: 2100 },
     { step: 'pr', champ: 'aetr_Elev_avg', min: 300, max: 1100 },
-    { step: 'pr', champ: 'att_pitch_avg', min: 0, max: 5 },
+    { step: 'pr', champ: 'att_pitch_avg', min: 0, max: 6 },
     { step: 'pr', champ: 'att_pitch_max', min: null, max: 16 },
     { step: 'pr', champ: 'batt0_curr_avg', min: 19, max: 25 },
     { step: 'pr', champ: 'ctun_ThO_avg', min: 60, max: 77 },
     { step: 'pr', champ: 'ctun_ThO_max', min: null, max: 97 },
-    { step: 'pr', champ: 'att_Des-h_max_d', min: -12, max: 12 },
+    { step: 'pr', champ: 'att_Des-h_max_d', min: -15, max: 15 },
 
     { step: 'to', champ: 'batt1_volt_min', min: 45, max: null },
     { step: 'to', champ: 'batt1_curr_max', min: null, max: 250 },
@@ -106,7 +106,7 @@ const thresholds = [
     { step: 'cr', champ: 'arsp_delta_phaseending_30s', min: -0.6, max: 0.6 },
     { step: 'cr', champ: 'att_roll_avg', min: -3, max: 3 },
     { step: 'cr', champ: 'att_|roll|_max', min: null, max: 35 },
-    { step: 'cr', champ: 'att_pitch_avg', min: 0, max: 5 },
+    { step: 'cr', champ: 'att_pitch_avg', min: 0, max: 6 },
     { step: 'cr', champ: 'att_pitch_max', min: null, max: 16 },
     { step: 'cr', champ: 'batt0_curr_avg', min: 15, max: 33 },
     { step: 'cr', champ: 'batt1_curr_avg', min: null, max: 1 },
@@ -2941,7 +2941,7 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";
 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
-    fieldset.innerHTML += `att_pitch_avg (0<_<5 °): ${checkThreshold('cr', 'att_pitch_avg', avgvalue)}`;
+    fieldset.innerHTML += `att_pitch_avg (0<_<6 °): ${checkThreshold('cr', 'att_pitch_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `att_pitch_max (<16 °): ${checkThreshold('cr', 'att_pitch_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
@@ -3050,7 +3050,7 @@ function print_pl(log, t1, t2, h, head) {
     fieldset.innerHTML += "<br>";
 
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(att.TimeUS), att.Pitch, t1, t2);
-    fieldset.innerHTML += `att_pitch_avg (0<_<5 °): ${checkThreshold('pr', 'att_pitch_avg', avgvalue)}`;
+    fieldset.innerHTML += `att_pitch_avg (0<_<6 °): ${checkThreshold('pr', 'att_pitch_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     fieldset.innerHTML += `att_pitch_max (<16 °): ${checkThreshold('pr', 'att_pitch_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
