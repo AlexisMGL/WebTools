@@ -1864,6 +1864,7 @@ function load_am(log) {
     const top = findTOP(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["VTOL Takeoff"])
 
     fs_tm.innerHTML += `TOP: ${top}`;
+    fs_tm.innerHTML += "<br>";  // Add a line break
     try {
         if (time_mark["Payload Drop"] != "Message non trouvé") {
             const [latdrop, lngdrop] = dropPoint(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["Payload Drop"])
