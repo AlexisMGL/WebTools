@@ -33,7 +33,7 @@ const thresholds = [
 
     { step: 'to', champ: 'batt1_volt_min', min: 45, max: null },
     { step: 'to', champ: 'batt1_curr_max', min: null, max: 250 },
-    { step: 'to', champ: 'batt1_curr_avg', min: null, max: 150 },
+    { step: 'to', champ: 'batt1_curr_avg', min: null, max: 160 },
     { step: 'to', champ: 'rcou_C5_max', min: null, max: 1980 },
     { step: 'to', champ: 'rcou_C5_avg', min: 1550, max: 1850 },
     { step: 'to', champ: 'rcou_C6_max', min: null, max: 1980 },
@@ -51,9 +51,9 @@ const thresholds = [
     { step: 'to', champ: 'qtun_ThO_avg', min: 0.35, max: 0.65 },
     { step: 'to', champ: 'qtun_ThH_est', min: 0.10, max: 0.45 },
 
-    { step: 'la', champ: 'batt1_volt_min', min: 42, max: null },
+    { step: 'la', champ: 'batt1_volt_min', min: 41.2, max: null },
     { step: 'la', champ: 'batt1_curr_max', min: null, max: 250 },
-    { step: 'la', champ: 'batt1_curr_avg', min: null, max: 150 },
+    { step: 'la', champ: 'batt1_curr_avg', min: null, max: 160 },
     { step: 'la', champ: 'rcou_C5_max', min: null, max: 1940 },
     { step: 'la', champ: 'rcou_C5_avg', min: 1300, max: 1800 },
     { step: 'la', champ: 'rcou_C6_max', min: null, max: 1940 },
@@ -119,7 +119,7 @@ const thresholds = [
     { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1485, max: 1515 },
     { step: 'cr', champ: 'vibe_X_max', min: null, max: 5 },
     { step: 'cr', champ: 'vibe_Y_max', min: null, max: 5 },
-    { step: 'cr', champ: 'vibe_Z_max', min: null, max: 8 },
+    { step: 'cr', champ: 'vibe_Z_max', min: null, max: 10 },
 
     { step: 'ff', champ: 'batt0_volt_min', min: 42, max: null },
     { step: 'ff', champ: 'batt0_curr_max', min: null, max: 85 },
@@ -134,12 +134,13 @@ const thresholds = [
     { step: 'ff', champ: 'pm_load_max', min: null, max: 52 },
     { step: 'ff', champ: 'pm_InternalErrors', min: null, max: 1 },
     { step: 'ff', champ: 'powr_Vcc_min', min: 5.08, max: null },
-    { step: 'ff', champ: 'powr_Vcc_avg', min: 5.18, max: null },
+    { step: 'ff', champ: 'powr_Vcc_avg', min: 5.14, max: null },
     { step: 'ff', champ: 'powr_Vservo_min', min: 4.80, max: null },
     { step: 'ff', champ: 'powr_Vservo_avg', min: 4.95, max: null },
     { step: 'ff', champ: 'vibe0_VibeX_max', min: null, max: 35 },
     { step: 'ff', champ: 'vibe0_VibeY_max', min: null, max: 35 },
     { step: 'ff', champ: 'vibe0_VibeZ_max', min: null, max: 35 },
+    { step: 'ff', champ: 'arspd0_Temp_max', min: null, max: 45 },
     { step: 'ff', champ: 'XKF4_SV_max', min: null, max: 0.68 },
     { step: 'ff', champ: 'XKF4_SP_max', min: null, max: 0.68 },
     { step: 'ff', champ: 'XKF4_SH_max', min: null, max: 0.68 },
@@ -2631,7 +2632,7 @@ function print_to(log,t1,t2,head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('to', 'batt1_curr_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";  // Add another line break
-    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${checkThreshold('to', 'batt1_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += `batt1_curr_avg (<160 A): ${checkThreshold('to', 'batt1_curr_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";  // Add another line break
     //RCOU
     [minvalue, maxvalue, avgvalue5] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C5, t1, t2);
@@ -2698,14 +2699,14 @@ function print_la(log, t1, t2, head) {
 
     // batt 1 volt
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_volt, t1, t2);
-    fieldset.innerHTML += `batt1_volt_min (>42 V): ${checkThreshold('la', 'batt1_volt_min', minvalue)}`;
+    fieldset.innerHTML += `batt1_volt_min (>41.2 V): ${checkThreshold('la', 'batt1_volt_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // batt 1 curr
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(time, bat_1_curr, t1, t2);
     fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('la', 'batt1_curr_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt1_curr_avg (<150 A): ${checkThreshold('la', 'batt1_curr_avg', avgvalue)}`;
+    fieldset.innerHTML += `batt1_curr_avg (<160 A): ${checkThreshold('la', 'batt1_curr_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // RCOU C5
@@ -3008,7 +3009,7 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += `vibe_Y_max (<5): ${checkThreshold('cr', 'vibe_Y_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
-    fieldset.innerHTML += `vibe_Z_max (<8): ${checkThreshold('cr', 'vibe_Z_max', maxvalue)}`;
+    fieldset.innerHTML += `vibe_Z_max (<10): ${checkThreshold('cr', 'vibe_Z_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
 
     return fieldset;
@@ -3098,6 +3099,7 @@ function print_ff(log, t1, t2, head) {
     fieldset.appendChild(heading)
 
     const bat_0 = log.get_instance("BAT", 0)
+    const arspd_0 = log.get_instance("ARSP", 0)
     const bat_1 = log.get_instance("BAT", 1)
     const vibe_0 = log.get_instance("VIBE", 0)
     const gps_0 = log.get_instance("GPS", 0)
@@ -3153,7 +3155,7 @@ function print_ff(log, t1, t2, head) {
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.Vcc, t1, t2);
     fieldset.innerHTML += `powr_Vcc_min (>5.08 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
     fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vcc_avg (>5.18 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
+    fieldset.innerHTML += `powr_Vcc_avg (>5.14 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.VServo, t1, t2);
     fieldset.innerHTML += `powr_Vservo_min (>4.80 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
@@ -3170,6 +3172,11 @@ function print_ff(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
     fieldset.innerHTML += `vibe0_VibeZ_max (<30): ${checkThreshold('ff', 'vibe0_VibeZ_max', maxvalue)}`;
+    fieldset.innerHTML += "<br>";
+
+    // Temp
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp, t1, t2);
+    fieldset.innerHTML += `arspd0_Temp_max (<45): ${checkThreshold('ff', 'arspd0_Temp_max', maxvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // XKF4
