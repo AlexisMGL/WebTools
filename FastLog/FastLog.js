@@ -83,6 +83,7 @@ const thresholds = [
     { step: 'tr', champ: 'rcou_backC6C8_avg', min: 1200, max: 1750 },
     { step: 'tr', champ: 'rcou_frontC5C7_avg', min: 1200, max: 1750 },
     { step: 'tr', champ: 'rcou_motordeseq_avg', min: -100, max: 200 },
+    { step: 'tr', champ: 'transition_alt', min: 65, max: 110 },
     { step: 'tr', champ: 'transition_time', min: 10, max: 18 },
 
     { step: 'ab', champ: 'batt0_curr_max', min: null, max: 35 },
@@ -2596,6 +2597,16 @@ function dropPoint(time, lat, lng, t1) {
     return [lat0,lng0];
 }
 
+function transition_alt(time, alt, t1) {
+
+    let start = 0;
+
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+    return alt[start]
+}
+
 function print_to(log,t1,t2,head) {
     let fieldset = document.createElement("fieldset")
 
@@ -2768,6 +2779,7 @@ function print_tr(log, t1, t2, t3, head) {
     fieldset.appendChild(heading);
 
     const bat_0 = log.get_instance("BAT", 0);
+    const rfnd_0 = log.get_instance("RFND", 0)
     const rcou = log.get("RCOU");
 
     let time = TimeUS_to_seconds(bat_0.TimeUS);
@@ -2814,6 +2826,11 @@ function print_tr(log, t1, t2, t3, head) {
 
     const motordeseqAvg = (avgvalueBack - avgvalueFront) / 2;
     fieldset.innerHTML += `rcou_motordeseq_avg (-100<_<200 ms): ${checkThreshold('tr', 'rcou_motordeseq_avg', motordeseqAvg)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+    //Transition alt
+    const tr_alt = transition_alt(TimeUS_to_seconds(rfnd_0.TimeUS),rfnd_0.Dist,t1)
+    fieldset.innerHTML += `transition_alt (65<_<110 m): ${checkThreshold('tr', 'transition_alt', tr_alt)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // Transition time
@@ -4579,7 +4596,7 @@ async function load(e) {
         return
     }
 
-    document.title = "Hardware Report: " + file.name
+    document.title = "FastLog: " + file.name
 
     if (file.name.toLowerCase().endsWith(".bin")) {
         let reader = new FileReader()
@@ -4667,7 +4684,7 @@ let log_stats = {}
 let clock_drift = {}
 function reset() {
 
-    document.title = "ArduPilot Hardware Report"
+    document.title = "AerialMetric FastLog"
 
     function setup_section(section) {
         // Remove all children
