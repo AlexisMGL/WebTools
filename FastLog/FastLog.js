@@ -2953,7 +2953,7 @@ function print_re(log, t1, t2, head) {
     fieldset.innerHTML += `att_roll_avg (-3<_<3 °): ${checkThreshold('cr', 'att_roll_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
     if (-minvalue > maxvalue) {
-        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', minvalue)}`;
+        fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', -minvalue)}`;
     } else {
         fieldset.innerHTML += `att_|roll|_max (<35 °): ${checkThreshold('cr', 'att_|roll|_max', maxvalue)}`;
     }
