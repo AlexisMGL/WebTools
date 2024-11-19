@@ -1870,7 +1870,6 @@ function load_am(log) {
     try {
         if (time_mark["Payload Drop"] != "Message non trouvé") {
             const [latdrop, lngdrop] = dropPoint(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Lat, gps_0.Lng, time_mark["Payload Drop"])
-            fs_tm.innerHTML += "<br>";  // Add a line break
             fs_tm.innerHTML += `Drop_lat: ${latdrop}`;
             fs_tm.innerHTML += "<br>";  // Add a line break
             fs_tm.innerHTML += `Drop_lng: ${lngdrop}`;
