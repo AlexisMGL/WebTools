@@ -180,6 +180,7 @@ const thresholds = [
     { step: 'ch', champ: 'xkf1_VD_max', min: null, max: 6 },
     { step: 'ch', champ: 'fpar_sinktime_max', min: null, max: 1 },
 
+    { step: 'pm', champ: 'Warnings', min: null, max: 1 },
 ];
 
 function checkThreshold(step, champ, value) {
@@ -196,6 +197,21 @@ function checkThreshold(step, champ, value) {
     }
 
     return value !== null ? `${value.toFixed(2)} ${withinMin && withinMax ? "\u2705" : "\u274c"}` : "n/a";
+}
+
+function checkThresholdParam(step, champ, value, str) {
+    // Recherche le seuil correspondant dans la base de données
+    const threshold = thresholds.find(th => th.step === step && th.champ === champ);
+    if (!threshold) return "n/a";
+
+    // Vérifie si la valeur est dans les limites définies
+    const withinMin = threshold.min === null || value > threshold.min;
+    const withinMax = threshold.max === null || value < threshold.max;
+
+    if (threshold.min === null && threshold.max === null) {
+        return value !== null ? `${value.toFixed(2)}` : "n/a";
+    }
+    return value == 0 ? `OK ${withinMin && withinMax ? "\u2705" : "\u274c"}` : `${str} ${withinMin && withinMax ? "\u2705" : "\u274c"}`;
 }
 
 async function check_release(hash, paragraph) {
@@ -2025,8 +2041,9 @@ function load_am(log) {
         column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
         table_ff.appendChild(column_para)
     }
-    
-
+    let column_param = document.createElement("table")
+    column_param.appendChild(compare_param(log,"Parameters Warnings","references.param"))
+    am_section.appendChild(column_param);
     
 
 
@@ -2106,7 +2123,8 @@ function load_am(log) {
                     "Full Flight Controls": "ff_",
                     "Far From Home (5km) Controls": "fh_",
                     "Response": "re_",
-                    "Parachute Margin": "ch_"
+                    "Parachute Margin": "ch_",
+                    "Parameters Warnings": "pm_"
                 };
 
                 // Ajouter le bouton pour télécharger le fichier avec le texte extrait
@@ -3407,6 +3425,72 @@ function print_para(log, t1, t2, head) {
 
     return fieldset
 }
+
+function compare_param(log, head, referenceFilePath) {
+    let params_all_text = get_param_download_text(params); // Récupération des paramètres actuels
+    let reference_params = "";
+    const fieldset = document.createElement("fieldset");
+    fieldset.innerHTML += `<legend>${head}</legend>`;
+    const fieldsettemp = document.createElement("fieldset");
+
+    // Lecture du fichier de référence
+    fetch(referenceFilePath)
+        .then(response => response.text())
+        .then(data => {
+            // Remplacer les sauts de ligne par des espaces et nettoyer les espaces superflus
+            reference_params = data.replace(/\s+/g, " ").trim();
+
+            // Transformer params_all et reference_params en objets pour une recherche facile
+            const parseParams = (params) =>
+                Object.fromEntries(
+                    params
+                        .trim()
+                        .split(" ")
+                        .map(p => {
+                            const [key, ...values] = p.split(",").map(s => s.trim());
+                            return [key, values.length > 1 ? values : values[0]];
+                        })
+                );
+
+            const paramsObj = parseParams(params_all_text.replace(/\s+/g, " ").trim()); // Nettoyer params_all_text aussi
+            const referenceObj = parseParams(reference_params);
+
+            // Ajouter la légende au fieldset
+            
+
+            // Compteur de différences
+            let differenceCount = 0;
+
+            // Trouver et afficher les différences
+            for (let key in paramsObj) {
+                const currentValue = paramsObj[key];
+                const referenceValue = referenceObj[key];
+
+                if (referenceValue !== undefined) {
+                    const isValid =
+                        Array.isArray(referenceValue)
+                            ? referenceValue.includes(currentValue) // Vérifie si la valeur actuelle est dans les valeurs autorisées
+                            : referenceValue === currentValue; // Comparaison simple pour une seule valeur
+
+                    if (!isValid) {
+                        differenceCount++;
+                        fieldsettemp.innerHTML += `${key},${currentValue} (${Array.isArray(referenceValue) ? referenceValue.join("/") : referenceValue}) //`;
+                    }
+                }
+            }
+            fieldset.innerHTML += `Param_Warnings : ${checkThresholdParam('pm', 'Warnings', differenceCount, fieldsettemp.innerHTML)}<br>`;
+        })
+        .catch(err => console.error("Erreur lors de la lecture du fichier de référence :", err));
+
+    return fieldset;
+}
+
+
+
+
+
+
+
 
 function load_param_file(text) {
     var lines = text.split('\n')
@@ -5708,7 +5792,8 @@ async function processTask(binFilePath,tasktype) {
                 "Full Flight Controls": "ff_",
                 "Far From Home (5km) Controls": "fh_",
                 "Response": "re_",
-                "Parachute Margin": "ch_"
+                "Parachute Margin": "ch_",
+                "Parameters Warnings": "pm_"
             };
 
             await handleFileProcessing(binFilePath); // Attendre que load_2 se termine
