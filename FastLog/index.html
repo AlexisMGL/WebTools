@@ -74,6 +74,7 @@
         function selectFolder() {
             ipcRenderer.invoke('select-folder').then((folderPath) => {
                 if (folderPath) {
+                    loadReferenceFile("./references.param")
                     document.getElementById('VER').innerText = `Selected folder: ${folderPath}`;
                     document.getElementById('OpenIn').disabled = false;
                     processDirectory(folderPath,0);
@@ -84,6 +85,7 @@
         function selectFolder2() {
             ipcRenderer.invoke('select-folder').then((folderPath) => {
                 if (folderPath) {
+                    loadReferenceFile("./references.param")
                     document.getElementById('VER').innerText = `Selected folder: ${folderPath}`;
                     document.getElementById('OpenIn').disabled = false;
                     processDirectory(folderPath,1);

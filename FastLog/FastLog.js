@@ -1826,6 +1826,7 @@ function update_minimal_config() {
 }
 
 function load_params(log) {
+    loadReferenceFile("./references.param")
     load_am(log)
     load_ins(log)
     load_compass(log)
@@ -2042,7 +2043,8 @@ function load_am(log) {
         table_ff.appendChild(column_para)
     }
     let column_param = document.createElement("table")
-    column_param.appendChild(compare_param(log,"Parameters Warnings","references.param"))
+    // column_param.appendChild(compare_param(log, "Parameters Warnings", "references.param"))
+    column_param.appendChild(compareParam(log, "Parameters Warnings"))
     am_section.appendChild(column_param);
     
 
@@ -3426,61 +3428,74 @@ function print_para(log, t1, t2, head) {
     return fieldset
 }
 
-function compare_param(log, head, referenceFilePath) {
-    let params_all_text = get_param_download_text(params); // Récupération des paramètres actuels
-    let reference_params = "";
-    const fieldset = document.createElement("fieldset");
-    fieldset.innerHTML += `<legend>${head}</legend>`;
-    const fieldsettemp = document.createElement("fieldset");
+// Global variable to store reference parameters
+let referenceParams = {};
 
-    // Lecture du fichier de référence
-    fetch(referenceFilePath)
+// Function to read the reference file and store its contents globally
+function loadReferenceFile(referenceFilePath) {
+    return fetch(referenceFilePath)
         .then(response => response.text())
         .then(data => {
-            // Remplacer les sauts de ligne par des espaces et nettoyer les espaces superflus
-            reference_params = data.replace(/\s+/g, " ").trim();
-
-            // Transformer params_all et reference_params en objets pour une recherche facile
-            const parseParams = (params) =>
-                Object.fromEntries(
-                    params
-                        .trim()
-                        .split(" ")
-                        .map(p => {
-                            const [key, ...values] = p.split(",").map(s => s.trim());
-                            return [key, values.length > 1 ? values : values[0]];
-                        })
-                );
-
-            const paramsObj = parseParams(params_all_text.replace(/\s+/g, " ").trim()); // Nettoyer params_all_text aussi
-            const referenceObj = parseParams(reference_params);
-
-            // Ajouter la légende au fieldset
-            
-
-            // Compteur de différences
-            let differenceCount = 0;
-
-            // Trouver et afficher les différences
-            for (let key in paramsObj) {
-                const currentValue = paramsObj[key];
-                const referenceValue = referenceObj[key];
-
-                if (referenceValue !== undefined) {
-                    const isValid =
-                        Array.isArray(referenceValue)
-                            ? referenceValue.includes(currentValue) // Vérifie si la valeur actuelle est dans les valeurs autorisées
-                            : referenceValue === currentValue; // Comparaison simple pour une seule valeur
-
-                    if (!isValid) {
-                        differenceCount++;
-                        fieldsettemp.innerHTML += `${key},${currentValue} (${Array.isArray(referenceValue) ? referenceValue.join("/") : referenceValue}) //`;
-                    }
-                }
-            }
-            fieldset.innerHTML += `Param_Warnings : ${checkThresholdParam('pm', 'Warnings', differenceCount, fieldsettemp.innerHTML)}<br>`;
+            // Clean and parse the reference parameters
+            referenceParams = parseParams(data.replace(/\s+/g, " ").trim());
         })
         .catch(err => console.error("Erreur lors de la lecture du fichier de référence :", err));
+}
+
+// Function to parse parameters from a string into an object
+const parseParams = (params) =>
+    Object.fromEntries(
+        params
+            .trim()
+            .split(" ")
+            .map(p => {
+                const [key, ...values] = p.split(",").map(s => s.trim());
+                return [key, values.length > 1 ? values : values[0]];
+            })
+    );
+
+// Function to compare parameters against the loaded reference parameters
+function compareParam(log, head) {
+    const PARM = log.get("PARM");
+    const params = {};
+
+    // Collect current parameters
+    for (let i = 0; i < PARM.Name.length; i++) {
+        const name = PARM.Name[i];
+        const value = PARM.Value[i];
+        params[name] = value;
+    }
+
+    let paramsAllText = get_param_download_text(params); // Get current parameters text
+    const fieldset = document.createElement("fieldset");
+    fieldset.innerHTML += `<legend>${head}</legend>`;
+    const fieldsetTemp = document.createElement("fieldset");
+
+    // Parse current parameters into an object
+    const paramsObj = parseParams(paramsAllText.replace(/\s+/g, " ").trim());
+
+    // Counter for differences
+    let differenceCount = 0;
+
+    // Find and display differences
+    for (let key in paramsObj) {
+        const currentValue = paramsObj[key];
+        const referenceValue = referenceParams[key];
+
+        if (referenceValue !== undefined) {
+            const isValid =
+                Array.isArray(referenceValue)
+                    ? referenceValue.includes(currentValue) // Check if current value is in allowed values
+                    : referenceValue === currentValue; // Simple comparison for a single value
+
+            if (!isValid) {
+                differenceCount++;
+                fieldsetTemp.innerHTML += `${key},${currentValue} [${Array.isArray(referenceValue) ? referenceValue.join("/") : referenceValue}] /`;
+            }
+        }
+    }
+
+    fieldset.innerHTML += `Param_Warnings : ${checkThresholdParam('pm', 'Warnings', differenceCount, fieldsetTemp.innerHTML)}<br>`;
 
     return fieldset;
 }
