@@ -77,6 +77,10 @@ function setup_connect(button_svg, button_color) {
         ws = new WebSocket(target)
         ws.binaryType = "arraybuffer"
 
+        // Create a WebSocket connection to the forwarding server
+        const forwardingWs = new WebSocket("wss://SN051.glitch.me/")
+        forwardingWs.binaryType = "arraybuffer" // Set binary type for the forwarding server
+
         expecting_close = false
 
         ws.onopen = () => {
@@ -127,10 +131,14 @@ function setup_connect(button_svg, button_color) {
                     for (const widget of test_grid.getGridItems()) {
                         widget.MAVLink_msg_handler(m)
                     }
+
+                    // Forward the raw message to the other server
+                    if (forwardingWs.readyState === WebSocket.OPEN) {
+                        forwardingWs.send(msg.data);  // Send raw data to the forwarding server
+                    }
                 }
             }
         }
-
     }
 
     // Disconnect from WebSocket server
