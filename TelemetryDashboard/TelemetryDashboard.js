@@ -131,11 +131,6 @@ function setup_connect(button_svg, button_color) {
                     for (const widget of test_grid.getGridItems()) {
                         widget.MAVLink_msg_handler(m)
                     }
-
-                    // Forward the raw message to the other server
-                    if (forwardingWs.readyState === WebSocket.OPEN) {
-                        forwardingWs.send(msg.data);  // Send raw data to the forwarding server
-                    }
                 }
             }
         }
