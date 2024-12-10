@@ -2416,7 +2416,7 @@ function findMaxDifference(time, values) {
     // Parcourir toutes les paires time, value
     for (let i = 0; i < time.length; i++) {
         let currentValue = values[i];
-        let targetTime = time[i] + 120; // Ajouter 120 secondes à l'instant actuel
+        let targetTime = time[i] + 180; // Ajouter 120 secondes à l'instant actuel
 
         // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
         let j = i + 1;
