@@ -1839,7 +1839,7 @@ function load_params(log) {
 
 }
 
-function load_am(log) {
+function load_am(log,filename) {
 
     // This section contains fastlog tool by AerialMetric
 
@@ -1996,11 +1996,11 @@ function load_am(log) {
     let column_ff = document.createElement("td")
     
     if (time_mark["Transition start"] == "Message non trouvé") {
-        column_ff.appendChild(print_ff(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Full Flight Controls"))
+        column_ff.appendChild(print_ff(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], filename))
         table_ff.appendChild(column_ff)
     }
     else {
-        column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Full Flight Controls"))
+        column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], filename))
         table_ff.appendChild(column_ff)
     }
     let column_ffh = document.createElement("td")
@@ -2412,6 +2412,7 @@ function findMinMaxAvgValue(time, values, t1, t2) {
 
 function findMaxDifference(time, values) {
     let maxDifference = -Infinity;
+    let maxStartTime = null; // Variable pour stocker le temps de début associé à maxDifference
 
     // Parcourir toutes les paires time, value
     for (let i = 0; i < time.length; i++) {
@@ -2421,23 +2422,27 @@ function findMaxDifference(time, values) {
         // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
         let j = i + 1;
         while (j < time.length && time[j] < targetTime) {
+            
+            // Vérifier si on est bien dans les bornes du tableau
+            if (j < time.length) {
+                // Calculer l'écart
+                let difference = Math.abs(values[j] - currentValue);
+
+                if (difference > maxDifference) {
+                    maxDifference = difference;
+                    maxStartTime = time[i]; // Mettre à jour le temps de début
+                }
+            }
             j++;
         }
 
-        // Vérifier si on est bien dans les bornes du tableau
-        if (j < time.length && time[j] > targetTime) {
-            // Calculer l'écart
-            let difference = Math.abs(values[j] - currentValue);
 
-            if (difference > maxDifference) {
-                maxDifference = difference;
-            }
-        }
     }
 
     // Retourner le résultat (null si aucun écart trouvé)
-    return maxDifference === -Infinity ? null : maxDifference;
+    return maxDifference === -Infinity ? [null, null] : [maxDifference, maxStartTime];
 }
+
 
 
 function findMinMaxFirst(time, values, t1, t2) {
@@ -3126,7 +3131,7 @@ function print_ff(log, t1, t2, head) {
 
     let heading = document.createElement("legend")
     heading.innerHTML = head
-    fieldset.appendChild(heading)
+    fieldsetlab.appendChild(heading)
 
     const bat_0 = log.get_instance("BAT", 0)
     const arspd_0 = log.get_instance("ARSP", 0)
@@ -3232,8 +3237,10 @@ function print_ff(log, t1, t2, head) {
     //fieldsetlab.innerHTML += "<br>";
     //fieldsetlab.innerHTML += `arspd0_Temp_delta (NA): ${maxvalue - minvalue}`;
     //fieldsetlab.innerHTML += "<br>";
-    maxdif = findMaxDifference(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp);
-    fieldsetlab.innerHTML += `max_2min_diff (NA): ${maxdif}`;
+    let [maxdif, sec] = findMaxDifference(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp);
+    fieldsetlab.innerHTML += `max_2min_diff value : ${maxdif}`;
+    fieldsetlab.innerHTML += "<br>";
+    fieldsetlab.innerHTML += `max_2min_diff timemark: ${sec}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
 }
@@ -4694,7 +4701,7 @@ async function load_2(e) {
                         let log = new DataflashParser();
                         log.processData(reader.result, []);
                         // Add code here
-                        load_am(log);
+                        load_am(log, file.name.toLowerCase());
                         resolve(); // Résoudre la promesse ici une fois le traitement terminé
                     } catch (error) {
                         reject(error); // Rejeter la promesse en cas d'erreur
@@ -5436,7 +5443,7 @@ function processAMData(files) {
                 .then(fileContent => {
                     let log = new DataflashParser();
                     log.processData(fileContent, []); // `fileContent` est maintenant un ArrayBuffer
-                    load_am(log); // Appeler load_am pour chaque fichier
+                    load_am(log,file.name.toLowerCase()); // Appeler load_am pour chaque fichier
 
                     // Mettre à jour le statut du fichier à "Terminé"
                     let statusCell = document.getElementById(`status-${file.name}`);
