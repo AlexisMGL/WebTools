@@ -1994,7 +1994,7 @@ function load_am(log) {
     am_section.appendChild(table_ff)
 
     let column_ff = document.createElement("td")
-
+    
     if (time_mark["Transition start"] == "Message non trouvé") {
         column_ff.appendChild(print_ff(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Full Flight Controls"))
         table_ff.appendChild(column_ff)
@@ -2416,7 +2416,7 @@ function findMaxDifference(time, values) {
     // Parcourir toutes les paires time, value
     for (let i = 0; i < time.length; i++) {
         let currentValue = values[i];
-        let targetTime = time[i] + 180; // Ajouter 120 secondes à l'instant actuel
+        let targetTime = time[i] + 20; // Ajouter 120 secondes à l'instant actuel
 
         // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
         let j = i + 1;
@@ -3139,99 +3139,99 @@ function print_ff(log, t1, t2, head) {
     const pm = log.get("PM")
 
     // Battery 0
-    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
-    fieldset.innerHTML += `batt0_volt_min (>42 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
-    fieldset.innerHTML += `batt0_curr_max (<85 A): ${checkThreshold('ff', 'batt0_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `batt0_curr_avg (19<_<29 A): ${checkThreshold('ff', 'batt0_curr_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
-    fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('ff', 'batt1_curr_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.CurrTot, t1, t2);
-    fieldset.innerHTML += `batt0_currTot (mAh): ${checkThreshold('ff', 'batt0_currTot', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue1, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.CurrTot, t1, t2);
-    fieldset.innerHTML += `batt1_currTot (mAh): ${checkThreshold('ff', 'batt1_currTot', maxvalue1)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue2, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
-    minvalue = (maxvalue) / (0.001 * avgvalue * (t2 - t1));
-    fieldset.innerHTML += `batt0_consperkm (mAh/km): ${checkThreshold('ff', 'batt0_consperkm', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1));
-    fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${checkThreshold('ff', 'batt0+1_consperkm', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
+    //fieldset.innerHTML += `batt0_volt_min (>42 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
+    //fieldset.innerHTML += `batt0_curr_max (<85 A): ${checkThreshold('ff', 'batt0_curr_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //fieldset.innerHTML += `batt0_curr_avg (19<_<29 A): ${checkThreshold('ff', 'batt0_curr_avg', avgvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.Curr, t1, t2);
+    //fieldset.innerHTML += `batt1_curr_max (<250 A): ${checkThreshold('ff', 'batt1_curr_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.CurrTot, t1, t2);
+    //fieldset.innerHTML += `batt0_currTot (mAh): ${checkThreshold('ff', 'batt0_currTot', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue1, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_1.TimeUS), bat_1.CurrTot, t1, t2);
+    //fieldset.innerHTML += `batt1_currTot (mAh): ${checkThreshold('ff', 'batt1_currTot', maxvalue1)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue2, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.Spd, t1, t2);
+    //minvalue = (maxvalue) / (0.001 * avgvalue * (t2 - t1));
+    //fieldset.innerHTML += `batt0_consperkm (mAh/km): ${checkThreshold('ff', 'batt0_consperkm', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1));
+    //fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${checkThreshold('ff', 'batt0+1_consperkm', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // GPS
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
-    fieldset.innerHTML += `gps0_sats_min (>10 sats): ${checkThreshold('ff', 'gps0_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_1.TimeUS), gps_1.NSats, t1, t2);
-    fieldset.innerHTML += `gps1_sats_min (>10 sats): ${checkThreshold('ff', 'gps1_sats_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //// GPS
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_0.TimeUS), gps_0.NSats, t1, t2);
+    //fieldset.innerHTML += `gps0_sats_min (>10 sats): ${checkThreshold('ff', 'gps0_sats_min', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(gps_1.TimeUS), gps_1.NSats, t1, t2);
+    //fieldset.innerHTML += `gps1_sats_min (>10 sats): ${checkThreshold('ff', 'gps1_sats_min', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // PM
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.Load, t1, t2);
-    maxvalue = maxvalue / 10;
-    fieldset.innerHTML += `pm_load_max (<52 %): ${checkThreshold('ff', 'pm_load_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.IntE, t1, t2);
-    fieldset.innerHTML += `pm_InternalErrors (<1): ${checkThreshold('ff', 'pm_InternalErrors', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //// PM
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.Load, t1, t2);
+    //maxvalue = maxvalue / 10;
+    //fieldset.innerHTML += `pm_load_max (<52 %): ${checkThreshold('ff', 'pm_load_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(pm.TimeUS), pm.IntE, t1, t2);
+    //fieldset.innerHTML += `pm_InternalErrors (<1): ${checkThreshold('ff', 'pm_InternalErrors', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // POWR
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.Vcc, t1, t2);
-    fieldset.innerHTML += `powr_Vcc_min (>5.08 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vcc_avg (>5.14 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.VServo, t1, t2);
-    fieldset.innerHTML += `powr_Vservo_min (>4.80 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
-    fieldset.innerHTML += "<br>";
-    fieldset.innerHTML += `powr_Vservo_avg (>4.95 V): ${checkThreshold('ff', 'powr_Vservo_avg', avgvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //// POWR
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.Vcc, t1, t2);
+    //fieldset.innerHTML += `powr_Vcc_min (>5.08 V): ${checkThreshold('ff', 'powr_Vcc_min', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //fieldset.innerHTML += `powr_Vcc_avg (>5.14 V): ${checkThreshold('ff', 'powr_Vcc_avg', avgvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(powr.TimeUS), powr.VServo, t1, t2);
+    //fieldset.innerHTML += `powr_Vservo_min (>4.80 V): ${checkThreshold('ff', 'powr_Vservo_min', minvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //fieldset.innerHTML += `powr_Vservo_avg (>4.95 V): ${checkThreshold('ff', 'powr_Vservo_avg', avgvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // Vibe
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeX, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeX_max (<30): ${checkThreshold('ff', 'vibe0_VibeX_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeY, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeY_max (<30): ${checkThreshold('ff', 'vibe0_VibeY_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
-    fieldset.innerHTML += `vibe0_VibeZ_max (<30): ${checkThreshold('ff', 'vibe0_VibeZ_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //// Vibe
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeX, t1, t2);
+    //fieldset.innerHTML += `vibe0_VibeX_max (<30): ${checkThreshold('ff', 'vibe0_VibeX_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeY, t1, t2);
+    //fieldset.innerHTML += `vibe0_VibeY_max (<30): ${checkThreshold('ff', 'vibe0_VibeY_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(vibe_0.TimeUS), vibe_0.VibeZ, t1, t2);
+    //fieldset.innerHTML += `vibe0_VibeZ_max (<30): ${checkThreshold('ff', 'vibe0_VibeZ_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // Temp
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp, t1, t2);
-    fieldset.innerHTML += `arspd0_Temp_max (<45): ${checkThreshold('ff', 'arspd0_Temp_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
+    //// Temp
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp, t1, t2);
+    //fieldset.innerHTML += `arspd0_Temp_max (<45): ${checkThreshold('ff', 'arspd0_Temp_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
 
-    // XKF4
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SV, t1, t2);
-    fieldset.innerHTML += `XKF4_SV_max (<0.68): ${checkThreshold('ff', 'XKF4_SV_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SP, t1, t2);
-    fieldset.innerHTML += `XKF4_SP_max (<0.68): ${checkThreshold('ff', 'XKF4_SP_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SH, t1, t2);
-    fieldset.innerHTML += `XKF4_SH_max (<0.68): ${checkThreshold('ff', 'XKF4_SH_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SM, t1, t2);
-    fieldset.innerHTML += `XKF4_SM_max (<0.68): ${checkThreshold('ff', 'XKF4_SM_max', maxvalue)}`;
-    fieldset.innerHTML += "<br>";
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SVT, t1, t2);
-    fieldset.innerHTML += `XKF4_SVT_max (<0.75): ${checkThreshold('ff', 'XKF4_SVT_max', maxvalue)}`;
+    //// XKF4
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SV, t1, t2);
+    //fieldset.innerHTML += `XKF4_SV_max (<0.68): ${checkThreshold('ff', 'XKF4_SV_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SP, t1, t2);
+    //fieldset.innerHTML += `XKF4_SP_max (<0.68): ${checkThreshold('ff', 'XKF4_SP_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SH, t1, t2);
+    //fieldset.innerHTML += `XKF4_SH_max (<0.68): ${checkThreshold('ff', 'XKF4_SH_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SM, t1, t2);
+    //fieldset.innerHTML += `XKF4_SM_max (<0.68): ${checkThreshold('ff', 'XKF4_SM_max', maxvalue)}`;
+    //fieldset.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(xkf4_0.TimeUS), xkf4_0.SVT, t1, t2);
+    //fieldset.innerHTML += `XKF4_SVT_max (<0.75): ${checkThreshold('ff', 'XKF4_SVT_max', maxvalue)}`;
 
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp, t1, t2);
-    fieldsetlab.innerHTML += `arspd0_Temp_max (<45): ${maxvalue}`;
-    fieldsetlab.innerHTML += "<br>";
-    fieldsetlab.innerHTML += `arspd0_Temp_min (NA): ${minvalue}`;
-    fieldsetlab.innerHTML += "<br>";
-    fieldsetlab.innerHTML += `arspd0_Temp_delta (NA): ${maxvalue - minvalue}`;
-    fieldsetlab.innerHTML += "<br>";
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp, t1, t2);
+    //fieldsetlab.innerHTML += `arspd0_Temp_max (<45): ${maxvalue}`;
+    //fieldsetlab.innerHTML += "<br>";
+    //fieldsetlab.innerHTML += `arspd0_Temp_min (NA): ${minvalue}`;
+    //fieldsetlab.innerHTML += "<br>";
+    //fieldsetlab.innerHTML += `arspd0_Temp_delta (NA): ${maxvalue - minvalue}`;
+    //fieldsetlab.innerHTML += "<br>";
     maxdif = findMaxDifference(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp);
     fieldsetlab.innerHTML += `max_2min_diff (NA): ${maxdif}`;
     fieldsetlab.innerHTML += "<br>";
@@ -4693,6 +4693,7 @@ async function load_2(e) {
                     try {
                         let log = new DataflashParser();
                         log.processData(reader.result, []);
+                        // Add code here
                         load_am(log);
                         resolve(); // Résoudre la promesse ici une fois le traitement terminé
                     } catch (error) {
@@ -5398,21 +5399,69 @@ function processAMData(files) {
         });
     }
 
+    // Ajouter un tableau HTML pour afficher les fichiers traités
+    let table = document.getElementById("filesTable");
+    if (!table) {
+        // Créer le tableau s'il n'existe pas
+        table = document.createElement("table");
+        table.id = "filesTable";
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.innerHTML = `
+        <thead>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px;">Nom du fichier</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Statut</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+        document.body.prepend(table); // Ajouter le tableau en haut de la page
+    }
+
+    const tbody = table.querySelector("tbody");
+
     // Parcourir tous les fichiers filtrés et les traiter
     Promise.all(
-        files.map(file =>
-            readFileAsArrayBuffer(file)
+        files.map(file => {
+            // Ajouter une ligne pour chaque fichier avec le statut "En cours"
+            let row = document.createElement("tr");
+            row.innerHTML = `
+            <td style="border: 1px solid #ddd; padding: 8px;">${file.name}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;" id="status-${file.name}">En cours</td>
+        `;
+            tbody.appendChild(row);
+
+            return readFileAsArrayBuffer(file)
                 .then(fileContent => {
                     let log = new DataflashParser();
                     log.processData(fileContent, []); // `fileContent` est maintenant un ArrayBuffer
                     load_am(log); // Appeler load_am pour chaque fichier
+
+                    // Mettre à jour le statut du fichier à "Terminé"
+                    let statusCell = document.getElementById(`status-${file.name}`);
+                    if (statusCell) {
+                        statusCell.textContent = "Terminé";
+                        statusCell.style.color = "green";
+                    }
                 })
-        )
+                .catch(error => {
+                    // Mettre à jour le statut du fichier à "Erreur"
+                    let statusCell = document.getElementById(`status-${file.name}`);
+                    if (statusCell) {
+                        statusCell.textContent = "Erreur";
+                        statusCell.style.color = "red";
+                    }
+                    console.error(`Erreur lors du traitement du fichier ${file.name}:`, error);
+                });
+        })
     ).then(() => {
-        console.log('Tous les fichiers ont été traités.');
+        console.log("Tous les fichiers ont été traités.");
     }).catch(error => {
-        console.error('Erreur lors du traitement des fichiers:', error);
+        console.error("Erreur lors du traitement des fichiers:", error);
     });
+
+
 }
 
 function addThresholdInfo(line) {
