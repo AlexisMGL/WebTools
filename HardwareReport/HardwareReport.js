@@ -4342,6 +4342,76 @@ async function load_log(log_file) {
         Plotly.redraw(plot)
     }
 
+    // Power flags
+    if (have_POWR) {
+
+        // Bitmask values for flags
+        const MAV_POWER_STATUS = {
+            BRICK_VALID: 1 << 0,
+            SERVO_VALID: 1 << 1,
+            USB_CONNECTED: 1 << 2,
+            PERIPH_OVERCURRENT: 1 << 3,
+            PERIPH_HIPOWER_OVERCURRENT: 1 << 4,
+            CHANGED: 1 << 5,
+        }
+
+        // Helper to decode bitmask to 0 or 1 array
+        function array_bit_set(A, val) {
+            const len = A.length
+            let ret = new Array(len)
+            for (let i = 0; i<len; i++) {
+                ret[i] = ((A[i] & val) != 0) ? 1 : 0
+            }
+            return ret
+        }
+
+        // Deal with log field name hange
+        let AccFlags_name
+        if (log.messageTypes.POWR.expressions.includes("AccFlags")) {
+            AccFlags_name = "AccFlags"
+        } else {
+            AccFlags_name = "AccFlg"
+        }
+
+        let flag_name
+        if (log.messageTypes.POWR.expressions.includes("Flags")) {
+            flag_name = "Flags"
+        } else {
+            flag_name = "Flg"
+        }
+
+        // Only plot if there is some change
+        let show_flags = log.messageTypes.POWR.expressions.includes(flag_name)
+        if (show_flags && log.messageTypes.POWR.expressions.includes(AccFlags_name) && array_all_equal(array_bit_set(log.get("POWR", AccFlags_name), MAV_POWER_STATUS.CHANGED), 0)) {
+            show_flags = false
+        }
+
+        if (show_flags) {
+            let plot = document.getElementById("power_flags")
+            plot_visibility(plot, false)
+
+            const flags = log.get("POWR", flag_name)
+            const time = TimeUS_to_seconds(log.get("POWR", "TimeUS"))
+
+            power_flags.data[0].x = time
+            power_flags.data[0].y = array_bit_set(flags, MAV_POWER_STATUS.BRICK_VALID)
+
+            power_flags.data[1].x = time
+            power_flags.data[1].y = array_bit_set(flags, MAV_POWER_STATUS.SERVO_VALID)
+
+            power_flags.data[2].x = time
+            power_flags.data[2].y = array_bit_set(flags, MAV_POWER_STATUS.USB_CONNECTED)
+
+            power_flags.data[3].x = time
+            power_flags.data[3].y = array_bit_set(flags, MAV_POWER_STATUS.PERIPH_OVERCURRENT)
+
+            power_flags.data[4].x = time
+            power_flags.data[4].y = array_bit_set(flags, MAV_POWER_STATUS.PERIPH_HIPOWER_OVERCURRENT)
+
+            Plotly.redraw(plot)
+        }
+    }
+
     // Performance
     if ('PM' in log.messageTypes) {
         const PM = log.get("PM")
@@ -4561,6 +4631,11 @@ async function load_log(log_file) {
                     continue
                 }
 
+                if ((weeks[i] <= 1000) || (ms[i] == 0)) {
+                    // Invalid timestamp
+                    continue
+                }
+
                 // Calculate GPS time in milli seconds
                 const ms_per_week = 7 * 24 * 60 * 60 * 1000
                 const GPS_ms = (weeks[i] * ms_per_week) + ms[i]
@@ -4714,6 +4789,7 @@ async function load_2(e) {
 let Sensor_Offset = {}
 let Temperature = {}
 let Board_Voltage = {}
+let power_flags = {}
 let performance_load = {}
 let performance_mem = {}
 let performance_time = {}
@@ -5024,6 +5100,35 @@ function reset() {
     plot = document.getElementById("Board_Voltage")
     Plotly.purge(plot)
     Plotly.newPlot(plot, Board_Voltage.data, Board_Voltage.layout, {displaylogo: false});
+    plot_visibility(plot, true)
+
+    // Power flags
+    const power_flags_hover_tmmplate = "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}"
+    power_flags.data = []
+
+    name = "Primary<br>power supply"
+    power_flags.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: power_flags_hover_tmmplate })
+
+    name = "Secondary<br>power supply"
+    power_flags.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: power_flags_hover_tmmplate })
+
+    name = "USB power"
+    power_flags.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: power_flags_hover_tmmplate })
+
+    name = "Peripheral<br>overcurrent"
+    power_flags.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: power_flags_hover_tmmplate })
+
+    name = "Peripheral<br>high power<br>overcurrent"
+    power_flags.data.push({ mode: 'lines', name: name, meta: name, hovertemplate: power_flags_hover_tmmplate })
+
+    power_flags.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
+                                margin: { b: 50, l: 50, r: 50, t: 20 },
+                                xaxis: { title: {text: time_scale_label } },
+                                yaxis: { title: {text: "Power flags" }, rangemode: "tozero" } }
+
+    plot = document.getElementById("power_flags")
+    Plotly.purge(plot)
+    Plotly.newPlot(plot, power_flags.data, power_flags.layout, {displaylogo: false});
     plot_visibility(plot, true)
 
     // Performace load

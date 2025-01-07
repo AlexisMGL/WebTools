@@ -28,7 +28,7 @@ const params = {
         save: true,
     },
     MOT_THST_HOVER: {
-        default: 0.35,
+        default: null,
         save: false,
     },
     MOTOR_COUNT: {
@@ -66,7 +66,7 @@ function loadParamFile(input) {
 function saveParamFile() {
     const paramsString = Object.entries(params)
         .filter(([_, value]) => value.save)
-        .map(([key, value]) => `${key},${value.value}`)
+        .map(([key, value]) => `${key},${param_to_string(value.value)}`)
         .join("\n");
     const blob = new Blob([paramsString], { type: "text/plain;charset=utf-8" });
     saveAs(blob, "ThrustExpo.param");
@@ -194,6 +194,13 @@ function updateThrustExpoPlot(thrustExpo = null) {
             thrustExpoPlot.data,
             thrustExpoPlot.layout
         );
+        thrustErrorPlot.data = [];
+        thrustErrorPlot.layout.shapes[0].visible = false
+        Plotly.react(
+            thrustErrorPlot.plot,
+            thrustErrorPlot.data,
+            thrustErrorPlot.layout
+        );
         return;
     }
 
@@ -206,10 +213,10 @@ function updateThrustExpoPlot(thrustExpo = null) {
         current: new Array(data_length),
     };
     for (let i = 0; i < data_length; i++) {
-        data.pwm[i] = thrustData[i].pwm;
-        data.thrust[i] = thrustData[i].thrust;
-        data.voltage[i] = thrustData[i].voltage;
-        data.current[i] = thrustData[i].current;
+        data.pwm[i] = parseFloat(thrustData[i].pwm);
+        data.thrust[i] = parseFloat(thrustData[i].thrust);
+        data.voltage[i] = parseFloat(thrustData[i].voltage);
+        data.current[i] = parseFloat(thrustData[i].current);
     }
 
     // Test at actuator values from 0 to 1
@@ -385,6 +392,8 @@ function updateThrustExpoPlot(thrustExpo = null) {
     ];
 
     // estimate hover thrust if mass is provided
+    const hoverInput = document.getElementById("MOT_THST_HOVER");
+    hoverInput.value = ""
     if (params.COPTER_AUW.value > 0 && params.MOTOR_COUNT.value > 0) {
         const requiredThrust =
             params.COPTER_AUW.value / params.MOTOR_COUNT.value;
@@ -400,14 +409,7 @@ function updateThrustExpoPlot(thrustExpo = null) {
             params.MOT_THST_HOVER.value =
                 Math.round((hoverThrottle / 100) * 10000) / 10000;
             params.MOT_THST_HOVER.save = true;
-            const hoverContainer = document.getElementById(
-                "hover-thrust-estimate"
-            );
-            const hoverInput = document.getElementById("MOT_THST_HOVER");
-            if (hoverContainer && hoverInput) {
-                hoverInput.value = params.MOT_THST_HOVER.value.toFixed(3);
-                hoverContainer.style.display = "block";
-            }
+            hoverInput.value = params.MOT_THST_HOVER.value.toFixed(3);
 
             // add hover point to plot
             thrustExpoPlot.data.push({
@@ -452,6 +454,7 @@ function updateThrustExpoPlot(thrustExpo = null) {
     ];
     thrustErrorPlot.layout.shapes[0].y0 = result.mean;
     thrustErrorPlot.layout.shapes[0].y1 = result.mean;
+    thrustErrorPlot.layout.shapes[0].visible = true
     Plotly.react(
         thrustErrorPlot.plot,
         thrustErrorPlot.data,
@@ -468,6 +471,8 @@ function updateThrustPwmPlot() {
     // skip plotting if no valid data
     if (thrustData.length === 0) {
         thrustPwmPlot.data = [];
+        thrustPwmPlot.layout.shapes = null;
+        thrustPwmPlot.layout.annotations = null;
         Plotly.react(
             thrustPwmPlot.plot,
             thrustPwmPlot.data,
@@ -571,6 +576,7 @@ function initThrustErrorPlot() {
                     width: 1,
                     color: "gray",
                 },
+                visible: false
             },
         ],
     };
@@ -626,6 +632,7 @@ function initThrustPwmPlot() {
 function initThrustTable() {
     thrustTable = new Tabulator("#thrust-table", {
         rowHeight: TABLE_ROW_HEIGHT,
+        layout:"fitColumns",
 
         // enable range selection
         selectableRange: 1,
@@ -696,7 +703,6 @@ function initThrustTable() {
             headerHozAlign: "center",
             editor: "input",
             resizable: "header",
-            width: 132,
         },
 
         columns: [
@@ -705,24 +711,28 @@ function initThrustTable() {
                 field: "pwm",
                 hozAlign: "right",
                 validator: "numeric",
+                minWidth: 132,
             },
             {
                 title: "Thrust",
                 field: "thrust",
                 hozAlign: "right",
                 validator: "numeric",
+                minWidth: 132,
             },
             {
                 title: "Voltage (V)",
                 field: "voltage",
                 hozAlign: "right",
                 validator: "numeric",
+                minWidth: 132,
             },
             {
                 title: "Current (A)",
                 field: "current",
                 hozAlign: "right",
                 validator: "numeric",
+                minWidth: 132,
             },
         ],
 
@@ -747,7 +757,16 @@ function initThrustTable() {
     let updateTimeout = null;
 
     const onDataChanged = function () {
-        //update table height as necessary
+        // update chart after changes stop
+        // (paste actions call this repeatedly, so debounce a little)
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+            updatePlotData();
+        }, 100);
+    };
+
+    const onRenderComplete = function() {
+        // update table height as necessary
         const rowCount = thrustTable.getRows().length;
         const headerHeight =
             thrustTable.element.querySelector(".tabulator-header").offsetHeight;
@@ -759,17 +778,10 @@ function initThrustTable() {
             currentHeight = newHeight;
             thrustTable.setHeight(`${newHeight}px`);
         }
-
-        // update chart after changes stop
-        // (paste actions call this repeatedly, so debounce a little)
-        clearTimeout(updateTimeout);
-        updateTimeout = setTimeout(() => {
-            updatePlotData();
-        }, 100);
-    };
+    }
 
     thrustTable.on("dataChanged", onDataChanged);
-    thrustTable.on("renderComplete", onDataChanged);
+    thrustTable.on("renderComplete", onRenderComplete);
 
     // if the last row is edited, add a new row
     thrustTable.on("cellEdited", function (cell) {
@@ -791,8 +803,6 @@ function updatePlotData(thrustExpo = null) {
 }
 
 function reset() {
-    const hoverContainer = document.getElementById("hover-thrust-estimate");
-    hoverContainer.style.display = "none";
     document.getElementById("paramFile").value = "";
     params.MOT_THST_HOVER.save = false;
     document.querySelectorAll(".param-row input").forEach((input) => {
@@ -808,6 +818,7 @@ function reset() {
             current: "",
         }))
     );
+    updatePlotData();
 }
 
 function loadExample() {
@@ -890,6 +901,7 @@ function loadExample() {
         { pwm: 1989, thrust: 2.233, voltage: 21.52, current: 13.511 },
         { pwm: 2000, thrust: 2.254, voltage: 21.52, current: 13.854 },
     ]);
+    updatePlotData();
     const copterAuwElement = document.getElementById("COPTER_AUW");
     copterAuwElement.value = 2.5;
     copterAuwElement.dispatchEvent(new Event("change"));

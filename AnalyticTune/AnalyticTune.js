@@ -647,6 +647,21 @@ var flight_data = {}
 var fft_plot = {}
 var fft_plot_Phase = {}
 var fft_plot_Coh = {}
+
+function link_plots() {
+
+    // Link all frequency axis
+    link_plot_axis_range([["FFTPlotMag", "x", "", fft_plot],
+                          ["FFTPlotPhase", "x", "", fft_plot_Phase],
+                          ["FFTPlotCoh", "x", "", fft_plot_Coh]])
+
+    // Link all reset calls
+    link_plot_reset([["FFTPlotMag", fft_plot],
+                     ["FFTPlotPhase", fft_plot_Phase],
+                     ["FFTPlotCoh", fft_plot_Coh]])
+
+}
+
 function setup_plots() {
 
     const time_scale_label = "Time (s)"
@@ -766,7 +781,7 @@ function setup_plots() {
     Plotly.purge(plot)
     Plotly.newPlot(plot, fft_plot_Coh.data, fft_plot_Coh.layout, {displaylogo: false});
 
-    //link_plots()
+    link_plots()
 }
 
 function get_axis_prefix() {
@@ -789,6 +804,8 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
     var unwrap_phase = false
 
     var PID_rate = get_form("SCHED_LOOP_RATE")
+
+    // Calculate transfer function for Rate PID
     var PID_filter = []
     var axis_prefix = "ATC_RAT_" + get_axis_prefix();
     PID_filter.push(new PID(PID_rate,
@@ -800,6 +817,7 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
 
     const PID_H = evaluate_transfer_functions([PID_filter], freq_max, freq_step, use_dB, unwrap_phase)
 
+    // calculate transfer funciton for the PID Error Notch filter
     const nef_num = get_form(axis_prefix + "NEF")
     var nef_freq = 0.0
     if (nef_num > 0) { nef_freq = get_form("FILT" + nef_num + "_NOTCH_FREQ") }
@@ -812,6 +830,7 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
         PID_H_TOT = PID_H.H_total
     }
 
+    // calculate transfer function for FF and DFF
     var FF_filter = []
     FF_filter.push(new feedforward(PID_rate, get_form(axis_prefix + "FF"),get_form(axis_prefix + "D_FF")))
     const FF_H = evaluate_transfer_functions([FF_filter], freq_max, freq_step, use_dB, unwrap_phase)
@@ -821,10 +840,13 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
         FFPID_H[1][k] = PID_H_TOT[1][k] + FF_H.H_total[1][k]
     }
 
+    // calculate transfer function for target LPF
     var T_filter = []
     T_filter.push(new LPF_1P(PID_rate, get_form(axis_prefix + "FLTT")))
     const FLTT_H = evaluate_transfer_functions([T_filter], freq_max, freq_step, use_dB, unwrap_phase)
 
+    // calculate transfer function for target PID notch and the target LPF combined, if the notch is defined.  Otherwise just 
+    // provide the target LPF as the combined transfer function.
     const ntf_num = get_form(axis_prefix + "NTF")
     var ntf_freq = 0.0
     if (ntf_num > 0) { ntf_freq = get_form("FILT" + ntf_num + "_NOTCH_FREQ") }
@@ -837,10 +859,12 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
         TGT_FILT_H = FLTT_H.H_total
     }
 
+    // calculate the transfer function of the INS filters which includes notches and LPF
     let fast_sample_rate = get_form("GyroSampleRate");
     let gyro_filters = get_filters(fast_sample_rate)
     const INS_H = evaluate_transfer_functions([gyro_filters], freq_max, freq_step, use_dB, unwrap_phase)
 
+    // calculation of transfer function for the rate controller (includes serveral intermediate steps)
     var H_PID_Acft_plus_one = [new Array(PID_H_TOT[0].length).fill(0), new Array(PID_H_TOT[0].length).fill(0)]
 
     const PID_Acft = complex_mul(H_acft, PID_H_TOT)
@@ -855,29 +879,58 @@ function calculate_predicted_TF(H_acft, sample_rate, window_size) {
     }
     const Ret_rate = complex_div(FLTT_FFPID_Acft, H_PID_Acft_plus_one)
 
+    // calculate transfer function for the angle P in prep for attitude controller calculation
     var Ang_P_filter = []
     Ang_P_filter.push(new Ang_P(PID_rate, get_form("ATC_ANG_" + get_axis_prefix() + "P")))
     const Ang_P_H = evaluate_transfer_functions([Ang_P_filter], freq_max, freq_step, use_dB, unwrap_phase)
 
-    const rate_INS_ANGP = complex_mul(Ret_rate, complex_mul(INS_H.H_total, Ang_P_H.H_total))
-    var rate_INS_ANGP_plus_one = [new Array(H_acft[0].length).fill(0), new Array(H_acft[0].length).fill(0)]
+    // calculate transfer function for attitude controller with feedforward enabled (includes intermediate steps)
+    const rate_ANGP = complex_mul(Ret_rate, Ang_P_H.H_total)
+    var rate_ANGP_plus_one = [new Array(H_acft[0].length).fill(0), new Array(H_acft[0].length).fill(0)]
     var ANGP_plus_one = [new Array(H_acft[0].length).fill(0), new Array(H_acft[0].length).fill(0)]
     for (let k=0;k<H_acft[0].length+1;k++) {
-        rate_INS_ANGP_plus_one[0][k] = rate_INS_ANGP[0][k] + 1
-        rate_INS_ANGP_plus_one[1][k] = rate_INS_ANGP[1][k]
+        rate_ANGP_plus_one[0][k] = rate_ANGP[0][k] + 1
+        rate_ANGP_plus_one[1][k] = rate_ANGP[1][k]
         ANGP_plus_one[0][k] = Ang_P_H.H_total[0][k] + 1
         ANGP_plus_one[1][k] = Ang_P_H.H_total[1][k]
     }
-    const Ret_att = complex_div(complex_mul(ANGP_plus_one, Ret_rate), rate_INS_ANGP_plus_one)
+    const Ret_att_ff = complex_div(complex_mul(ANGP_plus_one, Ret_rate), rate_ANGP_plus_one)
 
+    // transfer function of attitude controller without feedforward
+    const Ret_att_nff = complex_div(complex_mul(Ang_P_H.H_total, Ret_rate), rate_ANGP_plus_one)
+
+    // calculate transfer function for pilot feel LPF
     var tc_filter = []
-    const tc_freq = 1 / (get_form("ATC_INPUT_TC") * 2 * Math.PI)
+    var tc_freq
+    if (get_axis_prefix() == "YAW_") {
+        tc_freq = 1 / (get_form("PILOT_Y_RATE_TC") * 2 * Math.PI)
+    } else {
+        tc_freq = 1 / (get_form("ATC_INPUT_TC") * 2 * Math.PI)
+    }
     tc_filter.push(new LPF_1P(PID_rate, tc_freq))
     const tc_H = evaluate_transfer_functions([tc_filter], freq_max, freq_step, use_dB, unwrap_phase)
+    // calculate transfer function for pilot input to the aircraft response
+    const Ret_pilot = complex_mul(tc_H.H_total, Ret_att_ff)
 
-    const Ret_pilot = complex_mul(tc_H.H_total, Ret_att)
+    // calculate transfer function for attitude Distrubance Rejection
+    var minus_one = [new Array(H_acft[0].length).fill(-1), new Array(H_acft[0].length).fill(0)]
+    const Ret_DRB = complex_div(minus_one, rate_ANGP_plus_one)
+   
+    const Ret_att_bl = rate_ANGP
 
-    return [Ret_rate, Ret_att, Ret_pilot]
+    const Ret_rate_bl = INS_PID_Acft
+
+    var bl_temp = [new Array(H_acft[0].length).fill(0), new Array(H_acft[0].length).fill(0)]
+    var bl_temp1 = complex_mul(Ang_P_H.H_total, FLTT_FFPID_Acft)
+    var bl_temp2 = complex_mul(INS_H.H_total, PID_Acft)
+    for (let k=0;k<H_acft[0].length+1;k++) {
+        bl_temp[0][k] = bl_temp1[0][k] + bl_temp2[0][k]
+        bl_temp[1][k] = bl_temp1[1][k] + bl_temp2[1][k]
+    }
+    const Ret_sys_bl = bl_temp
+
+
+    return [Ret_rate, Ret_att_ff, Ret_pilot, Ret_DRB, Ret_att_nff, Ret_att_bl, Ret_rate_bl, Ret_sys_bl]
 
 }
 
@@ -950,6 +1003,9 @@ function TimeUS_to_seconds(TimeUS) {
 
 // Load a new log
 let log
+var sid_axis
+var sid_sets = {}
+var use_ANG_message
 function load_log(log_file) {
 
     log = new DataflashParser()
@@ -982,6 +1038,14 @@ function load_log(log_file) {
         return get_param_value(PARM, name, allow_change)
     }
 
+    if ("SIDS" in log.messageTypes) {
+        sid_sets.axis = []
+        sid_sets.tlen = []
+        const SIDS_time = TimeUS_to_seconds(log.get("SIDS", "TimeUS"))
+        sid_sets.axis = log.get("SIDS", "Ax")
+        sid_sets.tlen = log.get("SIDS", "TR")
+    }
+
     // Find SIDD data range
     if ("SIDD" in log.messageTypes) {
         const SIDD_time = TimeUS_to_seconds(log.get("SIDD", "TimeUS"))
@@ -989,7 +1053,28 @@ function load_log(log_file) {
         flight_data.data[0].x = SIDD_time
         flight_data.data[0].y = log.get("SIDD", "Targ")
 
-        update_time(SIDD_time)
+        sid_sets.tstart = []
+        sid_sets.tend = []
+        j = 0
+        sid_sets.tstart[j] = SIDD_time[0]
+        for (let k=1;k<SIDD_time.length;k++) {
+            if (SIDD_time[k]-SIDD_time[k-1] > 0.5) {
+                sid_sets.tend[j] = SIDD_time[k-1]
+                if (sid_sets.tend[j]-sid_sets.tstart[j] > sid_sets.tlen[j] + 1.0) {
+                    sid_sets.tend[j]=sid_sets.tstart[j]+sid_sets.tlen[j] + 1.0
+                }
+                j++
+                sid_sets.tstart[j] = SIDD_time[k]
+            }
+        }
+        sid_sets.tend[j] = SIDD_time[SIDD_time.length-1]
+        if (sid_sets.tend[j]-sid_sets.tstart[j] > sid_sets.tlen[j] + 1.0) {
+            sid_sets.tend[j]=sid_sets.tstart[j]+sid_sets.tlen[j] + 1.0
+        }
+        start_time = sid_sets.tstart[0]
+        end_time = sid_sets.tend[0]
+        set_sid_axis(sid_sets.axis[0])
+        add_sid_sets()
     }
 
     if ("RATE" in log.messageTypes) {
@@ -1002,6 +1087,14 @@ function load_log(log_file) {
         flight_data.data[3].y = log.get("RATE", "Y")
         update_time(RATE_time)
     }
+
+    // Determine if ANG message is used instead of ATT message
+    if ("ANG" in log.messageTypes) {
+        use_ANG_message = true
+    } else {
+        use_ANG_message = false
+    }
+
 
     // If found use zoom to non-zero SIDD
     if ((start_time != null) && (end_time != null)) {
@@ -1051,6 +1144,7 @@ function load_log(log_file) {
     const other_params = [
         "INS_GYRO_FILTER",
         "ATC_INPUT_TC",
+        "PILOT_Y_RATE_TC",
         "ATC_ANG_RLL_P",
         "ATC_ANG_PIT_P",
         "ATC_ANG_YAW_P"
@@ -1145,7 +1239,7 @@ function setup_FFT_data() {
     Plotly.purge(plot)
     Plotly.newPlot(plot, fft_plot_Coh.data, fft_plot_Coh.layout, {displaylogo: false});
 
-//    link_plots()
+    link_plots()
 
 }
 
@@ -1173,6 +1267,8 @@ function axis_changed() {
 }
 
 function update_PID_filters() {
+    document.getElementById('RollPitchTC').style.display = 'none';
+    document.getElementById('YawTC').style.display = 'none';
     document.getElementById('RollPIDS').style.display = 'none';
     document.getElementById('PitchPIDS').style.display = 'none';
     document.getElementById('YawPIDS').style.display = 'none';
@@ -1183,6 +1279,7 @@ function update_PID_filters() {
         document.getElementById('FILT' + i).style.display = 'none';
     }
     if (document.getElementById('type_Roll').checked) {
+        document.getElementById('RollPitchTC').style.display = 'block';
         document.getElementById('RollPIDS').style.display = 'block';;
         document.getElementById('RollNOTCH').style.display = 'block';
         const NTF_num = document.getElementById('ATC_RAT_RLL_NTF').value;
@@ -1194,6 +1291,7 @@ function update_PID_filters() {
             document.getElementById('FILT' + NEF_num).style.display = 'block';
         }
     } else if (document.getElementById('type_Pitch').checked) {
+        document.getElementById('RollPitchTC').style.display = 'block';
         document.getElementById('PitchPIDS').style.display = 'block';
         document.getElementById('PitchNOTCH').style.display = 'block';
         const NTF_num = document.getElementById('ATC_RAT_PIT_NTF').value;
@@ -1205,6 +1303,7 @@ function update_PID_filters() {
             document.getElementById('FILT' + NEF_num).style.display = 'block';
         }
     } else if (document.getElementById('type_Yaw').checked) {
+        document.getElementById('YawTC').style.display = 'block';
         document.getElementById('YawPIDS').style.display = 'block';
         document.getElementById('YawNOTCH').style.display = 'block';
         const NTF_num = document.getElementById('ATC_RAT_YAW_NTF').value;
@@ -1267,7 +1366,7 @@ function calculate_freq_resp() {
                   window_size: window_size,
                   correction: win_correction })
 
-    console.log(data_set)
+//    console.log(data_set)
 
     // Windowing amplitude correction depends on spectrum of interest and resolution
     const FFT_resolution = data_set.FFT.average_sample_rate/data_set.FFT.window_size
@@ -1279,7 +1378,7 @@ function calculate_freq_resp() {
 
     // Number of windows averaged
     const mean_length = end_index - start_index
-    console.log(mean_length)
+//    console.log(mean_length)
 
     var H_pilot
     var coh_pilot
@@ -1300,6 +1399,14 @@ function calculate_freq_resp() {
     var coh_att
     [H_att, coh_att] = calculate_freq_resp_from_FFT(data_set.FFT.AttTgt, data_set.FFT.Att, start_index, end_index, mean_length, window_size, sample_rate)
 
+    var H_drb
+    var coh_drb
+    [H_drb, coh_drb] = calculate_freq_resp_from_FFT(data_set.FFT.DRBin, data_set.FFT.DRBresp, start_index, end_index, mean_length, window_size, sample_rate)
+
+    var H_sys_bl
+    var coh_sys_bl
+    [H_sys_bl, coh_sys_bl] = calculate_freq_resp_from_FFT(data_set.FFT.SysBLInput, data_set.FFT.SysBLOutput, start_index, end_index, mean_length, window_size, sample_rate)
+
     // resample calculated responses to predicted response length
     const len = H_acft[0].length-1
     var H_pilot_tf = [new Array(len).fill(0), new Array(len).fill(0)]
@@ -1310,6 +1417,10 @@ function calculate_freq_resp() {
     var coh_rate_tf = [new Array(len).fill(0)]
     var H_att_tf = [new Array(len).fill(0), new Array(len).fill(0)]
     var coh_att_tf = [new Array(len).fill(0)]
+    var H_drb_tf = [new Array(len).fill(0), new Array(len).fill(0)]
+    var coh_drb_tf = [new Array(len).fill(0)]
+    var H_sys_bl_tf = [new Array(len).fill(0), new Array(len).fill(0)]
+    var coh_sys_bl_tf = [new Array(len).fill(0)]
     var freq_tf = [new Array(len).fill(0)]
     for (let k=1;k<len+1;k++) {
         H_pilot_tf[0][k-1] = H_pilot[0][k]
@@ -1324,13 +1435,23 @@ function calculate_freq_resp() {
         H_att_tf[0][k-1] = H_att[0][k]
         H_att_tf[1][k-1] = H_att[1][k]
         coh_att_tf[k-1] = coh_att[k]
+        H_drb_tf[0][k-1] = H_drb[0][k]
+        H_drb_tf[1][k-1] = H_drb[1][k]
+        coh_drb_tf[k-1] = coh_drb[k]
+        H_sys_bl_tf[0][k-1] = H_sys_bl[0][k]
+        H_sys_bl_tf[1][k-1] = H_sys_bl[1][k]
+        coh_sys_bl_tf[k-1] = coh_sys_bl[k]
         freq_tf[k-1] = data_set.FFT.bins[k]
     }
 
     var H_rate_pred
-    var H_att_pred
+    var H_att_ff_pred
     var H_pilot_pred
-    [H_rate_pred, H_att_pred, H_pilot_pred] = calculate_predicted_TF(H_acft_tf, sample_rate, window_size)
+    var H_DRB_pred
+    var H_att_bl_pred
+    var H_rate_bl_pred
+    var H_sys_bl_pred
+    [H_rate_pred, H_att_ff_pred, H_pilot_pred, H_DRB_pred, H_att_nff_pred, H_att_bl_pred, H_rate_bl_pred, H_sys_bl_pred] = calculate_predicted_TF(H_acft_tf, sample_rate, window_size)
 
     calc_freq_resp = {
         pilotctrl_H: H_pilot_tf,
@@ -1341,12 +1462,21 @@ function calculate_freq_resp() {
         ratectrl_coh: coh_rate_tf,
         bareAC_H: H_acft_tf,
         bareAC_coh: coh_acft_tf,
+        DRB_H: H_drb_tf,
+        DRB_coh: coh_drb_tf,
+        sysbl_H: H_sys_bl_tf,
+        sysbl_coh: coh_sys_bl_tf,
         freq: freq_tf
     }
     pred_freq_resp = {
-        attctrl_H: H_att_pred,
+        attctrl_ff_H: H_att_ff_pred,
         ratectrl_H: H_rate_pred,
-        pilotctrl_H: H_pilot_pred
+        pilotctrl_H: H_pilot_pred,
+        attctrl_nff_H: H_att_nff_pred,
+        DRB_H: H_DRB_pred,
+        attbl_H: H_att_bl_pred,
+        ratebl_H: H_rate_bl_pred,
+        sysbl_H: H_sys_bl_pred
     }
 
     redraw_freq_resp()
@@ -1363,22 +1493,31 @@ function load_time_history_data(t_start, t_end, axis) {
     let timeRATE_arr = log.get("RATE", "TimeUS")
     const ind1_i = nearestIndex(timeRATE_arr, t_start*1000000)
     const ind2_i = nearestIndex(timeRATE_arr, t_end*1000000)
-    console.log("ind1: ",ind1_i," ind2: ",ind2_i)
+//    console.log("ind1: ",ind1_i," ind2: ",ind2_i)
 
     let timeRATE = Array.from(timeRATE_arr)
-    console.log("time field pre slicing size: ", timeRATE.length)
+//    console.log("time field pre slicing size: ", timeRATE.length)
 
     timeRATE = timeRATE.slice(ind1_i, ind2_i)
-    console.log("time field post slicing size: ", timeRATE.length)
+//    console.log("time field post slicing size: ", timeRATE.length)
 
     // Determine average sample rate
     const trecord = (timeRATE[timeRATE.length - 1] - timeRATE[0]) / 1000000
     const samplerate = (timeRATE.length)/ trecord
-    console.log("sample rate: ", samplerate)
+//    console.log("sample rate: ", samplerate)
 
-    const timeATT = log.get("ATT", "TimeUS")
-    const ind1_a = nearestIndex(timeATT, t_start*1000000)
-    const ind2_a = nearestIndex(timeATT, t_end*1000000)
+    var timeATT
+    var ind1_a
+    var ind2_a
+    if (use_ANG_message) {
+        timeATT = log.get("ANG", "TimeUS")
+        ind1_a = nearestIndex(timeATT, t_start*1000000)
+        ind2_a = nearestIndex(timeATT, t_end*1000000)
+    } else {
+        timeATT = log.get("ATT", "TimeUS")
+        ind1_a = nearestIndex(timeATT, t_start*1000000)
+        ind2_a = nearestIndex(timeATT, t_end*1000000)
+    }
 
     const timeSIDD = log.get("SIDD", "TimeUS")
     const ind1_s = nearestIndex(timeSIDD, t_start*1000000)
@@ -1415,8 +1554,15 @@ function load_time_history_data(t_start, t_end, axis) {
     let ActInputData = Array.from(log.get("RATE", ActInputParam))
     let RateTgtData = Array.from(log.get("RATE", RateTgtParam))
     let RateData = Array.from(log.get("RATE", RateParam))
-    let AttTgtData = Array.from(log.get("ATT", AttTgtParam))
-    let AttData = Array.from(log.get("ATT", AttParam))
+    var AttTgtData
+    var AttData
+    if (use_ANG_message) {
+        AttTgtData = Array.from(log.get("ANG", AttTgtParam))
+        AttData = Array.from(log.get("ANG", AttParam))
+    } else {
+        AttTgtData = Array.from(log.get("ATT", AttTgtParam))
+        AttData = Array.from(log.get("ATT", AttParam))
+    }
     let GyroRawData = Array.from(log.get("SIDD", GyroRawParam))
 
     // Slice ActInputData
@@ -1445,6 +1591,14 @@ function load_time_history_data(t_start, t_end, axis) {
     PilotInputData = PilotInputData.slice(ind1_s, ind2_s)
     PilotInputData = array_scale(PilotInputData, 0.01745)
 
+    // Pull Targ for input to Attitude Disturbance Rejection Transfer Function
+    DRBInputData = PilotInputData
+    DRBRespData = array_sub(AttData, DRBInputData)
+
+    SysBLInputData = ActInputData
+    SysBLOutputData = array_sub(array_scale(PilotInputData, 1.0/0.01745), ActInputData)
+
+
     var data = {
         PilotInput: PilotInputData,
         ActInput:   ActInputData,
@@ -1452,7 +1606,11 @@ function load_time_history_data(t_start, t_end, axis) {
         RateTgt:    RateTgtData,
         Rate:       RateData,
         AttTgt:     AttTgtData,
-        Att:        AttData
+        Att:        AttData,
+        DRBin:      DRBInputData,
+        DRBresp:    DRBRespData,
+        SysBLInput: SysBLInputData,
+        SysBLOutput: SysBLOutputData
     }
     return [data, samplerate]
 
@@ -1563,43 +1721,6 @@ function window_size_inc(event) {
     last_window_size = event.target.value
 }
 
-// build url and query string for current view and copy to clipboard
-function get_link() {
-
-    if (!(navigator && navigator.clipboard && navigator.clipboard.writeText)) {
-        // copy not available
-        return
-    }
-
-    // get base url
-    var url =  new URL((window.location.href).split('?')[0]);
-
-    // Add all query strings
-    var sections = ["params", "PID_params"];
-    for (var j = 0; j<sections.length; j++) {
-        var items = document.forms[sections[j]].querySelectorAll('input,select');
-        for (var i=-0;i<items.length;i++) {
-            if (items[i].name === "") {
-                // Invalid name
-                continue
-            }
-            if (items[i].type == "radio" && !items[i].checked) {
-                // Only add checked radio buttons
-                continue;
-            }
-            if (items[i].type == "checkbox") {
-                url.searchParams.append(items[i].name, items[i].checked);
-                continue;
-            }
-            url.searchParams.append(items[i].name, items[i].value);
-        }
-    }
-
-    // copy to clipboard
-    navigator.clipboard.writeText(url.toString());
-
-}
-
 function save_parameters() {
 
     function save_from_elements(inputs) {
@@ -1609,6 +1730,10 @@ function save_parameters() {
         for (const v in inputs) {
             var name = "" + inputs[v].id;
             if (document.getElementById('type_Roll').checked) {
+                if (name.startsWith("ATC_INPUT_")) {
+                    var value = inputs[v].value;
+                    params += name + "," + param_to_string(value) + "\n";
+                }
                 if (name.startsWith("ATC_RAT_RLL")) {
                     var value = inputs[v].value;
                     params += name + "," + param_to_string(value) + "\n";
@@ -1620,6 +1745,10 @@ function save_parameters() {
                 NEF_num = document.getElementById('ATC_RAT_RLL_NEF').value
                 NTF_num = document.getElementById('ATC_RAT_RLL_NTF').value
             } else if (document.getElementById('type_Pitch').checked) {
+                if (name.startsWith("ATC_INPUT_")) {
+                    var value = inputs[v].value;
+                    params += name + "," + param_to_string(value) + "\n";
+                }
                 if (name.startsWith("ATC_RAT_PIT")) {
                     var value = inputs[v].value;
                     params += name + "," + param_to_string(value) + "\n";
@@ -1631,7 +1760,11 @@ function save_parameters() {
                 NEF_num = document.getElementById('ATC_RAT_PIT_NEF').value
                 NTF_num = document.getElementById('ATC_RAT_PIT_NTF').value
             } else if (document.getElementById('type_Yaw').checked) {
-                if (name.startsWith("ATC_RAT_YAW")) {
+                if (name.startsWith("PILOT_")) {
+                    var value = inputs[v].value;
+                    params += name + "," + param_to_string(value) + "\n";
+                }
+                    if (name.startsWith("ATC_RAT_YAW")) {
                     var value = inputs[v].value;
                     params += name + "," + param_to_string(value) + "\n";
                 }
@@ -1788,10 +1921,12 @@ function redraw_freq_resp() {
 
     var unwrap_ph = document.getElementById("PID_ScaleUnWrap").checked;
 
+//    console.log(sid_axis)
     unwrap_ph = false
      // Set scaled x data
     const scaled_bins = frequency_scale.fun(calc_freq_resp.freq)
-    var show_set = true
+    var show_set_calc = true
+    var show_set_pred = true
     var calc_data
     var calc_data_coh
     var pred_data
@@ -1799,26 +1934,77 @@ function redraw_freq_resp() {
     if (document.getElementById("type_Pilot_Ctrlr").checked) {
         calc_data = calc_freq_resp.pilotctrl_H
         calc_data_coh = calc_freq_resp.pilotctrl_coh
+        if (sid_axis > 3) {
+            show_set_calc = false
+        }
         pred_data = pred_freq_resp.pilotctrl_H
         pred_data_coh = calc_freq_resp.bareAC_coh
-        show_set = true
+        show_set_pred = true
+    } else if (document.getElementById("type_Sys_Stab").checked) {
+        calc_data = calc_freq_resp.sysbl_H  // entire control system stability
+        calc_data_coh = calc_freq_resp.sysbl_coh
+        if (sid_axis < 10 || sid_axis > 12) {
+            show_set_calc = false
+        }
+        pred_data = pred_freq_resp.sysbl_H  // attitude stability
+        pred_data_coh = calc_freq_resp.bareAC_coh
+        show_set_pred = true
+    } else if (document.getElementById("type_Att_Stab").checked) {
+        calc_data = calc_freq_resp.sysbl_H  // entire control system stability
+        calc_data_coh = calc_freq_resp.sysbl_coh
+        show_set_calc = false
+        pred_data = pred_freq_resp.attbl_H  // attitude stability
+        pred_data_coh = calc_freq_resp.bareAC_coh
+        show_set_pred = true
+    } else if (document.getElementById("type_Rate_Stab").checked) {
+        calc_data = calc_freq_resp.sysbl_H  // entire control system stability
+        calc_data_coh = calc_freq_resp.sysbl_coh
+        show_set_calc = false
+        pred_data = pred_freq_resp.ratebl_H  // attitude stability
+        pred_data_coh = calc_freq_resp.bareAC_coh
+        show_set_pred = true
+    } else if (document.getElementById("type_Att_DRB").checked) {
+        calc_data = calc_freq_resp.DRB_H  // calculated disturbance rejection
+        calc_data_coh = calc_freq_resp.DRB_coh  // calculated disturbance rejection coherence
+        if (sid_axis < 4 || sid_axis > 6) {
+            show_set_calc = false
+        }
+        pred_data = pred_freq_resp.DRB_H  // predicted disturbance rejection
+        pred_data_coh = calc_freq_resp.bareAC_coh
+        show_set_pred = true
+    } else if (document.getElementById("type_Att_Ctrlr_nff").checked) {
+        calc_data = calc_freq_resp.attctrl_H
+        calc_data_coh = calc_freq_resp.attctrl_coh
+        if (sid_axis < 4 || sid_axis > 6) {
+            show_set_calc = false
+        }
+        pred_data = pred_freq_resp.attctrl_nff_H  // attitude controller without feedforward
+        pred_data_coh = calc_freq_resp.bareAC_coh
+        show_set_pred = true
     } else if (document.getElementById("type_Att_Ctrlr").checked) {
         calc_data = calc_freq_resp.attctrl_H
         calc_data_coh = calc_freq_resp.attctrl_coh
-        pred_data = pred_freq_resp.attctrl_H
+        if (sid_axis > 3 && sid_axis < 7 || sid_axis > 9) {
+            show_set_calc = false
+        }
+        pred_data = pred_freq_resp.attctrl_ff_H  // attitude controller with feedforward
         pred_data_coh = calc_freq_resp.bareAC_coh
-        show_set = true
+        show_set_pred = true
     } else if (document.getElementById("type_Rate_Ctrlr").checked) {
         calc_data = calc_freq_resp.ratectrl_H
         calc_data_coh = calc_freq_resp.ratectrl_coh
+        if (sid_axis > 9) {
+            show_set_calc = false
+        }
         pred_data = pred_freq_resp.ratectrl_H
         pred_data_coh = calc_freq_resp.bareAC_coh
-        show_set = true
+        show_set_pred = true
     } else {
         calc_data = calc_freq_resp.bareAC_H
         calc_data_coh = calc_freq_resp.bareAC_coh
-        pred_data = pred_freq_resp.attctrl_H
-        show_set = false
+        show_set_calc = true
+        pred_data = pred_freq_resp.ratectrl_H
+        show_set_pred = false
     }
 
     // Apply selected scale, set to y axis
@@ -1828,7 +2014,7 @@ function redraw_freq_resp() {
     fft_plot.data[0].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot.data[0].visible = true
+    fft_plot.data[0].visible = show_set_calc
 
     var calc_plotted_phase = []
     if (unwrap_ph) {
@@ -1843,7 +2029,7 @@ function redraw_freq_resp() {
     fft_plot_Phase.data[0].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot_Phase.data[0].visible = true
+    fft_plot_Phase.data[0].visible = show_set_calc
 
     // Apply selected scale, set to y axis
     fft_plot_Coh.data[0].y = calc_data_coh
@@ -1852,7 +2038,7 @@ function redraw_freq_resp() {
     fft_plot_Coh.data[0].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot_Coh.data[0].visible = true
+    fft_plot_Coh.data[0].visible = show_set_calc
 
     // Apply selected scale, set to y axis
     fft_plot.data[1].y = amplitude_scale.scale(complex_abs(pred_data))
@@ -1861,7 +2047,7 @@ function redraw_freq_resp() {
     fft_plot.data[1].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot.data[1].visible = show_set
+    fft_plot.data[1].visible = show_set_pred
 
     var pred_plotted_phase = []
     if (unwrap_ph) {
@@ -1876,7 +2062,7 @@ function redraw_freq_resp() {
     fft_plot_Phase.data[1].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot_Phase.data[1].visible = show_set
+    fft_plot_Phase.data[1].visible = show_set_pred
 
     // Apply selected scale, set to y axis
     fft_plot_Coh.data[1].y = pred_data_coh
@@ -1885,7 +2071,7 @@ function redraw_freq_resp() {
     fft_plot_Coh.data[1].x = scaled_bins
 
     // Work out if we should show this line
-    fft_plot_Coh.data[1].visible = show_set
+    fft_plot_Coh.data[1].visible = show_set_pred
 
     Plotly.redraw("FFTPlotMag")
 
@@ -1895,4 +2081,171 @@ function redraw_freq_resp() {
 
     const end = performance.now();
     console.log(`freq response redraw took: ${end - start} ms`);
+}
+
+function add_sid_sets() {
+    let fieldset = document.getElementById("sid_sets")
+
+    // Remove all children
+    fieldset.replaceChildren(fieldset.children[0])
+
+    // Add table
+    let table = document.createElement("table")
+    table.style.borderCollapse = "collapse"
+
+    fieldset.appendChild(table)
+
+    // Add headers
+    let header = document.createElement("tr")
+    table.appendChild(header)
+
+    function set_cell_style(cell, color, center) {
+        cell.style.border = "1px solid #000"
+        cell.style.padding = "8px"
+
+        if (center !== false) {
+            cell.style.textAlign = "center"
+        }
+
+        if (color != null) {
+            // add alpha, 40%
+            cell.style.backgroundColor = color + '66'
+        }
+    }
+
+    let index = document.createElement("th")
+    header.appendChild(index)
+    index.appendChild(document.createTextNode("Num"))
+    set_cell_style(index)
+
+    let item = document.createElement("th")
+    header.appendChild(item)
+    item.appendChild(document.createTextNode("Use"))
+    set_cell_style(item)
+
+    item = document.createElement("th")
+    header.appendChild(item)
+    item.appendChild(document.createTextNode("SID Axis"))
+    set_cell_style(item)
+
+    item = document.createElement("th")
+    header.appendChild(item)
+    item.appendChild(document.createTextNode("Start Time"))
+    set_cell_style(item)
+
+    item = document.createElement("th")
+    header.appendChild(item)
+    item.appendChild(document.createTextNode("End Time"))
+    set_cell_style(item)
+
+    const axisTypes = {
+       1: "Input Roll Angle",
+       2: "Input Pitch Angle",
+       3: "Input Yaw Angle",
+       4: "Recovery Roll Angle",
+       5: "Recovery Pitch Angle",
+       6: "Recovery Yaw Angle",
+       7: "Rate Roll",
+       8: "Rate Pitch",
+       9: "Rate Yaw",
+       10: "Mixer Roll",
+       11: "Mixer Pitch",
+       12: "Mixer Yaw",
+       13: "Mixer Thrust",
+       14: "Measured Lateral Position",
+       15: "Measured Longitudinal Position",
+       16: "Measured Lateral Velocity",
+       17: "Measured Longitudinal Velocity",
+       18: "Input Lateral Velocity",
+       19: "Input Longitudinal Velocity"
+    }
+
+    const num_sets = sid_sets.axis.length
+    // Add line
+    for (let i = 0; i < num_sets; i++) {
+        const color = num_sets > 1 ? plot_default_color(i) : null
+
+        // Add new row
+        let row = document.createElement("tr")
+        table.appendChild(row)
+
+        // Index
+        let index = document.createElement("td")
+        row.appendChild(index)
+        set_cell_style(index, color)
+        index.appendChild(document.createTextNode(i + 1))
+
+        // Use radio button
+        let item = document.createElement("td")
+        row.appendChild(item)
+        set_cell_style(item, color)
+
+        let radio = document.createElement("input")
+        radio.setAttribute('type', "radio")
+        radio.setAttribute('id', "set_selection_" + i)
+        radio.setAttribute('name', "sid_sets")
+        radio.setAttribute('value', "set_set_" + i)
+        radio.setAttribute('onchange', "update_time_range(this); time_range_changed(this)")
+        item.appendChild(radio)
+
+        // Select first item by defualt
+        if (i == 0) {
+            radio.checked = true
+        }
+
+        // Axis
+        item = document.createElement("td")
+        row.appendChild(item)
+        set_cell_style(item, color, false)
+
+        // Add type string
+        const axis = sid_sets.axis[i]
+        if (axis in axisTypes) {
+            // Number and type
+            item.appendChild(document.createTextNode(sid_sets.axis[i] + ": " + axisTypes[axis]))
+
+        } else {
+            // Number only
+            item.appendChild(document.createTextNode(sid_sets.axis[i]))
+        }
+
+        // Start time
+        item = document.createElement("td")
+        row.appendChild(item)
+        set_cell_style(item, color)
+        item.appendChild(document.createTextNode(sid_sets.tstart[i].toFixed(2)))
+
+        // End time
+        item = document.createElement("td")
+        row.appendChild(item)
+        set_cell_style(item, color)
+        item.appendChild(document.createTextNode(sid_sets.tend[i].toFixed(2)))
+
+    }
+}
+
+function update_time_range() {
+
+    for (j=0; j<sid_sets.axis.length;j++){
+        var id_name = "set_selection_" + j
+        if (document.getElementById(id_name).checked) {
+            document.getElementById("starttime").value = sid_sets.tstart[j]
+            document.getElementById("endtime").value = sid_sets.tend[j]
+            set_sid_axis(sid_sets.axis[j])
+        }
+    }
+
+}
+
+function set_sid_axis(axis) {
+
+    if (axis == 1 || axis == 4 || axis == 7 || axis == 10) {
+        document.getElementById("type_Roll").checked = true
+    } else if (axis == 2 || axis == 5 || axis == 8 || axis == 11) {
+        document.getElementById("type_Pitch").checked = true
+    } else if (axis == 3 || axis == 6 || axis == 9 || axis == 12) {
+        document.getElementById("type_Yaw").checked = true
+    }
+    sid_axis = axis
+    axis_changed()
 }
