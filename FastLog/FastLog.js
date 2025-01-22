@@ -115,8 +115,8 @@ const thresholds = [
     { step: 'cr', champ: 'gps0_sats_min', min: 10, max: null },
     { step: 'cr', champ: 'gps1_sats_min', min: 10, max: null },
     { step: 'cr', champ: 'rcou_c1_avg', min: 1470, max: 1530 },
-    { step: 'cr', champ: 'rcou_|c1|_max', min: 1400, max: 1600 },
-    { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1485, max: 1515 },
+    { step: 'cr', champ: 'rcou_|c1|_max', min: 1380, max: 1620 },
+    { step: 'cr', champ: 'rcou_c2+c4/2_avg', min: 1475, max: 1525 },
     { step: 'cr', champ: 'vibe_X_max', min: null, max: 5 },
     { step: 'cr', champ: 'vibe_Y_max', min: null, max: 5 },
     { step: 'cr', champ: 'vibe_Z_max', min: null, max: 12 },
@@ -3011,13 +3011,13 @@ function print_re(log, t1, t2, head) {
     if ((1500 - minvalue) > (maxvalue - 1500)) {
         fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${checkThreshold('cr', 'rcou_|c1|_max', minvalue)}`;
     } else {
-        fieldset.innerHTML += `rcou_|c1|_max (1400<_<1600 ms): ${checkThreshold('cr', 'rcou_|c1|_max', maxvalue)}`;
+        fieldset.innerHTML += `rcou_|c1|_max (1380<_<1620 ms): ${checkThreshold('cr', 'rcou_|c1|_max', maxvalue)}`;
     }
     fieldset.innerHTML += "<br>";
     [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C2, t1, t2);
     [minvalue, maxvalue, avgvalue2] = findMinMaxAvgValue(TimeUS_to_seconds(rcou.TimeUS), rcou.C4, t1, t2);
     avgvalue = (avgvalue + avgvalue2) / 2;
-    fieldset.innerHTML += `rcou_c2+c4/2_avg (1485<_<1515 ms): ${checkThreshold('cr', 'rcou_c2+c4/2_avg', avgvalue)}`;
+    fieldset.innerHTML += `rcou_c2+c4/2_avg (1475<_<1535 ms): ${checkThreshold('cr', 'rcou_c2+c4/2_avg', avgvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // Vibe
