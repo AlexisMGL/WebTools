@@ -2000,31 +2000,31 @@ function load_am(log,filename) {
         table_ff.appendChild(column_ff)
     }
     else {
-        column_ff.appendChild(print_ff(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], filename))
+        column_ff.appendChild(print_ff(log, time_mark["Transition start"], time_mark["Throttle disarmed"], filename))
         table_ff.appendChild(column_ff)
     }
     let column_ffh = document.createElement("td")
-    try {
-        column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"));
-       // table_ff.appendChild(column_ffh);
-    } catch (error) {
-        console.error("An error occurred:", error);
-        // Tu peux aussi faire autre chose ici, comme ignorer l'erreur ou ajouter un log spécifique.
-    }
+    //try {
+    //    column_ffh.appendChild(print_ffh(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Far From Home (5km) Controls"));
+    //   // table_ff.appendChild(column_ffh);
+    //} catch (error) {
+    //    console.error("An error occurred:", error);
+    //    // Tu peux aussi faire autre chose ici, comme ignorer l'erreur ou ajouter un log spécifique.
+    //}
     let column_ffresp = document.createElement("td")
     let column_para = document.createElement("td")
-    if (time_mark["Transition start"] == "Message non trouvé") {
-        column_ffresp.appendChild(print_ffrespv(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
-        // table_ff.appendChild(column_ffresp)
-        column_para.appendChild(print_para(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Parachute Margin"))
-        // table_ff.appendChild(column_para)
-    }
-    else {
-        column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
-        // table_ff.appendChild(column_ffresp)
-        column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
-        // table_ff.appendChild(column_para)
-    }
+    //if (time_mark["Transition start"] == "Message non trouvé") {
+    //    column_ffresp.appendChild(print_ffrespv(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+    //    // table_ff.appendChild(column_ffresp)
+    //    column_para.appendChild(print_para(log, time_mark["Throttle armed"], time_mark["Throttle disarmed"], "Parachute Margin"))
+    //    // table_ff.appendChild(column_para)
+    //}
+    //else {
+    //    column_ffresp.appendChild(print_ffresp(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], time_mark["Cruise start"], time_mark["Start airbrake"], "Response"))
+    //    // table_ff.appendChild(column_ffresp)
+    //    column_para.appendChild(print_para(log, time_mark["VTOL Takeoff"], time_mark["Throttle disarmed"], "Parachute Margin"))
+    //    // table_ff.appendChild(column_para)
+    //}
     
 
     
@@ -3237,12 +3237,44 @@ function print_ff(log, t1, t2, head) {
     //fieldsetlab.innerHTML += "<br>";
     //fieldsetlab.innerHTML += `arspd0_Temp_delta (NA): ${maxvalue - minvalue}`;
     //fieldsetlab.innerHTML += "<br>";
-    let [maxdif, sec] = findMaxDifference(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp);
-    fieldsetlab.innerHTML += `max_2min_diff value : ${maxdif}`;
-    fieldsetlab.innerHTML += "<br>";
-    fieldsetlab.innerHTML += `max_2min_diff timemark: ${sec}`;
+    //let [maxdif, sec] = findMaxDifference(TimeUS_to_seconds(arspd_0.TimeUS), arspd_0.Temp);
+    //fieldsetlab.innerHTML += `max_2min_diff value : ${maxdif}`;
+    //fieldsetlab.innerHTML += "<br>";
+    //fieldsetlab.innerHTML += `max_2min_diff timemark: ${sec}`;
+    //fieldsetlab.innerHTML += "<br>";
+
+    const rcou = log.get("RCOU");
+
+    mincur = findMinCur(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, TimeUS_to_seconds(rcou.TimeUS), rcou.C3);
+    fieldsetlab.innerHTML += `max_cur_c3>1950 (A): ${mincur}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
+}
+
+function findMinCur(time1, cur, time2, c3) {
+    let mincur = Infinity;
+
+    // Parcourir toutes les paires time, value
+    for (let i = 0; i < time2.length; i++) {
+        let thro = c3[i];
+        if (thro > 1950) {
+            // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
+            let j = 0;
+            while (j < time1.length && time1[j] < time2[i]) {
+                j++;
+            }
+            console.log(cur[j]);
+            if (cur[j] < mincur) {
+
+                mincur = cur[j];
+
+            }
+        }
+
+    }
+
+    // Retourner le résultat (null si aucun écart trouvé)
+    return mincur === Infinity ? null : mincur;
 }
 
 function print_ffh(log, t1, t2, head) {
