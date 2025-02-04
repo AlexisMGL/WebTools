@@ -3246,7 +3246,7 @@ function print_ff(log, t1, t2, head) {
     const rcou = log.get("RCOU");
 
     mincur = findMinCur(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, TimeUS_to_seconds(rcou.TimeUS), rcou.C3);
-    fieldsetlab.innerHTML += `max_cur_c3>1950 (A): ${mincur}`;
+    fieldsetlab.innerHTML += `max_cur_c3>1850 (A): ${mincur}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
 }
@@ -3257,7 +3257,7 @@ function findMinCur(time1, cur, time2, c3) {
     // Parcourir toutes les paires time, value
     for (let i = 0; i < time2.length; i++) {
         let thro = c3[i];
-        if (thro > 1950) {
+        if (thro > 1850) {
             // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
             let j = 0;
             while (j < time1.length && time1[j] < time2[i]) {
