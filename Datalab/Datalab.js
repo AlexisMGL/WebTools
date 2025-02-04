@@ -5460,47 +5460,38 @@ function processAMData(files) {
 
     const tbody = table.querySelector("tbody");
 
-    // Parcourir tous les fichiers filtrés et les traiter
-    Promise.all(
-        files.map(file => {
-            // Ajouter une ligne pour chaque fichier avec le statut "En cours"
-            let row = document.createElement("tr");
-            row.innerHTML = `
-            <td style="border: 1px solid #ddd; padding: 8px;">${file.name}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;" id="status-${file.name}">En cours</td>
-        `;
-            tbody.appendChild(row);
+    // Remplacer Promise.all par une boucle séquentielle
+    const processSequentially = async (fileList) => {
+        for (const file of fileList) {
+            try {
+                // Ajouter la ligne avant le traitement
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px;">${file.name}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;" id="status-${file.name}">En cours</td>
+                `;
+                tbody.appendChild(row);
 
-            return readFileAsArrayBuffer(file)
-                .then(fileContent => {
-                    let log = new DataflashParser();
-                    log.processData(fileContent, []); // `fileContent` est maintenant un ArrayBuffer
-                    load_am(log,file.name.toLowerCase()); // Appeler load_am pour chaque fichier
+                // Traitement avec await séquentiel
+                const fileContent = await readFileAsArrayBuffer(file);
+                const log = new DataflashParser();
+                log.processData(fileContent, []);
+                load_am(log, file.name.toLowerCase());
 
-                    // Mettre à jour le statut du fichier à "Terminé"
-                    let statusCell = document.getElementById(`status-${file.name}`);
-                    if (statusCell) {
-                        statusCell.textContent = "Terminé";
-                        statusCell.style.color = "green";
-                    }
-                })
-                .catch(error => {
-                    // Mettre à jour le statut du fichier à "Erreur"
-                    let statusCell = document.getElementById(`status-${file.name}`);
-                    if (statusCell) {
-                        statusCell.textContent = "Erreur";
-                        statusCell.style.color = "red";
-                    }
-                    console.error(`Erreur lors du traitement du fichier ${file.name}:`, error);
-                });
-        })
-    ).then(() => {
-        console.log("Tous les fichiers ont été traités.");
+                // Mise à jour du statut
+                document.getElementById(`status-${file.name}`).textContent = "Terminé";
+            } catch (error) {
+                document.getElementById(`status-${file.name}`).textContent = "Erreur";
+                console.error(`Erreur sur ${file.name}:`, error);
+            }
+        }
+    };
+
+    processSequentially(files).then(() => {
+        console.log("Traitement terminé pour tous les fichiers");
     }).catch(error => {
         console.error("Erreur lors du traitement des fichiers:", error);
     });
-
-
 }
 
 function addThresholdInfo(line) {
