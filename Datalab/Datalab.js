@@ -3244,9 +3244,13 @@ function print_ff(log, t1, t2, head) {
     //fieldsetlab.innerHTML += "<br>";
 
     const rcou = log.get("RCOU");
+    const xkf1 = log.get_instance("XKF1", 0)
 
-    mincur = findMinCur(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, TimeUS_to_seconds(rcou.TimeUS), rcou.C3);
-    fieldsetlab.innerHTML += `max_cur_c3>1850 (A): ${mincur}`;
+
+
+    //mincur = findMinCur(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, TimeUS_to_seconds(rcou.TimeUS), rcou.C3);
+    maxsink = findmaxsink(TimeUS_to_seconds(rcou.TimeUS),rcou.C5, TimeUS_to_seconds(xkf1.TimeUS),xkf1.VD)
+    fieldsetlab.innerHTML += `maxvd (m/s): ${maxsink}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
 }
@@ -3274,6 +3278,31 @@ function findMinCur(time1, cur, time2, c3) {
 
     // Retourner le résultat (null si aucun écart trouvé)
     return mincur === Infinity ? null : mincur;
+}
+
+function findmaxsink(time1, c5, time2, vd) {
+    let maxvd = - Infinity;
+
+    // Parcourir toutes les paires time, value
+    for (let i = 0; i < time1.length; i++) {
+        let thro = c5[i];
+        if (thro > 1100) {
+            // Trouver l'indice correspondant à targetTime ou le plus proche après targetTime
+            let j = 0;
+            while (j < time2.length && time1[j] < time2[i]) {
+                j++;
+            }
+            if (vd[j] > maxvd) {
+
+                maxvd = vd[j];
+
+            }
+        }
+
+    }
+
+    // Retourner le résultat (null si aucun écart trouvé)
+    return maxvd === - Infinity ? null : maxvd;
 }
 
 function print_ffh(log, t1, t2, head) {
