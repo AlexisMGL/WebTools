@@ -3263,7 +3263,6 @@ function findMinCur(time1, cur, time2, c3) {
             while (j < time1.length && time1[j] < time2[i]) {
                 j++;
             }
-            console.log(cur[j]);
             if (cur[j] < mincur) {
 
                 mincur = cur[j];
