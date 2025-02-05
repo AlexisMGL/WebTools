@@ -3244,15 +3244,46 @@ function print_ff(log, t1, t2, head) {
     //fieldsetlab.innerHTML += "<br>";
 
     const rcou = log.get("RCOU");
-    const xkf1 = log.get_instance("XKF1", 0)
-
-
+    const xkf1 = log.get_instance("XKF1", 0);
 
     //mincur = findMinCur(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, TimeUS_to_seconds(rcou.TimeUS), rcou.C3);
-    maxsink = findmaxsink(TimeUS_to_seconds(rcou.TimeUS),rcou.C5, TimeUS_to_seconds(xkf1.TimeUS),xkf1.VD)
-    fieldsetlab.innerHTML += `maxvd (m/s): ${maxsink}`;
+    //maxsink = findmaxsink(TimeUS_to_seconds(rcou.TimeUS),rcou.C5, TimeUS_to_seconds(xkf1.TimeUS),xkf1.VD)
+    //fieldsetlab.innerHTML += `maxvd (m/s): ${maxsink}`;
+    //fieldsetlab.innerHTML += "<br>";
+
+    const qtun = log.get("QTUN");
+
+    display_time = findMaxConsecutiveTimeWithVzLessThanMinus5(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt)
+    fieldsetlab.innerHTML += `maxvd (m/s): ${display_time}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
+}
+
+function findMaxConsecutiveTimeWithVzLessThanMinus5(time1, vz) {
+    let maxDuration = 0;
+    let currentDuration = 0;
+
+    // Parcourir toutes les valeurs de vz
+    for (let i = 0; i < vz.length; i++) {
+        if (vz[i] < -5) {
+            // Incrémenter la durée actuelle si vz < -5
+            currentDuration += (i < time1.length - 1) ? time1[i + 1] - time1[i] : 0;
+        } else {
+            // Réinitialiser la durée actuelle si vz >= -5
+            if (currentDuration > maxDuration) {
+                maxDuration = currentDuration;
+            }
+            currentDuration = 0;
+        }
+    }
+
+    // Vérifier une dernière fois au cas où la séquence se termine par vz < -5
+    if (currentDuration > maxDuration) {
+        maxDuration = currentDuration;
+    }
+
+    // Retourner la durée maximale consécutive (0 si aucune séquence trouvée)
+    return maxDuration > 0 ? maxDuration : 0;
 }
 
 function findMinCur(time1, cur, time2, c3) {
