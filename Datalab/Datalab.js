@@ -3253,25 +3253,29 @@ function print_ff(log, t1, t2, head) {
 
     const qtun = log.get("QTUN");
 
-    display_time = findMaxConsecutiveTimeWithVzLessThanMinus5(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt)
-    fieldsetlab.innerHTML += `maxvd (m/s): ${display_time}`;
+    display_time = findMaxConsecutiveTimeWithVzLessThanMinus5(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt,qtun.Alt)
+    fieldsetlab.innerHTML += `maxT (m/s): ${display_time.maxDuration}`;
+    fieldsetlab.innerHTML += "<br>";
+    fieldsetlab.innerHTML += `last_alt (m): ${display_time.altitudeAtEnd}`;
     fieldsetlab.innerHTML += "<br>";
     return fieldsetlab;
 }
 
-function findMaxConsecutiveTimeWithVzLessThanMinus5(time1, vz) {
+function findMaxConsecutiveTimeWithVzLessThanMinus5(time1, vz, alt) {
     let maxDuration = 0;
     let currentDuration = 0;
+    let endIndex = -1;  // Pour stocker l'indice de fin de la séquence maximale
 
     // Parcourir toutes les valeurs de vz
     for (let i = 0; i < vz.length; i++) {
-        if (vz[i] < -5) {
+        if (vz[i] < -5.5) {
             // Incrémenter la durée actuelle si vz < -5
             currentDuration += (i < time1.length - 1) ? time1[i + 1] - time1[i] : 0;
         } else {
             // Réinitialiser la durée actuelle si vz >= -5
             if (currentDuration > maxDuration) {
                 maxDuration = currentDuration;
+                endIndex = i - 1;  // L'indice de fin de la séquence maximale
             }
             currentDuration = 0;
         }
@@ -3280,10 +3284,22 @@ function findMaxConsecutiveTimeWithVzLessThanMinus5(time1, vz) {
     // Vérifier une dernière fois au cas où la séquence se termine par vz < -5
     if (currentDuration > maxDuration) {
         maxDuration = currentDuration;
+        endIndex = vz.length - 1;  // L'indice de fin de la séquence maximale
     }
 
-    // Retourner la durée maximale consécutive (0 si aucune séquence trouvée)
-    return maxDuration > 0 ? maxDuration : 0;
+    // Si une séquence a été trouvée, retourner la durée maximale et l'altitude correspondante
+    if (endIndex !== -1) {
+        return {
+            maxDuration: maxDuration,
+            altitudeAtEnd: alt[endIndex]
+        };
+    } else {
+        // Retourner 0 et null si aucune séquence n'a été trouvée
+        return {
+            maxDuration: 0,
+            altitudeAtEnd: null
+        };
+    }
 }
 
 function findMinCur(time1, cur, time2, c3) {
