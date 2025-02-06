@@ -3144,7 +3144,7 @@ function print_ff(log, t1, t2, head) {
     const pm = log.get("PM")
 
     // Battery 0
-    //let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
+    let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Volt, t1, t2);
     //fieldset.innerHTML += `batt0_volt_min (>42 V): ${checkThreshold('ff', 'batt0_volt_min', minvalue)}`;
     //fieldset.innerHTML += "<br>";
     //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(bat_0.TimeUS), bat_0.Curr, t1, t2);
@@ -3258,6 +3258,15 @@ function print_ff(log, t1, t2, head) {
     fieldsetlab.innerHTML += "<br>";
     fieldsetlab.innerHTML += `last_alt (m): ${display_time.altitudeAtEnd}`;
     fieldsetlab.innerHTML += "<br>";
+
+    const ntun = log.get("NTUN");
+
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ntun.TimeUS), ntun.XT, t1, t2);
+    fieldsetlab.innerHTML += `NTUN max: ${maxvalue/1000}`;
+    fieldsetlab.innerHTML += "<br>";
+    fieldsetlab.innerHTML += `NTUN min: ${minvalue / 1000}`;
+    fieldsetlab.innerHTML += "<br>";
+
     return fieldsetlab;
 }
 
