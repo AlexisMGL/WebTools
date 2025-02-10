@@ -179,6 +179,14 @@ const thresholds = [
     { step: 'ch', champ: 'tecs_dh_min', min: -6, max: null },
     { step: 'ch', champ: 'xkf1_VD_max', min: null, max: 6 },
     { step: 'ch', champ: 'fpar_sinktime_max', min: null, max: 1 },
+    { step: 'ch', champ: 'para_vtolsink_max', min: null, max: 4 },
+    { step: 'ch', champ: 'para_cvtol_max', min: null, max: 1 },
+    { step: 'ch', champ: 'para_altdelta_max', min: null, max: 40 },
+    { step: 'ch', champ: 'para_calt_max', min: null, max: 1 },
+    { step: 'ch', champ: 'para_xt_max', min: null, max: 1000 },
+    { step: 'ch', champ: 'para_cxt_max', min: null, max: 1 },
+    { step: 'ch', champ: 'para_motcur_min', min: 25, max: null },
+    { step: 'ch', champ: 'para_cmot_max', min: null, max: 1 },
 
     { step: 'pm', champ: 'Warnings', min: null, max: 1 },
 ];
@@ -2430,6 +2438,90 @@ function findMinMaxAvgValue(time, values, t1, t2) {
     return [minValue, maxValue, avgValue];
 }
 
+function findMinMaxAvgValue_mark1(time, values, mark, t1, t2) {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let sum = 0;
+    let count = 0;
+    let start = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2 && mark[i] == 1) {
+            if (values[i] < minValue) {
+                minValue = values[i];
+            }
+            if (values[i] > maxValue) {
+                maxValue = values[i];
+            }
+            sum += values[i];
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avgValue = count > 0 ? sum / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (minValue === Infinity) minValue = null;
+    if (maxValue === -Infinity) maxValue = null;
+
+    return [minValue, maxValue, avgValue];
+}
+
+function findMinMaxAvgValue_mark2(time, values, active, mark, t1, t2) {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let sum = 0;
+    let count = 0;
+    let start = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2 && mark[i] == 1 && active[i] > 90) {
+            if (values[i] < minValue) {
+                minValue = values[i];
+            }
+            if (values[i] > maxValue) {
+                maxValue = values[i];
+            }
+            sum += values[i];
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avgValue = count > 0 ? sum / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (minValue === Infinity) minValue = null;
+    if (maxValue === -Infinity) maxValue = null;
+
+    return [minValue, maxValue, avgValue];
+}
+
 function findMinMaxFirst(time, values, t1, t2) {
     let minValue = Infinity;
     let maxValue = -Infinity;
@@ -2498,6 +2590,49 @@ function findDeltas(time, values1, values2, t1, t2) {
             lowpass = 0.95*lowpass + 0.05*Math.abs(values2[i] - values1[i]); //value lowpassed on ~20 values
             if (lowpass > maxDelta) {
                 maxDelta = lowpass
+            }
+            sumd += values2[i] - values1[i];
+            sumdabs += Math.abs(values2[i] - values1[i]);
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avg_d = count > 0 ? sumd / count : null;
+    let avg_d_abs = count > 0 ? sumdabs / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (maxDelta === -Infinity) maxValue = null;
+
+    return [avg_d, avg_d_abs, maxDelta];
+}
+
+function findDeltas_mark1(time, values1, values2, mark, t1, t2) {
+    // give avg delta and avg || delta
+    let maxDelta = -Infinity;
+    let sumd = 0;
+    let sumdabs = 0;
+    let count = 0;
+    let start = 0;
+    let dif = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2 && mark[i]==1) {
+            dif = Math.abs(values2[i] - values1[i]); // no lowpass
+            if (dif > maxDelta) {
+                maxDelta = dif
             }
             sumd += values2[i] - values1[i];
             sumdabs += Math.abs(values2[i] - values1[i]);
@@ -3395,6 +3530,7 @@ function print_para(log, t1, t2, head) {
     const tecs = log.get("TECS")
     const xkf1_0 = log.get_instance("XKF1", 0)
     const fpar = log.get("FPAR")
+    const para = log.get("PARA")
 
     try {
         let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(tecs.TimeUS), tecs.dh, t1, t2);
@@ -3422,6 +3558,43 @@ function print_para(log, t1, t2, head) {
         fieldset.innerHTML += "<br>";  // Add a line break
     }
 
+    // PARA
+    if (para != null) {
+        // VTOL MAX
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(para.TimeUS), para.sk, t1, t2);
+        fieldset.innerHTML += `para_vtolsink_max (<4 m/s):  ${checkThreshold('ch', 'para_vtolsink_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // VTOL C
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(para.TimeUS), para.c_vtol, t1, t2);
+        fieldset.innerHTML += `para_cvtol_max (<1):  ${checkThreshold('ch', 'para_cvtol_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // ALT MAX
+        let [avg_d, avg_d_abs, max_d] = findDeltas_mark1(TimeUS_to_seconds(para.TimeUS), para.alt, para.t_alt, para.state, t1, t2);
+        fieldset.innerHTML += `para_altdelta_max (<40 m):  ${checkThreshold('ch', 'para_altdelta_max', max_d)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // ALT C
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue_mark1(TimeUS_to_seconds(para.TimeUS), para.c_alt, para.state, t1, t2);
+        fieldset.innerHTML += `para_calt_max (<1):  ${checkThreshold('ch', 'para_calt_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // XT MAX
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue_mark1(TimeUS_to_seconds(para.TimeUS), para.xt, para.state, t1, t2);
+        fieldset.innerHTML += `para_xtrack_max (<1000 m):  ${checkThreshold('ch', 'para_xt_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // XT C
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue_mark1(TimeUS_to_seconds(para.TimeUS), para.c_xt, para.state, t1, t2);
+        fieldset.innerHTML += `para_cxtrack_max (<1):  ${checkThreshold('ch', 'para_cxt_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // MIN CUR
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue_mark2(TimeUS_to_seconds(para.TimeUS), para.cur, para.thr, para.state, t1, t2);
+        fieldset.innerHTML += `para_motcur90thr_min (>25 A):  ${checkThreshold('ch', 'para_motcur_min', minvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+        // MIN CUR C
+        [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue_mark2(TimeUS_to_seconds(para.TimeUS), para.c_mot, para.thr, para.state, t1, t2);
+        fieldset.innerHTML += `para_cmot_max (<1):  ${checkThreshold('ch', 'para_cmot_max', maxvalue)}`;
+        fieldset.innerHTML += "<br>";  // Add a line break
+    } else {
+
+    }
 
 
 
