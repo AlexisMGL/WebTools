@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkHours R&D</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .added {
+            background-color: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <h1>Formulaire de Suivi des Tâches</h1>
+    <form id="tachesForm">
+        <table>
+            <thead>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Projet 1</th>
+                    <th>Projet 2</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tachesBody">
+                <tr>
+                    <td>
+                        <select name="start" required>
+                            <!-- Options de 7h00 à 17h00 -->
+                        </select>
+                    </td>
+                    <td>
+                        <select name="end" required>
+                            <!-- Options de 7h00 à 17h00 -->
+                        </select>
+                    </td>
+                    <td>
+                        <select name="projet_1" required>
+                            <!-- Options des projets 1 -->
+                        </select>
+                    </td>
+                    <td>
+                        <select name="projet_2" required>
+                            <!-- Options des projets 2 associés -->
+                        </select>
+                    </td>
+                    <td><button type="button" onclick="addRow(this)">Ajouter</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="submit">Soumettre</button>
+    </form>
+
+    <script src="workhours.js"></script>
+</body>
+</html>
