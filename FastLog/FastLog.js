@@ -17,6 +17,8 @@ import_done[1] = import('https://esm.sh/@octokit/request')
 let ArduPilot_GitHub_tags
 let octokitRequest_ratelimit_reset
 
+loadReferenceFile("./references.param")
+
 const thresholds = [
     { step: 'pr', champ: 'palier_tas', min: null, max: null },
     { step: 'pr', champ: 'palier_eas', min: null, max: null },
@@ -1834,7 +1836,7 @@ function update_minimal_config() {
 }
 
 function load_params(log) {
-    loadReferenceFile("./references.param")
+    
     load_am(log)
     load_ins(log)
     load_compass(log)
