@@ -152,6 +152,7 @@ const thresholds = [
     { step: 'fh', champ: 'ffh_start', min: null, max: null },
     { step: 'fh', champ: 'ffh_end', min: null, max: null },
     { step: 'fh', champ: 'rfnd_Dist_min', min: 70, max: null },
+    { step: 'fh', champ: 'rfnd_Dist_min_2s', min: 70, max: null },
     { step: 'fh', champ: 'terr_CHeight_min', min: 70, max: null },
     { step: 'fh', champ: 'RCIN_C1delta_ms', min: null, max: 20 },
     { step: 'fh', champ: 'RCIN_C2delta_ms', min: null, max: 20 },
@@ -1977,6 +1978,11 @@ function load_am(log) {
         let table_trans = document.createElement("table")
         am_section.appendChild(table_trans)
 
+        // If transitions ends after WP2, then cruise start at transition end
+        if (time_mark["Transition end"] > time_mark["Cruise start"]) {
+            time_mark["Cruise start"] = time_mark["Transition end"]
+        }
+
         let column_tr = document.createElement("td")
         column_tr.appendChild(print_tr(log, time_mark["Transition start"], time_mark["Cruise start"], time_mark["Transition end"], "Transition"))
         table_trans.appendChild(column_tr)
@@ -2119,7 +2125,7 @@ function load_am(log) {
                 const fileContent = e.target.result;
 
                 // Extraire le texte avant "Bat1"
-                const textBeforeBat = fileContent.split(/Bat1/)[0];
+                const textBeforeBat = fileContent;
 
                 // Définir les préfixes pour chaque section
                 const prefixes = {
@@ -2439,6 +2445,56 @@ function findMinMaxAvgValue(time, values, t1, t2) {
 
     return [minValue, maxValue, avgValue];
 }
+
+function findMinMaxAvgValue_2s(time, values, t1, t2) {
+    let globalMax = -Infinity;
+    let globalSum = 0;
+    let globalCount = 0;
+    let slidingMinOverall = Infinity;
+
+    // Déterminer les indices correspondant à l'intervalle [t1, t2]
+    let start = 0;
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+    let end = time.length - 1;
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Calculer globalement la valeur max et la moyenne pour values > 5
+    for (let i = start; i <= end; i++) {
+        if (values[i] > 5) {
+            globalMax = Math.max(globalMax, values[i]);
+            globalSum += values[i];
+            globalCount++;
+        }
+    }
+    let globalAvg = globalCount > 0 ? globalSum / globalCount : null;
+    if (globalMax === -Infinity) globalMax = null;
+
+    // Pour chaque instant dans l'intervalle, définir une fenêtre de 2 secondes
+    // et calculer le minimum (parmi les valeurs > 5) dans cette fenêtre.
+    for (let i = start; i <= end; i++) {
+        // La fenêtre va de time[i] à time[i] + 2 secondes
+        let windowEndTime = time[i] + 2;
+        let windowMin = Infinity;
+        for (let j = i; j <= end && time[j] <= windowEndTime; j++) {
+            if (values[j] > 5) {
+                windowMin = Math.min(windowMin, values[j]);
+            }
+        }
+        // Si la fenêtre contenait au moins une valeur > 5,
+        // comparer avec le minimum trouvé sur l'ensemble des fenêtres.
+        if (windowMin < slidingMinOverall) {
+            slidingMinOverall = windowMin;
+        }
+    }
+    if (slidingMinOverall === Infinity) slidingMinOverall = null;
+
+    return slidingMinOverall;
+}
+
 
 function findMinMaxAvgValue_mark1(time, values, mark, t1, t2) {
     let minValue = Infinity;
@@ -3380,6 +3436,10 @@ function print_ffh(log, t1, t2, head) {
     // RFND
     let [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(rfnd_0.TimeUS), rfnd_0.Dist, start_ffh, end_ffh);
     fieldset.innerHTML += `rfnd_Dist_min (>70 m): ${checkThreshold('fh', 'rfnd_Dist_min', minvalue)}`;
+    fieldset.innerHTML += "<br>";  // Add a line break
+
+    minvalue = findMinMaxAvgValue_2s(TimeUS_to_seconds(rfnd_0.TimeUS), rfnd_0.Dist, start_ffh, end_ffh)
+    fieldset.innerHTML += `rfnd_Dist_min_2s (>70 m): ${checkThreshold('fh', 'rfnd_Dist_min_2s', minvalue)}`;
     fieldset.innerHTML += "<br>";  // Add a line break
 
     // TERR
@@ -5968,7 +6028,7 @@ async function processTask(binFilePath,tasktype) {
             const prfContent = await fs.readFile(prfFilePath, 'utf8');
 
             // Votre logique de traitement du contenu
-            const textBeforeBat = prfContent.split(/Bat1/)[0];
+            const textBeforeBat = prfContent;
             const prefixes = {
                 "Time Reader": "ti_",
                 "VTOL TakeOff": "to_",
