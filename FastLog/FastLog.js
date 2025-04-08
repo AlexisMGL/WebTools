@@ -2480,7 +2480,7 @@ function findMinMaxAvgValue_2s(time, values, t1, t2) {
         let windowEndTime = time[i] + 2;
         let windowMin = Infinity;
         for (let j = i; j <= end && time[j] <= windowEndTime; j++) {
-            if (values[j] > 5) {
+            if (values[j] > 5 && values[i] < 150 && values[i+2] < 150) {
                 windowMin = Math.min(windowMin, values[j]);
             }
         }
