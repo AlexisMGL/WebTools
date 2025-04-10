@@ -131,6 +131,7 @@ const thresholds = [
     { step: 'ff', champ: 'batt1_currTot', min: null, max: null },
     { step: 'ff', champ: 'batt0_consperkm', min: null, max: null },
     { step: 'ff', champ: 'batt0+1_consperkm', min: null, max: null },
+    { step: 'ff', champ: 'batt0_last_volt', min: 43, max: null },
     { step: 'ff', champ: 'gps0_sats_min', min: 10, max: null },
     { step: 'ff', champ: 'gps1_sats_min', min: 10, max: null },
     { step: 'ff', champ: 'pm_load_max', min: null, max: 52 },
@@ -3344,6 +3345,9 @@ function print_ff(log, t1, t2, head) {
     fieldset.innerHTML += "<br>";
     minvalue = (maxvalue + maxvalue1) / (0.001 * avgvalue * (t2 - t1));
     fieldset.innerHTML += `batt0+1_consperkm (mAh/km): ${checkThreshold('ff', 'batt0+1_consperkm', minvalue)}`;
+    fieldset.innerHTML += "<br>";
+    minvalue = bat_0.Volt[bat_0.Volt.length - 1];
+    fieldset.innerHTML += `batt0_last_volt (V): ${checkThreshold('ff', 'batt0_last_volt', minvalue)}`;
     fieldset.innerHTML += "<br>";
 
     // GPS
