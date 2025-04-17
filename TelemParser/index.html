@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>Analyseur TLog</title>
+    <link rel="icon" href="../images/AP_favicon.png">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+        }
+
+        table {
+            width: 1200px;
+        }
+
+        section {
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <tr>
+            <td>
+                <a href="https://ardupilot.org">
+                    <img src="../images/ArduPilot.png" alt="ArduPilot" />
+                </a>
+            </td>
+            <td>
+                <a href="https://github.com/ArduPilot/WebTools">
+                    <img src="../images/github-mark.png" style="width:60px" alt="GitHub Mark" />
+                </a><br>
+                <a href="https://github.com/ArduPilot/WebTools">
+                    <img src="../images/GitHub_Logo.png" style="width:60px" alt="GitHub Logo" />
+                </a>
+            </td>
+        </tr>
+    </table>
+
+    <h1>Analyseur TLog</h1>
+
+    <!-- Sélection du tlog -->
+    <input id="fileItem" type="file" accept=".tlog,.bin" onchange="loadFile(this)">
+
+    <!-- Résultats -->
+    <section id="vibrationsSection" hidden>
+        <h3>Vibrations</h3>
+        <div id="vibrationsContent"></div>
+    </section>
+
+    <!-- Tout le JS client est ici -->
+    <script src="TelemParser.js" defer></script>
+</body>
+</html>

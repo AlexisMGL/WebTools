@@ -7,5 +7,8 @@
   },
   "devDependencies": {
     "electron": "^32.0.1"
+  },
+  "dependencies": {
+    "node-mavlink": "^2.1.0"
   }
 }
