@@ -1,13 +1,7 @@
 {
-  "scripts": {
-    "build": "browserify client.js -o public/TelemParser.js",
-    "start": "netlify dev"
-  },
+  "name": "WebTools",
+  "version": "1.0.0",
   "dependencies": {
     "node-mavlink": "^1.0.0"
-  },
-  "devDependencies": {
-    "browserify": "^17.0.0",
-    "netlify-cli": "^12.0.0"
   }
 }

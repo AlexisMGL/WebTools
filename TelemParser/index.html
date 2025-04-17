@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <title>Analyseur TLog</title>
     <link rel="icon" href="../images/AP_favicon.png">
-
     <style>
         body {
             font-family: sans-serif;
@@ -15,8 +14,8 @@
             width: 1200px;
         }
 
-        section {
-            margin-top: 2rem;
+        #vibrationsSection {
+            margin-top: 1.5rem;
         }
     </style>
 </head>
@@ -39,18 +38,19 @@
         </tr>
     </table>
 
-    <h1>Analyseur TLog</h1>
+    <h1>
+        <a href="" style="color:#000; text-decoration:none;">Analyseur TLog</a>
+    </h1>
 
-    <!-- Sélection du tlog -->
-    <input id="fileItem" type="file" accept=".tlog,.bin" onchange="loadFile(this)">
+    <!-- Sélecteur de fichier -->
+    <input id="fileItem" type="file" accept=".bin,.tlog">
 
-    <!-- Résultats -->
+    <!-- Résultats Vibrations -->
     <section id="vibrationsSection" hidden>
         <h3>Vibrations</h3>
         <div id="vibrationsContent"></div>
     </section>
 
-    <!-- Tout le JS client est ici -->
-    <script src="TelemParser.js" defer></script>
+    <script src="app.js" defer></script>
 </body>
 </html>
