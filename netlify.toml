@@ -1,8 +1,4 @@
 [build]
-  command = "echo 'Skipping build, serving static files'"  # Custom command that does nothing
-  publish = "."  # Directory to deploy, adjust if needed
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  command   = "npm run build"
+  publish   = "public"
+  functions = "netlify/functions"

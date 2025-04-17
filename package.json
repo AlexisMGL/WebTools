@@ -1,14 +1,13 @@
 {
-  "name": "mon-app-electron",
-  "version": "1.0.0",
-  "main": "HarwareReport\\\\Main.js",
   "scripts": {
-    "start": "electron ."
-  },
-  "devDependencies": {
-    "electron": "^32.0.1"
+    "build": "browserify client.js -o public/TelemParser.js",
+    "start": "netlify dev"
   },
   "dependencies": {
-    "node-mavlink": "^2.1.0"
+    "node-mavlink": "^1.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "netlify-cli": "^12.0.0"
   }
 }
