@@ -1,12 +1,13 @@
 [build]
-  publish   = "."                     # on publie tout le repo
-  functions = "netlify/functions"     # là où vivent tes Lambdas
+  # la commande à exécuter – ça va lancer "npm run build" qui est juste un echo
+  command   = "npm run build"
+  # publier toute la racine du repo
+  publish   = "."
+  # indique où sont tes lambdas
+  functions = "netlify/functions"
 
-# (optionnel) si tu veux que toutes les routes
-# /TelemParser, /FastLog, /FilterTool, etc.
-# pointent vers leur index.html respectif :
+# si tu veux toujours servir index.html depuis chaque sous?dossier
 [[redirects]]
   from    = "/*"
   to      = "/:splat/index.html"
   status  = 200
-  force   = false
