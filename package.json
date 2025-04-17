@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "dependencies": {
     "node-mavlink": "^1.0.0"
+  },
+  "scripts": {
+    "build": "echo \"✔ no build step, static site only\""
   }
 }
