@@ -1,14 +1,10 @@
 {
-  "name": "telem-parser-desktop",
+  "name": "telem-parser-netlify",
   "version": "1.0.0",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron ."
-  },
   "dependencies": {
     "node-mavlink": "^1.0.0"
   },
-  "devDependencies": {
-    "electron": "^25.0.0"
+  "scripts": {
+    "build": "echo \"No build step, just static files\""
   }
 }
