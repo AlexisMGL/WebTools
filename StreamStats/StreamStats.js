@@ -29,7 +29,7 @@ function bin_count(time_in, size, bin_width, total) {
     // Size of msg at index, deal with array size
     function get_size(i) {
         if (Array.isArray(size)) {
-            return  size[i]
+            return size[i]
         }
         return size
     }
@@ -108,124 +108,146 @@ function load_log(log_file) {
     console.log(`Load took: ${end - start} ms`)
 }
 
-function plot_log() {
+function plot_tlog() {
+    const bin_width = parseFloat(document.getElementById("WindowSize").value);
+    const use_size = document.getElementById("Unit_bps").checked;
+    const plot_labels = use_size ? rate_plot.bits : rate_plot.count;
 
-    // micro seconds to seconds helpers
-    const US2S = 1 / 1000000
-    function TimeUS_to_seconds(TimeUS) {
-        return array_scale(TimeUS, US2S)
-    }
+    // 1) On reconstruit les traces “data_rates”
+    data_rates.data = [];
+    let total = { count: [], low_bin: Infinity, high_bin: -Infinity };
+    let composition = {};
 
-    let stats = log.stats()
-    if (stats == null) {
-        alert("Failed to get stats")
-        return
-    }
+    for (const [sys_id, sys] of Object.entries(system)) {
+        for (const [comp_id, comp] of Object.entries(sys)) {
+            if (!comp.include.checked) {
+                // désactive les messages si le composant est décoché
+                Object.values(comp.msg).forEach(m => m.include.disabled = true);
+                continue;
+            }
+            Object.values(comp.msg).forEach(m => m.include.disabled = false);
 
-    // Load user setting
-    const bin_width = parseFloat(document.getElementById("WindowSize").value)
-    const use_size = document.getElementById("Unit_bps").checked
-    const plot_labels = use_size ? rate_plot.bits : rate_plot.count
-
-    // Plot composition
-    log_stats.data[0].labels = []
-    log_stats.data[0].values = []
-    for (const [key, value] of Object.entries(stats)) {
-        log_stats.data[0].labels.push(key)
-        log_stats.data[0].values.push(use_size ? value.size : value.count)
-    }
-    log_stats.data[0].hovertemplate = plot_labels.pie_hovertemplate
-
-    let plot = document.getElementById("log_stats")
-    plot_visibility(plot, false)
-    Plotly.redraw(plot)
-
-    let stats_text = document.getElementById("LOGSTATS")
-    stats_text.replaceChildren()
-    if (use_size) {
-        stats_text.appendChild(document.createTextNode("Total size: " + log.data.byteLength + " Bytes"))
-    }
-
-    // Clear plot data
-    data_rates.data = []
-
-    let total = {
-        count: [],
-        low_bin: Infinity,
-        high_bin: -Infinity,
-    }
-    for (const [name, value] of Object.entries(stats)) {
-        if ((value.count == 0) || !(name in log.messageTypes) || !log.messageTypes[name].expressions.includes("TimeUS")) {
-            continue
-        }
-
-        let time
-        if (!("instances" in log.messageTypes[name])) {
-            // No instances
-            time = TimeUS_to_seconds(log.get(name, "TimeUS"))
-
-        } else {
-            // Instances
-            time = []
-            for (const inst of Object.keys(log.messageTypes[name].instances)) {
-                time = [].concat(time, TimeUS_to_seconds(log.get_instance(name, inst, "TimeUS")))
+            for (const [name, msg] of Object.entries(comp.msg)) {
+                if (!msg.include.checked) continue;
+                // binning des messages
+                const binned = bin_count(
+                    msg.time,
+                    use_size ? msg.size : 1,
+                    bin_width,
+                    total
+                );
+                data_rates.data.push({
+                    mode: 'lines',
+                    x: binned.time,
+                    y: binned.count,
+                    name,
+                    meta: name,
+                    hovertemplate: plot_labels.hovertemplate
+                });
+                // calcul de la composition initiale
+                const key = `(${sys_id},${comp_id}) ${name}`;
+                composition[key] = use_size
+                    ? array_sum(msg.size)
+                    : msg.size.length;
             }
         }
-
-        const binned = bin_count(time, use_size ? (value.msg_size * 8) : 1, bin_width, total)
-
-        data_rates.data.push({
-            type: 'scattergl',
-            mode: 'lines',
-            x: binned.time,
-            y: binned.count,
-            name: name,
-            meta: name,
-            hovertemplate: plot_labels.hovertemplate
-        })
-
     }
 
-    // Show setup options
-    document.getElementById("plotsetup").hidden = false
+    // 2) Tracés “Message Rates”
+    data_rates.layout.yaxis.title.text = plot_labels.yaxis;
+    let plot = document.getElementById("data_rates");
+    Plotly.purge(plot);
+    Plotly.newPlot(plot, data_rates.data, data_rates.layout, { displaylogo: false });
+    plot_visibility(plot, false);
 
-    // Plot individual rates
-    data_rates.layout.yaxis.title.text = plot_labels.yaxis
+    // 3) Tracé “Total Rate”
+    const total_binned = total_count(total, bin_width);
+    total_rate.data[0].x = total_binned.time;
+    total_rate.data[0].y = total_binned.count;
+    total_rate.data[0].hovertemplate = plot_labels.hovertemplate;
+    total_rate.layout.yaxis.title.text = plot_labels.yaxis;
 
-    plot = document.getElementById("data_rates")
-    Plotly.purge(plot)
-    Plotly.newPlot(plot, data_rates.data, data_rates.layout, {displaylogo: false})
-    plot_visibility(plot, false)
+    plot = document.getElementById("total_rate");
+    Plotly.purge(plot);
+    Plotly.newPlot(plot, total_rate.data, total_rate.layout, { displaylogo: false });
+    plot_visibility(plot, false);
 
-    // Total rate
-    const total_binned = total_count(total, bin_width)
-    total_rate.data[0].x = total_binned.time
-    total_rate.data[0].y = total_binned.count
+    // 4) Tracé “Composition” initial
+    log_stats.data[0].labels = Object.keys(composition);
+    log_stats.data[0].values = Object.values(composition);
+    log_stats.data[0].hovertemplate = plot_labels.pie_hovertemplate;
 
-    total_rate.data[0].hovertemplate = plot_labels.hovertemplate
-    total_rate.layout.yaxis.title.text = plot_labels.yaxis
+    plot = document.getElementById("log_stats");
+    Plotly.redraw(plot);
+    plot_visibility(plot, false);
 
-    plot = document.getElementById("total_rate")
-    Plotly.purge(plot)
-    Plotly.newPlot(plot, total_rate.data, total_rate.layout, { displaylogo: false })
-    plot_visibility(plot, false)
-
-    // Clear listeners
+    // 5) On recale les axes et le reset
     document.getElementById("total_rate").removeAllListeners("plotly_relayout");
     document.getElementById("data_rates").removeAllListeners("plotly_relayout");
 
-    // Link all time axis
     link_plot_axis_range([
         ["total_rate", "x", "", total_rate],
         ["data_rates", "x", "", data_rates],
-    ])
-
-    // Link plot reset
+    ]);
     link_plot_reset([
         ["total_rate", total_rate],
         ["data_rates", data_rates],
-    ])
+    ]);
+
+    // ———————————————— NOUVEAUTÉS ————————————————
+
+    // A) Fonction qui refait le camembert selon [x0, x1]
+    function updateComposition(x0, x1) {
+        const comp2 = {};
+        for (const [sys_id, sys] of Object.entries(system)) {
+            for (const [comp_id, compObj] of Object.entries(sys)) {
+                if (!compObj.include.checked) continue;
+                for (const [name, msg] of Object.entries(compObj.msg)) {
+                    if (!msg.include.checked) continue;
+                    // on filtre les temps
+                    const times = msg.time.filter(t => t >= x0 && t <= x1);
+                    if (!times.length) continue;
+                    const key = `(${sys_id},${comp_id}) ${name}`;
+                    if (use_size) {
+                        let sum = 0;
+                        times.forEach(t => {
+                            const idx = msg.time.indexOf(t);
+                            sum += msg.size[idx];
+                        });
+                        comp2[key] = (comp2[key] || 0) + sum;
+                    } else {
+                        comp2[key] = (comp2[key] || 0) + times.length;
+                    }
+                }
+            }
+        }
+        Plotly.restyle(
+            document.getElementById("log_stats"),
+            {
+                labels: [Object.keys(comp2)],
+                values: [Object.values(comp2)]
+            }
+        );
+    }
+
+    // B) Gestion des événements de zoom/sélection
+    function handleRelayout(evt) {
+        let x0, x1;
+        if (evt["xaxis.range[0]"] != null) {
+            x0 = evt["xaxis.range[0]"];
+            x1 = evt["xaxis.range[1]"];
+        } else if (Array.isArray(evt["xaxis.range"])) {
+            [x0, x1] = evt["xaxis.range"];
+        } else return;
+        updateComposition(x0, x1);
+    }
+
+    ["total_rate", "data_rates"].forEach(id => {
+        const gd = document.getElementById(id);
+        gd.on("plotly_relayout", handleRelayout);
+    });
 }
+
 
 let system
 function load_tlog(log_file) {
@@ -317,7 +339,7 @@ function load_tlog(log_file) {
         // Calculate checksum
         let crc = 0xFFFF
         const crc_len = header.header_length + header.payload_length - 2
-        for (let i = 1; i < crc_len ; i++) {
+        for (let i = 1; i < crc_len; i++) {
             crc = x25Crc(data.getUint8(offset + i), crc)
         }
         crc = x25Crc(message.CRC, crc)
@@ -337,7 +359,7 @@ function load_tlog(log_file) {
 
         // Get component
         if (!(header.srcComponent in sys)) {
-            sys[header.srcComponent] = { 
+            sys[header.srcComponent] = {
                 next_seq: header.sequence,
                 received: 0,
                 dropped: 0,
@@ -361,11 +383,11 @@ function load_tlog(log_file) {
         let msg = comp.msg[message.name]
 
         // Get timestamp
-        const time_stamp = data.getBigUint64(offset-timestamp_length)
+        const time_stamp = data.getBigUint64(offset - timestamp_length)
         if (first_timestamp == null) {
             first_timestamp = time_stamp
 
-            const date = new Date(Number(time_stamp/1000n))
+            const date = new Date(Number(time_stamp / 1000n))
             console.log("Start time: " + date.toString())
         }
 
@@ -430,7 +452,7 @@ function load_tlog(log_file) {
             if (comp_id in MAV_COMPONENT) {
                 name = MAV_COMPONENT[comp_id]
             }
-    
+
             fieldset.appendChild(document.createTextNode("ID Name: " + name))
             fieldset.appendChild(document.createElement("br"))
 
@@ -446,8 +468,8 @@ function load_tlog(log_file) {
             fieldset.appendChild(document.createTextNode("Signing: " + (comp.signed ? "\u2705" : "\u274C")))
             fieldset.appendChild(document.createElement("br"))
 
-            const drop_pct = (comp.dropped/comp.received) * 100
-            fieldset.appendChild(document.createTextNode("Dropped messages: " + comp.dropped + " / " + comp.received +  " (" + drop_pct.toFixed(2) + "%)"))
+            const drop_pct = (comp.dropped / comp.received) * 100
+            fieldset.appendChild(document.createTextNode("Dropped messages: " + comp.dropped + " / " + comp.received + " (" + drop_pct.toFixed(2) + "%)"))
             fieldset.appendChild(document.createElement("br"))
 
             function add_include(parent, name) {
@@ -458,7 +480,7 @@ function load_tlog(log_file) {
                 check.addEventListener('change', plot_tlog)
 
                 parent.appendChild(check)
-    
+
                 let label = document.createElement("label")
                 label.setAttribute('for', name)
                 label.innerHTML = "Include"
@@ -510,108 +532,132 @@ function load_tlog(log_file) {
     const end = performance.now()
     console.log(`Load took: ${end - start} ms`)
 }
-
 function plot_tlog() {
+    const bin_width = parseFloat(document.getElementById("WindowSize").value);
+    const use_size = document.getElementById("Unit_bps").checked;
+    const plot_labels = use_size ? rate_plot.bits : rate_plot.count;
 
-    const bin_width = parseFloat(document.getElementById("WindowSize").value)
-    const use_size = document.getElementById("Unit_bps").checked
+    // 1) Construction des traces “Message Rates” et collecte pour la compo
+    data_rates.data = [];
+    let total = { count: [], low_bin: Infinity, high_bin: -Infinity };
+    let composition = {};
 
-    const plot_labels = use_size ? rate_plot.bits : rate_plot.count
-
-    // Clear plot data
-    data_rates.data = []
-
-    let total = {
-        count: [],
-        low_bin: Infinity,
-        high_bin: -Infinity,
-    }
-    let composition = {}
     for (const [sys_id, sys] of Object.entries(system)) {
         for (const [comp_id, comp] of Object.entries(sys)) {
-            const comp_include = comp.include.checked
-            for (const [name, msg] of Object.entries(comp.msg)) {
-                if (!comp_include) {
-                    // Component is disabled, disable message checkbox
-                    msg.include.disabled = true
-                    continue
-                }
-                msg.include.disabled = false
-                if (!msg.include.checked) {
-                    // Message is disabled
-                    continue
-                }
+            if (!comp.include.checked) {
+                Object.values(comp.msg).forEach(m => m.include.disabled = true);
+                continue;
+            }
+            Object.values(comp.msg).forEach(m => m.include.disabled = false);
 
-                const binned = bin_count(msg.time, use_size ? msg.size : 1, bin_width, total)
+            for (const [name, msg] of Object.entries(comp.msg)) {
+                if (!msg.include.checked) continue;
+                const binned = bin_count(msg.time, use_size ? msg.size : 1, bin_width, total);
 
                 data_rates.data.push({
                     mode: 'lines',
                     x: binned.time,
                     y: binned.count,
-                    name: name,
+                    name,
                     meta: name,
                     hovertemplate: plot_labels.hovertemplate
-                })
+                });
 
-                const comp_name = "(" + sys_id + ", " + comp_id + ") " + name
-                composition[comp_name] = use_size ? array_sum(msg.size) : msg.size.length
+                const key = `(${sys_id},${comp_id}) ${name}`;
+                composition[key] = use_size ? array_sum(msg.size) : msg.size.length;
             }
         }
     }
 
-    // Show setup options
-    document.getElementById("plotsetup").hidden = false
+    // 2) Affichage “Message Rates”
+    data_rates.layout.yaxis.title.text = plot_labels.yaxis;
+    let plot = document.getElementById("data_rates");
+    Plotly.purge(plot);
+    Plotly.newPlot(plot, data_rates.data, data_rates.layout, { displaylogo: false });
+    plot_visibility(plot, false);
 
-    // Plot individual rates
-    data_rates.layout.yaxis.title.text = plot_labels.yaxis
+    // 3) Affichage “Total Rate”
+    const total_binned = total_count(total, bin_width);
+    total_rate.data[0].x = total_binned.time;
+    total_rate.data[0].y = total_binned.count;
+    total_rate.data[0].hovertemplate = plot_labels.hovertemplate;
+    total_rate.layout.yaxis.title.text = plot_labels.yaxis;
 
-    let plot = document.getElementById("data_rates")
-    Plotly.purge(plot)
-    Plotly.newPlot(plot, data_rates.data, data_rates.layout, { displaylogo: false })
-    plot_visibility(plot, false)
+    plot = document.getElementById("total_rate");
+    Plotly.purge(plot);
+    Plotly.newPlot(plot, total_rate.data, total_rate.layout, { displaylogo: false });
+    plot_visibility(plot, false);
 
-    // Total rate
-    const total_binned = total_count(total, bin_width)
-    total_rate.data[0].x = total_binned.time
-    total_rate.data[0].y = total_binned.count
+    // 4) **NOUVEAU** : Affichage initial du camembert “Composition”
+    const compTrace = {
+        type: 'pie',
+        labels: Object.keys(composition),
+        values: Object.values(composition),
+        hovertemplate: plot_labels.pie_hovertemplate,
+        textinfo: "label+percent",
+        textposition: "inside"
+    };
+    plot = document.getElementById("log_stats");
+    Plotly.purge(plot);
+    Plotly.newPlot(plot, [compTrace], log_stats.layout, { displaylogo: false });
+    plot_visibility(plot, false);
 
-    total_rate.data[0].hovertemplate = plot_labels.hovertemplate
-    total_rate.layout.yaxis.title.text = plot_labels.yaxis
-
-    plot = document.getElementById("total_rate")
-    Plotly.purge(plot)
-    Plotly.newPlot(plot, total_rate.data, total_rate.layout, { displaylogo: false })
-    plot_visibility(plot, false)
-
-    // Plot composition
-    log_stats.data[0].labels = []
-    log_stats.data[0].values = []
-    for (const [key, value] of Object.entries(composition)) {
-        log_stats.data[0].labels.push(key)
-        log_stats.data[0].values.push(value)
-    }
-    log_stats.data[0].hovertemplate = plot_labels.pie_hovertemplate
-
-    plot = document.getElementById("log_stats")
-    plot_visibility(plot, false)
-    Plotly.redraw(plot)
-
-    // Clear listeners
+    // 5) Raccordements axes + reset (inchangés)
     document.getElementById("total_rate").removeAllListeners("plotly_relayout");
     document.getElementById("data_rates").removeAllListeners("plotly_relayout");
+    link_plot_axis_range([["total_rate", "x", "", total_rate], ["data_rates", "x", "", data_rates]]);
+    link_plot_reset([["total_rate", total_rate], ["data_rates", data_rates]]);
 
-    // Link all time axis
-    link_plot_axis_range([
-        ["total_rate", "x", "", total_rate],
-        ["data_rates", "x", "", data_rates],
-    ])
+    // —————————————————————————————————————————
+    // 6) Fonction interne pour mettre à jour le pie-chart selon [x0,x1]
+    function updatePie(x0, x1) {
+        const comp2 = {};
+        for (const [sys_id, sys] of Object.entries(system)) {
+            for (const [comp_id, compObj] of Object.entries(sys)) {
+                if (!compObj.include.checked) continue;
+                for (const [name, msg] of Object.entries(compObj.msg)) {
+                    if (!msg.include.checked) continue;
+                    const times = msg.time.filter(t => t >= x0 && t <= x1);
+                    if (!times.length) continue;
+                    const key = `(${sys_id},${comp_id}) ${name}`;
+                    if (use_size) {
+                        let sum = 0;
+                        times.forEach(t => {
+                            const idx = msg.time.indexOf(t);
+                            sum += msg.size[idx];
+                        });
+                        comp2[key] = (comp2[key] || 0) + sum;
+                    } else {
+                        comp2[key] = (comp2[key] || 0) + times.length;
+                    }
+                }
+            }
+        }
+        // On réaffiche le camembert avec Plotly.react
+        Plotly.react(
+            document.getElementById("log_stats"),
+            [{
+                type: 'pie',
+                labels: Object.keys(comp2),
+                values: Object.values(comp2),
+                hovertemplate: plot_labels.pie_hovertemplate,
+                textinfo: "label+percent",
+                textposition: "inside"
+            }],
+            log_stats.layout
+        );
+    }
 
-    // Link plot reset
-    link_plot_reset([
-        ["total_rate", total_rate],
-        ["data_rates", data_rates],
-    ])
+    // 7) On attache un seul listener pour les deux graphes
+    ["data_rates", "total_rate"].forEach(id => {
+        document.getElementById(id).on("plotly_relayout", evt => {
+            const x0 = evt["xaxis.range[0]"] ?? (Array.isArray(evt["xaxis.range"]) ? evt["xaxis.range"][0] : null);
+            const x1 = evt["xaxis.range[1]"] ?? (Array.isArray(evt["xaxis.range"]) ? evt["xaxis.range"][1] : null);
+            if (x0 != null && x1 != null) updatePie(x0, x1);
+        });
+    });
 }
+
 
 function replot() {
     if (system != null) {
@@ -688,15 +734,18 @@ function reset() {
     document.getElementById("LOGSTATS").replaceChildren()
 
     // Log Composition
-    log_stats.data = [ { type: 'pie', textposition: 'inside', textinfo: "label+percent",
-                         hovertemplate: '%{label}<br>%{value:,i} bits<br>%{percent}<extra></extra>'} ]
-    log_stats.layout = { showlegend: false,
-                         margin: { b: 10, l: 50, r: 50, t: 10 },
-                         }
+    log_stats.data = [{
+        type: 'pie', textposition: 'inside', textinfo: "label+percent",
+        hovertemplate: '%{label}<br>%{value:,i} bits<br>%{percent}<extra></extra>'
+    }]
+    log_stats.layout = {
+        showlegend: false,
+        margin: { b: 10, l: 50, r: 50, t: 10 },
+    }
 
     plot = document.getElementById("log_stats")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, log_stats.data, log_stats.layout, {displaylogo: false});
+    Plotly.newPlot(plot, log_stats.data, log_stats.layout, { displaylogo: false });
     plot_visibility(plot, true)
 
     const time_scale_label = "Time (s)"
