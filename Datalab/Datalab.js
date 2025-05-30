@@ -3251,64 +3251,115 @@ function print_ff(log, t1, t2, head) {
     //fieldsetlab.innerHTML += `maxvd (m/s): ${maxsink}`;
     //fieldsetlab.innerHTML += "<br>";
 
-    const qtun = log.get("QTUN");
+    //const qtun = log.get("QTUN");
 
-    display_time = findMaxConsecutiveTimeWithVzLessThanMinus5(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt,qtun.Alt)
-    fieldsetlab.innerHTML += `maxT (m/s): ${display_time.maxDuration}`;
-    fieldsetlab.innerHTML += "<br>";
-    fieldsetlab.innerHTML += `last_alt (m): ${display_time.altitudeAtEnd}`;
-    fieldsetlab.innerHTML += "<br>";
+    //display_time = findMaxConsecutiveTimeWithVzLessThanMinus5(TimeUS_to_seconds(qtun.TimeUS), qtun.CRt,qtun.Alt)
+    //fieldsetlab.innerHTML += `maxT (m/s): ${display_time.maxDuration}`;
+    //fieldsetlab.innerHTML += "<br>";
+    //fieldsetlab.innerHTML += `last_alt (m): ${display_time.altitudeAtEnd}`;
+    //fieldsetlab.innerHTML += "<br>";
 
-    const ntun = log.get("NTUN");
+    //const ntun = log.get("NTUN");
 
-    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ntun.TimeUS), ntun.XT, t1, t2);
-    fieldsetlab.innerHTML += `NTUN max: ${maxvalue/1000}`;
+    //[minvalue, maxvalue, avgvalue] = findMinMaxAvgValue(TimeUS_to_seconds(ntun.TimeUS), ntun.XT, t1, t2);
+    //fieldsetlab.innerHTML += `NTUN max: ${maxvalue/1000}`;
+    //fieldsetlab.innerHTML += "<br>";
+    //fieldsetlab.innerHTML += `NTUN min: ${minvalue / 1000}`;
+    //fieldsetlab.innerHTML += "<br>";
+
+    const att = log.get("ATT");
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValueVertical(TimeUS_to_seconds(att.TimeUS), att.Pitch.map(v => Math.abs(v)), att.DesYaw, t1, t2);
+    fieldsetlab.innerHTML += `pitch max: ${maxvalue}`;
     fieldsetlab.innerHTML += "<br>";
-    fieldsetlab.innerHTML += `NTUN min: ${minvalue / 1000}`;
+    [minvalue, maxvalue, avgvalue] = findMinMaxAvgValueVertical(TimeUS_to_seconds(att.TimeUS), att.Roll.map(Math.abs), att.DesYaw, t1, t2);
+    fieldsetlab.innerHTML += `roll max: ${maxvalue}`;
     fieldsetlab.innerHTML += "<br>";
 
     return fieldsetlab;
 }
 
-function findMaxConsecutiveTimeWithVzLessThanMinus5(time1, vz, alt) {
-    let maxDuration = 0;
-    let currentDuration = 0;
-    let endIndex = -1;  // Pour stocker l'indice de fin de la séquence maximale
+function findMaxConsecutiveTimeWithVzLessThanMinus5(time, values, desyaw, t1, t2) {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let sum = 0;
+    let count = 0;
+    let start = 0;
+    let end = time.length - 1;
 
-    // Parcourir toutes les valeurs de vz
-    for (let i = 0; i < vz.length; i++) {
-        if (vz[i] < -5.5) {
-            // Incrémenter la durée actuelle si vz < -5
-            currentDuration += (i < time1.length - 1) ? time1[i + 1] - time1[i] : 0;
-        } else {
-            // Réinitialiser la durée actuelle si vz >= -5
-            if (currentDuration > maxDuration) {
-                maxDuration = currentDuration;
-                endIndex = i - 1;  // L'indice de fin de la séquence maximale
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
+    }
+
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
+    }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2 && desyaw[i] > 0.1) {
+            if (values[i] < minValue) {
+                minValue = values[i];
             }
-            currentDuration = 0;
+            if (values[i] > maxValue) {
+                maxValue = values[i];
+            }
+            sum += values[i];
+            count++;
         }
     }
 
-    // Vérifier une dernière fois au cas où la séquence se termine par vz < -5
-    if (currentDuration > maxDuration) {
-        maxDuration = currentDuration;
-        endIndex = vz.length - 1;  // L'indice de fin de la séquence maximale
+    // Calculer la moyenne
+    let avgValue = count > 0 ? sum / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (minValue === Infinity) minValue = null;
+    if (maxValue === -Infinity) maxValue = null;
+
+    return [minValue, maxValue, avgValue];
+}
+
+function findMinMaxAvgValueVertical(time, values, desyaw, t1, t2) {
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let sum = 0;
+    let count = 0;
+    let start = 0;
+    let end = time.length - 1;
+
+    // Trouver le premier indice où le temps est >= t1
+    while (start < time.length && time[start] < t1) {
+        start++;
     }
 
-    // Si une séquence a été trouvée, retourner la durée maximale et l'altitude correspondante
-    if (endIndex !== -1) {
-        return {
-            maxDuration: maxDuration,
-            altitudeAtEnd: alt[endIndex]
-        };
-    } else {
-        // Retourner 0 et null si aucune séquence n'a été trouvée
-        return {
-            maxDuration: 0,
-            altitudeAtEnd: null
-        };
+    // Trouver le dernier indice où le temps est <= t2
+    while (end >= 0 && time[end] > t2) {
+        end--;
     }
+
+    // Parcourir la plage trouvée pour obtenir min, max et la somme pour la moyenne
+    for (let i = start; i <= end; i++) {
+        if (time[i] >= t1 && time[i] <= t2 && desyaw[i] > 0.1) {
+            if (values[i] < minValue) {
+                minValue = values[i];
+            }
+            if (values[i] > maxValue) {
+                maxValue = values[i];
+            }
+            sum += values[i];
+            count++;
+        }
+    }
+
+    // Calculer la moyenne
+    let avgValue = count > 0 ? sum / count : null;
+
+    // Gérer les cas où aucun temps n'est dans l'intervalle
+    if (minValue === Infinity) minValue = null;
+    if (maxValue === -Infinity) maxValue = null;
+
+    return [minValue, maxValue, avgValue];
 }
 
 function findMinCur(time1, cur, time2, c3) {
