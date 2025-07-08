@@ -17,6 +17,10 @@ import_done[1] = import('https://esm.sh/@octokit/request')
 let ArduPilot_GitHub_tags
 let octokitRequest_ratelimit_reset
 
+// Dataset used to accumulate energy model data from all loaded logs
+let energy_dataset_gather = []
+
+
 loadReferenceFile("./references.param")
 
 const thresholds = [
@@ -2030,6 +2034,12 @@ function load_am(log) {
     column_ff.appendChild(print_em(log, time_mark["Transition end"], time_mark["Start airbrake"], "Cruise model"))
     table_ff.appendChild(column_ff)
 
+    // Aggregated energy model over all loaded logs
+    let column_ff_gather = document.createElement("td")
+    column_ff_gather.appendChild(print_em_gather("Cruise model gather"))
+    table_ff.appendChild(column_ff_gather)
+
+
     //let column_ff = document.createElement("td")
 
     //if (time_mark["Transition start"] == "Message non trouvé") {
@@ -3420,7 +3430,8 @@ function print_ff(log, t1, t2, head) {
     return fieldset
 }
 
-function print_em(log, t1, t2, head) {
+// Build dataset for energy model computation
+function compute_em_dataset(log, t1, t2, head) {
     const fieldset = document.createElement("fieldset");
     const heading = document.createElement("legend");
     heading.innerHTML = head;
@@ -3465,43 +3476,51 @@ function print_em(log, t1, t2, head) {
         data.push({ sec: s, curr, volt, dhdem, airspeed, alt });
     }
 
-    //CALCUL DES COEFS
-    function solveCoefficients(data) {
-        const m = 4;
-        const XTX = Array.from({ length: m }, () => Array(m).fill(0));
-        const XTy = Array(m).fill(0);
-        data.forEach(d => {
-            const y = d.volt * d.curr;
-            const xs = [1, d.airspeed, d.dhdem, d.alt];
-            for (let i = 0; i < m; i++) {
-                XTy[i] += xs[i] * y;
-                for (let j = 0; j < m; j++) {
-                    XTX[i][j] += xs[i] * xs[j];
-                }
-            }
-        });
-        // Augmented matrix [XTX | XTy]
-        const A = XTX.map((row, i) => row.concat(XTy[i]));
-        // Gaussian elimination
+    return data;
+}
+
+// Solve coefficients for given dataset
+function compute_em_coefficients(data) {
+    const m = 4;
+    const XTX = Array.from({ length: m }, () => Array(m).fill(0));
+    const XTy = Array(m).fill(0);
+    data.forEach(d => {
+        const y = d.volt * d.curr;
+        const xs = [1, d.airspeed, d.dhdem, d.alt];
         for (let i = 0; i < m; i++) {
-            // Pivot
-            let maxRow = i;
-            for (let k = i + 1; k < m; k++) {
-                if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) maxRow = k;
-            }
-            [A[i], A[maxRow]] = [A[maxRow], A[i]];
-            const diag = A[i][i];
-            for (let j = i; j <= m; j++) A[i][j] /= diag;
-            // Eliminate
-            for (let k = 0; k < m; k++) {
-                if (k === i) continue;
-                const factor = A[k][i];
-                for (let j = i; j <= m; j++) A[k][j] -= factor * A[i][j];
+            XTy[i] += xs[i] * y;
+            for (let j = 0; j < m; j++) {
+                XTX[i][j] += xs[i] * xs[j];
             }
         }
-        return A.map(row => row[m]); // [a, b, c, d]
+    });
+    const A = XTX.map((row, i) => row.concat(XTy[i]));
+    for (let i = 0; i < m; i++) {
+        let maxRow = i;
+        for (let k = i + 1; k < m; k++) {
+            if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) maxRow = k;
+        }
+        [A[i], A[maxRow]] = [A[maxRow], A[i]];
+        const diag = A[i][i];
+        for (let j = i; j <= m; j++) A[i][j] /= diag;
+        for (let k = 0; k < m; k++) {
+            if (k === i) continue;
+            const factor = A[k][i];
+            for (let j = i; j <= m; j++) A[k][j] -= factor * A[i][j];
+        }
     }
-    const [a, b, c, d] = solveCoefficients(data);
+    return A.map(row => row[m]);
+}
+
+function print_em(log, t1, t2, head) {
+    const fieldset = document.createElement("fieldset");
+    const heading = document.createElement("legend");
+    heading.innerHTML = head;
+    fieldset.appendChild(heading);
+
+    const data = compute_em_dataset(log, t1, t2, "gather");
+    energy_dataset_gather = energy_dataset_gather.concat(data);
+    const [a, b, c, d] = compute_em_coefficients(data);
 
     // Show no-data message
     if (data.length === 0) {
@@ -3528,6 +3547,29 @@ function print_em(log, t1, t2, head) {
     //fieldset.appendChild(table);
 
     // Display computed coefficients
+    const formulaDiv = document.createElement("div");
+    formulaDiv.style.marginTop = "8px";
+    formulaDiv.textContent =
+        `Energy (W) = ${a.toFixed(3)} + ${b.toFixed(3)}*airspeed + ` +
+        `${c.toFixed(3)}*dhdem + ${d.toFixed(3)}*alt`;
+    fieldset.appendChild(formulaDiv);
+
+    return fieldset;
+}
+
+// Display energy model computed over all loaded logs
+function print_em_gather(head) {
+    const fieldset = document.createElement("fieldset");
+    const heading = document.createElement("legend");
+    heading.innerHTML = head;
+    fieldset.appendChild(heading);
+
+    if (energy_dataset_gather.length === 0) {
+        fieldset.textContent = "No data loaded.";
+        return fieldset;
+    }
+
+    const [a, b, c, d] = compute_em_coefficients(energy_dataset_gather);
     const formulaDiv = document.createElement("div");
     formulaDiv.style.marginTop = "8px";
     formulaDiv.textContent =
