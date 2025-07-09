@@ -31,12 +31,12 @@ function run_batch_fft(data_set) {
     // Calculate average sample time
     var sample_rate_sum = 0
     var sample_rate_count = 0
-    for (let j=0; j<num_sets; j++) {
+    for (let j = 0; j < num_sets; j++) {
         if (data_set[j] == null) {
             continue
         }
         const num_batch = data_set[j].length
-        for (let i=0;i<num_batch;i++) {
+        for (let i = 0; i < num_batch; i++) {
             if (data_set[j][i][fft_keys[0]].length < window_size) {
                 // Log section is too short, skip
                 continue
@@ -53,13 +53,13 @@ function run_batch_fft(data_set) {
 
     const sample_time = sample_rate_count / sample_rate_sum
 
-    for (let j=0; j<num_sets; j++) {
+    for (let j = 0; j < num_sets; j++) {
         if (data_set[j] == null) {
             continue
         }
         let have_data = false
         const num_batch = data_set[j].length
-        for (let i=0;i<num_batch;i++) {
+        for (let i = 0; i < num_batch; i++) {
             if (data_set[j][i].Tar.length < window_size) {
                 // Log section is too short, skip
                 continue
@@ -83,10 +83,12 @@ function run_batch_fft(data_set) {
     }
 
     // Get bins and other useful stuff
-    data_set.FFT = { bins: rfft_freq(window_size, sample_time),
-                     average_sample_rate: 1/sample_time,
-                     window_size: window_size,
-                     correction: window_correction }
+    data_set.FFT = {
+        bins: rfft_freq(window_size, sample_time),
+        average_sample_rate: 1 / sample_time,
+        window_size: window_size,
+        correction: window_correction
+    }
 
 }
 
@@ -104,9 +106,9 @@ function reset() {
 
     document.title = "ArduPilot PID Review"
 
-    const types = ["PIDP",   "PIDR",   "PIDY",
-                   "PIQP",   "PIQR",   "PIQY",
-                   "RATE_R", "RATE_P", "RATE_Y"]
+    const types = ["PIDP", "PIDR", "PIDY",
+        "PIQP", "PIQR", "PIQY",
+        "RATE_R", "RATE_P", "RATE_Y"]
     for (const type of types) {
         let ele = document.getElementById("type_" + type)
         ele.disabled = true
@@ -170,46 +172,52 @@ function setup_plots() {
 
     // Setup flight data plot
     const flight_data_plot = ["Roll", "Pitch", "Throttle", "Altitude"]
-    const flight_data_unit = ["deg",  "deg",   "",         "m"]
+    const flight_data_unit = ["deg", "deg", "", "m"]
     flight_data.data = []
-    for (let i=0;i<flight_data_plot.length;i++) {
+    for (let i = 0; i < flight_data_plot.length; i++) {
         let axi = "y"
         if (i > 0) {
-            axi += (i+1)
+            axi += (i + 1)
         }
-        flight_data.data[i] = { mode: "lines",
-                                name: flight_data_plot[i],
-                                meta: flight_data_plot[i],
-                                yaxis: axi,
-                                hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} " + flight_data_unit[i] }
+        flight_data.data[i] = {
+            mode: "lines",
+            name: flight_data_plot[i],
+            meta: flight_data_plot[i],
+            yaxis: axi,
+            hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f} " + flight_data_unit[i]
+        }
     }
 
     flight_data.layout = {
-        xaxis: { title: {text: time_scale_label },
-                 domain: [0.07, 0.93],
-                 type: "linear", 
-                 zeroline: false, 
-                 showline: true, 
-                 mirror: true,
-                 rangeslider: {} },
+        xaxis: {
+            title: { text: time_scale_label },
+            domain: [0.07, 0.93],
+            type: "linear",
+            zeroline: false,
+            showline: true,
+            mirror: true,
+            rangeslider: {}
+        },
         showlegend: false,
         margin: { b: 50, l: 50, r: 50, t: 20 },
     }
 
     const flight_data_axis_pos = [0, 0.06, 0.94, 1]
-    for (let i=0;i<flight_data_plot.length;i++) {
+    for (let i = 0; i < flight_data_plot.length; i++) {
         let axi = "yaxis"
         if (i > 0) {
-            axi += (i+1)
+            axi += (i + 1)
         }
         const side = i < 2 ? "left" : "right"
-        flight_data.layout[axi] = {title: { text: flight_data_plot[i] },
-                                            zeroline: false,
-                                            showline: true,
-                                            mirror: true,
-                                            side: side,
-                                            position: flight_data_axis_pos[i],
-                                            color: plot_default_color(i) }
+        flight_data.layout[axi] = {
+            title: { text: flight_data_plot[i] },
+            zeroline: false,
+            showline: true,
+            mirror: true,
+            side: side,
+            position: flight_data_axis_pos[i],
+            color: plot_default_color(i)
+        }
         if (i > 0) {
             flight_data.layout[axi].overlaying = 'y'
         }
@@ -217,10 +225,10 @@ function setup_plots() {
 
     var plot = document.getElementById("FlightData")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, flight_data.data, flight_data.layout, {displaylogo: false});
+    Plotly.newPlot(plot, flight_data.data, flight_data.layout, { displaylogo: false });
 
     // Update start and end time based on range
-    document.getElementById("FlightData").on('plotly_relayout', function(data) {
+    document.getElementById("FlightData").on('plotly_relayout', function (data) {
 
         function range_update(range) {
             document.getElementById("TimeStart").value = Math.floor(range[0])
@@ -250,45 +258,53 @@ function setup_plots() {
     })
 
     // Time domain plot
-    const pid_inputs = ["Target","Actual","Error"]
+    const pid_inputs = ["Target", "Actual", "Error"]
 
     TimeInputs.data = []
     for (const item of pid_inputs) {
-        TimeInputs.data.push({ mode: "lines",
-                                name: item,
-                                meta: item,
-                                showlegend: true,
-                                hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}" })
+        TimeInputs.data.push({
+            mode: "lines",
+            name: item,
+            meta: item,
+            showlegend: true,
+            hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}"
+        })
     }
 
-    TimeInputs.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                                margin: { b: 50, l: 50, r: 50, t: 20 },
-                                xaxis: { title: {text: time_scale_label } },
-                                yaxis: { title: {text: "deg / s" } }}
+    TimeInputs.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "deg / s" } }
+    }
 
     var plot = document.getElementById("TimeInputs")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, TimeInputs.data, TimeInputs.layout, {displaylogo: false})
+    Plotly.newPlot(plot, TimeInputs.data, TimeInputs.layout, { displaylogo: false })
 
 
-    const pid_outputs = ["P","I","D","FF","Output"]
+    const pid_outputs = ["P", "I", "D", "FF", "Output"]
     TimeOutputs.data = []
     for (const item of pid_outputs) {
-        TimeOutputs.data.push({ mode: "lines",
-                                name: item,
-                                meta: item,
-                                showlegend: true,
-                                hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}" })
+        TimeOutputs.data.push({
+            mode: "lines",
+            name: item,
+            meta: item,
+            showlegend: true,
+            hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}"
+        })
     }
 
-    TimeOutputs.layout = { legend: {itemclick: false, itemdoubleclick: false }, 
-                                margin: { b: 50, l: 50, r: 50, t: 20 },
-                                xaxis: { title: {text: time_scale_label } },
-                                yaxis: { title: {text: "" } }}
+    TimeOutputs.layout = {
+        legend: { itemclick: false, itemdoubleclick: false },
+        margin: { b: 50, l: 50, r: 50, t: 20 },
+        xaxis: { title: { text: time_scale_label } },
+        yaxis: { title: { text: "" } }
+    }
 
     plot = document.getElementById("TimeOutputs")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, TimeOutputs.data, TimeOutputs.layout, {displaylogo: false})
+    Plotly.newPlot(plot, TimeOutputs.data, TimeOutputs.layout, { displaylogo: false })
 
 
     amplitude_scale = get_amplitude_scale()
@@ -297,45 +313,47 @@ function setup_plots() {
     // FFT plot setup
     fft_plot.data = []
     fft_plot.layout = {
-        xaxis: {title: {text: frequency_scale.label }, type: "linear", zeroline: false, showline: true, mirror: true},
-        yaxis: {title: {text: amplitude_scale.label }, zeroline: false, showline: true, mirror: true },
+        xaxis: { title: { text: frequency_scale.label }, type: "linear", zeroline: false, showline: true, mirror: true },
+        yaxis: { title: { text: amplitude_scale.label }, zeroline: false, showline: true, mirror: true },
         showlegend: true,
-        legend: {itemclick: false, itemdoubleclick: false },
+        legend: { itemclick: false, itemdoubleclick: false },
         margin: { b: 50, l: 50, r: 50, t: 20 },
     }
 
     plot = document.getElementById("FFTPlot")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, fft_plot.data, fft_plot.layout, {displaylogo: false});
+    Plotly.newPlot(plot, fft_plot.data, fft_plot.layout, { displaylogo: false });
 
     // Step response setup
     step_plot.data = []
     step_plot.layout = {
-        xaxis: {title: {text: "Time (s)" }, zeroline: false, showline: true, mirror: true},
-        yaxis: {title: {text: "Response" }, zeroline: false, showline: true, mirror: true },
+        xaxis: { title: { text: "Time (s)" }, zeroline: false, showline: true, mirror: true },
+        yaxis: { title: { text: "Response" }, zeroline: false, showline: true, mirror: true },
         showlegend: true,
-        legend: {itemclick: false, itemdoubleclick: false },
+        legend: { itemclick: false, itemdoubleclick: false },
         margin: { b: 50, l: 50, r: 50, t: 20 },
     }
 
     // Step response 1.0 line
-    step_plot.layout.shapes = [{ type: 'line',
-                                line: { dash: "dot" },
-                                xref: 'paper',
-                                x0: 0,
-                                x1: 1,
-                                y0: 1,
-                                y1: 1 }]
+    step_plot.layout.shapes = [{
+        type: 'line',
+        line: { dash: "dot" },
+        xref: 'paper',
+        x0: 0,
+        x1: 1,
+        y0: 1,
+        y1: 1
+    }]
 
     plot = document.getElementById("step_plot")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, step_plot.data, step_plot.layout, {displaylogo: false});
+    Plotly.newPlot(plot, step_plot.data, step_plot.layout, { displaylogo: false });
 
     // Spectrogram setup
     // Add surface
     Spectrogram.data = [{
-        type:"heatmap",
-        colorbar: {title: {side: "right", text: ""}, orientation: "h"},
+        type: "heatmap",
+        colorbar: { title: { side: "right", text: "" }, orientation: "h" },
         transpose: true,
         zsmooth: "best",
         hovertemplate: ""
@@ -343,19 +361,19 @@ function setup_plots() {
 
     // Define Layout
     Spectrogram.layout = {
-        xaxis: {title: {text: time_scale_label}, zeroline: false, showline: true, mirror: true },
-        yaxis: {title: {text: frequency_scale.label }, type: "linear", zeroline: false, showline: true, mirror: true },
+        xaxis: { title: { text: time_scale_label }, zeroline: false, showline: true, mirror: true },
+        yaxis: { title: { text: frequency_scale.label }, type: "linear", zeroline: false, showline: true, mirror: true },
         showlegend: true,
-        legend: {itemclick: false, itemdoubleclick: false },
+        legend: { itemclick: false, itemdoubleclick: false },
         margin: { b: 50, l: 50, r: 50, t: 20 }
     }
 
     plot = document.getElementById("Spectrogram")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, Spectrogram.data, Spectrogram.layout, {displaylogo: false});
+    Plotly.newPlot(plot, Spectrogram.data, Spectrogram.layout, { displaylogo: false });
 
     link_plots()
-} 
+}
 
 function link_plots() {
 
@@ -369,27 +387,27 @@ function link_plots() {
 
     // Link all frequency axis
     link_plot_axis_range([["FFTPlot", "x", "", fft_plot],
-                          ["Spectrogram", "y", "", Spectrogram]])
+    ["Spectrogram", "y", "", Spectrogram]])
 
     // Link time axis
     link_plot_axis_range([["TimeInputs", "x", "", TimeInputs],
-                          ["TimeOutputs", "x", "", TimeOutputs],
-                          ["Spectrogram", "x", "", Spectrogram]])
+    ["TimeOutputs", "x", "", TimeOutputs],
+    ["Spectrogram", "x", "", Spectrogram]])
 
 
     // Link all reset calls
     link_plot_reset([["TimeInputs", TimeInputs],
-                     ["TimeOutputs", TimeOutputs],
-                     ["FFTPlot", fft_plot],
-                     ["step_plot", step_plot],
-                     ["Spectrogram", Spectrogram]])
+    ["TimeOutputs", TimeOutputs],
+    ["FFTPlot", fft_plot],
+    ["step_plot", step_plot],
+    ["Spectrogram", Spectrogram]])
 
 }
 
 // Add data sets to FFT plot
 const plot_types = ["Target", "Actual", "Error", "P", "I", "D", "FF", "Output"]
 function get_FFT_data_index(set_num, plot_type) {
-    return set_num*plot_types.length + plot_type
+    return set_num * plot_types.length + plot_type
 }
 
 function setup_FFT_data() {
@@ -412,49 +430,55 @@ function setup_FFT_data() {
             // Add set number if multiple sets
             var meta_prefix = ""
             if (num_sets > 1) {
-                meta_prefix = (i+1) + " "
+                meta_prefix = (i + 1) + " "
             }
 
             // For each axis
-            fft_plot.data[index] = { mode: "lines",
-                                     name: plot_types[j],
-                                     meta: meta_prefix + plot_types[j],
-                                     hovertemplate: "" }
+            fft_plot.data[index] = {
+                mode: "lines",
+                name: plot_types[j],
+                meta: meta_prefix + plot_types[j],
+                hovertemplate: ""
+            }
 
             // Add legend groups if multiple sets
             if (num_sets > 1) {
                 fft_plot.data[index].legendgroup = i
-                fft_plot.data[index].legendgrouptitle =  { text: "Test " + (i+1) }
+                fft_plot.data[index].legendgrouptitle = { text: "Test " + (i + 1) }
             }
         }
 
         const color = plot_default_color(i)
 
         // Each set gets mean step response and individual
-        const name = "Test " + (i+1)
-        const step_index = i*2
-        step_plot.data[step_index] = { mode: "lines",
-                                       line: {color: "rgba(100, 100, 100, 0.2)"},
-                                       hoverinfo: 'none',
-                                       showlegend: false }
+        const name = "Test " + (i + 1)
+        const step_index = i * 2
+        step_plot.data[step_index] = {
+            mode: "lines",
+            line: { color: "rgba(100, 100, 100, 0.2)" },
+            hoverinfo: 'none',
+            showlegend: false
+        }
 
-        step_plot.data[step_index + 1] = { mode: "lines",
-                                           line: { width: 4, color: color },
-                                           name: name,
-                                           meta: name,
-                                           hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}",
-                                           showlegend: num_sets > 1 }
+        step_plot.data[step_index + 1] = {
+            mode: "lines",
+            line: { width: 4, color: color },
+            name: name,
+            meta: name,
+            hovertemplate: "<extra></extra>%{meta}<br>%{x:.2f} s<br>%{y:.2f}",
+            showlegend: num_sets > 1
+        }
 
         // Add rectangle for each param set to time domain plots
         const rect = {
             type: 'rect',
             line: { width: 0 },
             yref: 'paper',
-            y0: 0,   y1: 1,
+            y0: 0, y1: 1,
             fillcolor: color,
             opacity: 0.4,
             label: {
-                text: i+1,
+                text: i + 1,
                 textposition: 'top left',
             },
             layer: "below",
@@ -468,19 +492,19 @@ function setup_FFT_data() {
 
     let plot = document.getElementById("TimeInputs")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, TimeInputs.data, TimeInputs.layout, {displaylogo: false})
+    Plotly.newPlot(plot, TimeInputs.data, TimeInputs.layout, { displaylogo: false })
 
     plot = document.getElementById("TimeOutputs")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, TimeOutputs.data, TimeOutputs.layout, {displaylogo: false})
+    Plotly.newPlot(plot, TimeOutputs.data, TimeOutputs.layout, { displaylogo: false })
 
     plot = document.getElementById("FFTPlot")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, fft_plot.data, fft_plot.layout, {displaylogo: false});
+    Plotly.newPlot(plot, fft_plot.data, fft_plot.layout, { displaylogo: false });
 
     plot = document.getElementById("step_plot")
     Plotly.purge(plot)
-    Plotly.newPlot(plot, step_plot.data, step_plot.layout, {displaylogo: false});
+    Plotly.newPlot(plot, step_plot.data, step_plot.layout, { displaylogo: false });
 
     link_plots()
 
@@ -556,7 +580,7 @@ function find_start_index(time) {
     const start_time = parseFloat(document.getElementById("TimeStart").value)
 
     var start_index = 0
-    for (j = 0; j<time.length; j++) {
+    for (j = 0; j < time.length; j++) {
         // Move forward start index while time is less than start time
         if (time[j] < start_time) {
             start_index = j
@@ -570,7 +594,7 @@ function find_end_index(time) {
     const end_time = parseFloat(document.getElementById("TimeEnd").value)
 
     var end_index = 0
-    for (j = 0; j<time.length-1; j++) {
+    for (j = 0; j < time.length - 1; j++) {
         // Move forward end index while time is less than end time
         if (time[j] <= end_time) {
             end_index = j + 1
@@ -680,7 +704,7 @@ function add_param_sets() {
 
             let changed = false
             if (i > 0) {
-                const last_value = PID.params.sets[i-1][name]
+                const last_value = PID.params.sets[i - 1][name]
                 if (value != last_value) {
                     changed = true
                 }
@@ -733,14 +757,14 @@ function add_param_sets() {
 
         // Change to Out on spectrogram if disabled option is set
         const disabled_checked = document.getElementById("Spec_Err").checked ||
-                                 document.getElementById("Spec_P").checked ||
-                                 document.getElementById("Spec_I").checked ||
-                                 document.getElementById("Spec_D").checked ||
-                                 document.getElementById("Spec_FF").checked
+            document.getElementById("Spec_P").checked ||
+            document.getElementById("Spec_I").checked ||
+            document.getElementById("Spec_D").checked ||
+            document.getElementById("Spec_FF").checked
         if (disabled_checked) {
             document.getElementById("Spec_Out").checked = true
         }
-    
+
     }
 
 
@@ -810,7 +834,7 @@ function redraw() {
     }
 
     // Set X axis to selected time range
-    const time_range = [ parseFloat(document.getElementById("TimeStart").value), parseFloat(document.getElementById("TimeEnd").value) ]
+    const time_range = [parseFloat(document.getElementById("TimeStart").value), parseFloat(document.getElementById("TimeEnd").value)]
 
     TimeInputs.layout.xaxis.autorange = false
     TimeInputs.layout.xaxis.range = time_range
@@ -860,10 +884,10 @@ function redraw() {
     }
 
     // Windowing amplitude correction depends on spectrum of interest and resolution
-    const FFT_resolution = PID.sets.FFT.average_sample_rate/PID.sets.FFT.window_size
+    const FFT_resolution = PID.sets.FFT.average_sample_rate / PID.sets.FFT.window_size
     const window_correction = amplitude_scale.window_correction(PID.sets.FFT.correction, FFT_resolution)
 
-     // Set scaled x data
+    // Set scaled x data
     const scaled_bins = frequency_scale.fun(PID.sets.FFT.bins)
 
     const num_sets = PID.sets.length
@@ -876,7 +900,7 @@ function redraw() {
 
         // Find the start and end index
         const start_index = find_start_index(set.FFT.time)
-        const end_index = find_end_index(set.FFT.time)+1
+        const end_index = find_end_index(set.FFT.time) + 1
 
         // Number of windows averaged
         const mean_length = end_index - start_index
@@ -888,7 +912,7 @@ function redraw() {
             }
 
             var mean = (new Array(set.FFT[key][0][0].length)).fill(0)
-            for (let k=start_index;k<end_index;k++) {
+            for (let k = start_index; k < end_index; k++) {
                 // Add to mean sum
                 mean = array_add(mean, amplitude_scale.fun(complex_abs(set.FFT[key][k])))
             }
@@ -939,8 +963,8 @@ function redraw_Spectrogram() {
     Spectrogram.layout.yaxis.type = frequency_scale.type
     Spectrogram.layout.yaxis.title.text = frequency_scale.label
     Spectrogram.layout.xaxis.autorange = false
-    Spectrogram.layout.xaxis.range = [ parseFloat(document.getElementById("TimeStart").value),
-                                       parseFloat(document.getElementById("TimeEnd").value)]
+    Spectrogram.layout.xaxis.range = [parseFloat(document.getElementById("TimeStart").value),
+    parseFloat(document.getElementById("TimeEnd").value)]
 
     Spectrogram.data[0].hovertemplate = "<extra></extra>" + "%{x:.2f} s<br>" + frequency_scale.hover("y") + "<br>" + amplitude_scale.hover("z")
     Spectrogram.data[0].colorbar.title.text = amplitude_scale.label
@@ -951,7 +975,7 @@ function redraw_Spectrogram() {
     Spectrogram.data[0].z = []
 
     // Windowing amplitude correction depends on spectrum of interest
-    const FFT_resolution = PID.sets.FFT.average_sample_rate/PID.sets.FFT.window_size
+    const FFT_resolution = PID.sets.FFT.average_sample_rate / PID.sets.FFT.window_size
     const window_correction = amplitude_scale.window_correction(PID.sets.FFT.correction, FFT_resolution)
 
     const num_bins = Spectrogram.data[0].y.length
@@ -996,7 +1020,7 @@ function redraw_Spectrogram() {
         // Setup z data
         const len = skip_flag.length
         let index = 0
-        for (j = 0; j<len; j++) {
+        for (j = 0; j < len; j++) {
             if (skip_flag[j] == true) {
                 // Add null Z values, this results in a blank section in the plot
                 Spectrogram.data[0].z.push(new Array(num_bins))
@@ -1029,7 +1053,7 @@ function redraw_step() {
         }
 
         // Clear plot
-        const plot_index = i*2
+        const plot_index = i * 2
         step_plot.data[plot_index].x = []
         step_plot.data[plot_index].y = []
     }
@@ -1058,7 +1082,7 @@ function redraw_step() {
 
     // Create time array
     var time = new Array(step_end_index)
-    for (let j=0;j<step_end_index;j++) {
+    for (let j = 0; j < step_end_index; j++) {
         time[j] = j * sample_time
     }
 
@@ -1073,19 +1097,19 @@ function redraw_step() {
     // convolution of gaussian and unit step is integral
     var sn = (new Array(real_len)).fill(1.0)
     var last_sn = 0
-    for (let j=0;j<len_lpf;j++) {
-        sn[j] = last_sn + Math.exp((-0.5/sigma**2) * (j-radius)**2)
+    for (let j = 0; j < len_lpf; j++) {
+        sn[j] = last_sn + Math.exp((-0.5 / sigma ** 2) * (j - radius) ** 2)
         last_sn = sn[j]
     }
     // Normalize to 1
-    for (let j=0;j<len_lpf;j++) {
+    for (let j = 0; j < len_lpf; j++) {
         sn[j] /= last_sn
     }
     // Reflect for full spectrum
-    sn = [...sn, ...sn.slice(1,real_len-1).reverse()]
+    sn = [...sn, ...sn.slice(1, real_len - 1).reverse()]
 
     // Scale
-    sn = array_scale(array_offset(array_scale(sn, -1.0), 1+1e-9), 10.0)
+    sn = array_scale(array_offset(array_scale(sn, -1.0), 1 + 1e-9), 10.0)
 
     // Pre-calculate inverse
     sn = array_inverse(sn)
@@ -1096,11 +1120,11 @@ function redraw_step() {
             continue
         }
         const num_batch = PID.sets[j].length
-        const plot_index = j*2
+        const plot_index = j * 2
 
         var Step_mean = (new Array(step_end_index)).fill(0)
         var mean_count = 0
-        for (let i=0;i<num_batch;i++) {
+        for (let i = 0; i < num_batch; i++) {
             if (PID.sets[j][i].Tar.length < window_size) {
                 // Log section is too short, skip
                 continue
@@ -1112,9 +1136,9 @@ function redraw_step() {
 
             // Find the start and end index
             const start_index = find_start_index(fft_time)
-            const end_index = find_end_index(fft_time)+1
+            const end_index = find_end_index(fft_time) + 1
 
-            for (let k=start_index;k<end_index;k++) {
+            for (let k = start_index; k < end_index; k++) {
 
                 // Skip any window with low input amplitude
                 // 20 deg/s threshold
@@ -1152,9 +1176,9 @@ function redraw_step() {
                 // Integrate impulse to get step response
                 var step = new Array(step_end_index)
                 step[0] = impulse_response[0]
-                for (let l=1;l<step_end_index;l++) {
+                for (let l = 1; l < step_end_index; l++) {
                     // Just real component
-                    step[l] = step[l - 1] + impulse_response[l*2]
+                    step[l] = step[l - 1] + impulse_response[l * 2]
                 }
 
                 // Add to mean
@@ -1176,9 +1200,9 @@ function redraw_step() {
             }
 
             // Plot mean
-            step_plot.data[plot_index+1].x = time
-            step_plot.data[plot_index+1].y = array_scale(Step_mean, 1 / mean_count)
-            step_plot.data[plot_index+1].visible = true
+            step_plot.data[plot_index + 1].x = time
+            step_plot.data[plot_index + 1].y = array_scale(Step_mean, 1 / mean_count)
+            step_plot.data[plot_index + 1].visible = true
 
             // Show all estimates by default for single set
             step_plot.data[plot_index].visible = (valid_sets == 1)
@@ -1191,7 +1215,7 @@ function redraw_step() {
 
     Plotly.redraw("step_plot")
 
-} 
+}
 
 // Update lines that are shown in FFT plot
 function update_hidden(source) {
@@ -1224,7 +1248,7 @@ function update_hidden(source) {
         let checkboxes = source.parentElement.querySelectorAll("input[type=checkbox]")
         var checked = 0
         var enabled = 0
-        for (let i=0; i<checkboxes.length; i++) {
+        for (let i = 0; i < checkboxes.length; i++) {
             if (checkboxes[i].checked) {
                 checked++
             }
@@ -1234,7 +1258,7 @@ function update_hidden(source) {
         }
         // Invert the majority
         const check = checked < (enabled * 0.5)
-        for (let i=0; i<checkboxes.length; i++) {
+        for (let i = 0; i < checkboxes.length; i++) {
             set_all_from_id(checkboxes[i].id, check)
             checkboxes[i].checked = check
         }
@@ -1247,10 +1271,10 @@ function update_hidden(source) {
             fft_plot.data[get_FFT_data_index(set, j)].visible = check && show_key
         }
 
-        const set_index = set*2
+        const set_index = set * 2
 
         // Set mean plot
-        step_plot.data[set_index+1].visible = check
+        step_plot.data[set_index + 1].visible = check
 
         // See how many mean lines are showing and hide plot of all
         let visible_mean = 0
@@ -1258,7 +1282,7 @@ function update_hidden(source) {
         let j = 0
         while (j < step_plot.data.length) {
             step_plot.data[j].visible = false
-            if (step_plot.data[j+1].visible) {
+            if (step_plot.data[j + 1].visible) {
                 visible_mean++
                 visible_set = j
             }
@@ -1284,8 +1308,8 @@ function update_hidden(source) {
 // Update flight data range and enable calculate when time range inputs are updated
 function time_range_changed() {
 
-    flight_data.layout.xaxis.range = [ parseFloat(document.getElementById("TimeStart").value),
-                                       parseFloat(document.getElementById("TimeEnd").value)]
+    flight_data.layout.xaxis.range = [parseFloat(document.getElementById("TimeStart").value),
+    parseFloat(document.getElementById("TimeEnd").value)]
     flight_data.layout.xaxis.autorange = false
     Plotly.redraw("FlightData")
 
@@ -1293,15 +1317,17 @@ function time_range_changed() {
 }
 
 function get_PID_param_names(prefix) {
-    return { KP:            prefix + "P",
-             KI:            prefix + "I",
-             KD:            prefix + "D",
-             FF:            prefix + "FF",
-             I_max:         prefix + "IMAX",
-             Target_filter: prefix + "FLTT",
-             Error_filter:  prefix + "FLTE",
-             D_filter:      prefix + "FLTD",
-             Slew_max:      prefix + "SMAX"}
+    return {
+        KP: prefix + "P",
+        KI: prefix + "I",
+        KD: prefix + "D",
+        FF: prefix + "FF",
+        I_max: prefix + "IMAX",
+        Target_filter: prefix + "FLTT",
+        Error_filter: prefix + "FLTE",
+        D_filter: prefix + "FLTD",
+        Slew_max: prefix + "SMAX"
+    }
 }
 
 // Split use the given time array to return split points in log data
@@ -1338,15 +1364,15 @@ function split_into_batches(PID_log_messages, index, time) {
         // This should mean we get a new batch after two missed messages
         count++
         const past_set_end = time[j] > set_end
-        if (((time[j] - time[j-1])*count) > ((time[j] - time[batch_start]) * 5) || (j == (len - 1)) || past_set_end) {
+        if (((time[j] - time[j - 1]) * count) > ((time[j] - time[batch_start]) * 5) || (j == (len - 1)) || past_set_end) {
             if (count >= 64) {
                 // Must have at least 64 samples in each batch
-                const sample_rate = 1 / ((time[j-1] - time[batch_start]) / count)
+                const sample_rate = 1 / ((time[j - 1] - time[batch_start]) / count)
                 sample_rate_sum += sample_rate
                 sample_rate_count++
 
                 // Add to batch
-                ret.push({param_set: param_set, sample_rate: sample_rate, batch_start: batch_start, batch_end: j-1})
+                ret.push({ param_set: param_set, sample_rate: sample_rate, batch_start: batch_start, batch_end: j - 1 })
             }
             if (past_set_end) {
                 // Move on to next set
@@ -1378,15 +1404,15 @@ async function load(log_file) {
     reset()
 
     // Reset log object                                  Copter          Plane
-    PID_log_messages = [ {id: ["PIDR"],      prefixes: [ "ATC_RAT_RLL_", "RLL_RATE_"]},
-                         {id: ["PIDP"],      prefixes: [ "ATC_RAT_PIT_", "PTCH_RATE_"]},
-                         {id: ["PIDY"],      prefixes: [ "ATC_RAT_YAW_", "YAW_RATE_"]},
-                         {id: ["PIQR"],      prefixes: [                 "Q_A_RAT_RLL_"]},
-                         {id: ["PIQP"],      prefixes: [                 "Q_A_RAT_PIT_"]},
-                         {id: ["PIQY"],      prefixes: [                 "Q_A_RAT_YAW_"]},
-                         {id: ["RATE", "R"], prefixes: [ "ATC_RAT_RLL_", "Q_A_RAT_RLL_"]},
-                         {id: ["RATE", "P"], prefixes: [ "ATC_RAT_PIT_", "Q_A_RAT_PIT_"]},
-                         {id: ["RATE", "Y"], prefixes: [ "ATC_RAT_YAW_", "Q_A_RAT_YAW_"]} ]
+    PID_log_messages = [{ id: ["PIDR"], prefixes: ["ATC_RAT_RLL_", "RLL_RATE_"] },
+    { id: ["PIDP"], prefixes: ["ATC_RAT_PIT_", "PTCH_RATE_"] },
+    { id: ["PIDY"], prefixes: ["ATC_RAT_YAW_", "YAW_RATE_"] },
+    { id: ["PIQR"], prefixes: ["Q_A_RAT_RLL_"] },
+    { id: ["PIQP"], prefixes: ["Q_A_RAT_PIT_"] },
+    { id: ["PIQY"], prefixes: ["Q_A_RAT_YAW_"] },
+    { id: ["RATE", "R"], prefixes: ["ATC_RAT_RLL_", "Q_A_RAT_RLL_"] },
+    { id: ["RATE", "P"], prefixes: ["ATC_RAT_PIT_", "Q_A_RAT_PIT_"] },
+    { id: ["RATE", "Y"], prefixes: ["ATC_RAT_YAW_", "Q_A_RAT_YAW_"] }]
 
     // Set flags for no data
     PID_log_messages.have_data = false
@@ -1395,7 +1421,7 @@ async function load(log_file) {
     }
 
     let log = new DataflashParser()
-    log.processData(log_file , [])
+    log.processData(log_file, [])
 
     open_in_update(log)
 
@@ -1429,13 +1455,13 @@ async function load(log_file) {
                     const time = PARM.TimeUS[j] * US2S
                     const value = PARM.Value[j]
                     found_param = true
-                    if (param_values[name] != null  && (param_values[name] != value)) {
+                    if (param_values[name] != null && (param_values[name] != value)) {
                         if ((last_set_end == null) || (time - last_set_end > 1.0)) {
                             // First param change for a second
                             last_set_end = time
 
                             // Param change store all values to this point as a batch
-                            PID_log_messages[i].params.sets.push(Object.assign({}, param_values, {end_time: last_set_end}))
+                            PID_log_messages[i].params.sets.push(Object.assign({}, param_values, { end_time: last_set_end }))
 
                             // Record start time for new set
                             param_values.start_time = time
@@ -1453,7 +1479,7 @@ async function load(log_file) {
             }
             if (found_param) {
                 // Push the final set
-                PID_log_messages[i].params.sets.push(Object.assign({}, param_values, {end_time: Infinity}))
+                PID_log_messages[i].params.sets.push(Object.assign({}, param_values, { end_time: Infinity }))
                 PID_log_messages[i].params.prefix = prefix
                 // could lock onto a set of param prefixes per vehicle to speed up the search
                 break
@@ -1492,24 +1518,28 @@ async function load(log_file) {
                 if (is_RATE_msg) {
                     const axis_prefix = PID_log_messages[i].id[1]
                     // Note that is not quite the same, PID logs report the filtered target value where as RATE gets the raw
-                    PID_log_messages[i].sets[batch.param_set].push({ time: time.slice(batch.batch_start, batch.batch_end),
-                                                                     sample_rate: batch.sample_rate,
-                                                                     Tar: Array.from(log_msg[axis_prefix + "Des"].slice(batch.batch_start, batch.batch_end)),
-                                                                     Act: Array.from(log_msg[axis_prefix        ].slice(batch.batch_start, batch.batch_end)),
-                                                                     Out: Array.from(log_msg[axis_prefix + "Out"].slice(batch.batch_start, batch.batch_end))})
+                    PID_log_messages[i].sets[batch.param_set].push({
+                        time: time.slice(batch.batch_start, batch.batch_end),
+                        sample_rate: batch.sample_rate,
+                        Tar: Array.from(log_msg[axis_prefix + "Des"].slice(batch.batch_start, batch.batch_end)),
+                        Act: Array.from(log_msg[axis_prefix].slice(batch.batch_start, batch.batch_end)),
+                        Out: Array.from(log_msg[axis_prefix + "Out"].slice(batch.batch_start, batch.batch_end))
+                    })
 
                 } else {
                     // Convert radians to degress
                     const rad2deg = 180.0 / Math.PI
-                    PID_log_messages[i].sets[batch.param_set].push({ time: time.slice(batch.batch_start, batch.batch_end),
-                                                                     sample_rate: batch.sample_rate,
-                                                                     Tar: array_scale(Array.from(log_msg.Tar.slice(batch.batch_start, batch.batch_end)), rad2deg),
-                                                                     Act: array_scale(Array.from(log_msg.Act.slice(batch.batch_start, batch.batch_end)), rad2deg),
-                                                                     Err: array_scale(Array.from(log_msg.Err.slice(batch.batch_start, batch.batch_end)), rad2deg),
-                                                                     P:   Array.from(log_msg.P.slice(batch.batch_start, batch.batch_end)),
-                                                                     I:   Array.from(log_msg.I.slice(batch.batch_start, batch.batch_end)),
-                                                                     D:   Array.from(log_msg.D.slice(batch.batch_start, batch.batch_end)),
-                                                                     FF:  Array.from(log_msg.FF.slice(batch.batch_start, batch.batch_end))})
+                    PID_log_messages[i].sets[batch.param_set].push({
+                        time: time.slice(batch.batch_start, batch.batch_end),
+                        sample_rate: batch.sample_rate,
+                        Tar: array_scale(Array.from(log_msg.Tar.slice(batch.batch_start, batch.batch_end)), rad2deg),
+                        Act: array_scale(Array.from(log_msg.Act.slice(batch.batch_start, batch.batch_end)), rad2deg),
+                        Err: array_scale(Array.from(log_msg.Err.slice(batch.batch_start, batch.batch_end)), rad2deg),
+                        P: Array.from(log_msg.P.slice(batch.batch_start, batch.batch_end)),
+                        I: Array.from(log_msg.I.slice(batch.batch_start, batch.batch_end)),
+                        D: Array.from(log_msg.D.slice(batch.batch_start, batch.batch_end)),
+                        FF: Array.from(log_msg.FF.slice(batch.batch_start, batch.batch_end))
+                    })
                 }
             }
 
@@ -1573,7 +1603,7 @@ async function load(log_file) {
                 }
                 const len = batch.P.length
                 batch.Out = new Array(len)
-                for (let i = 0; i<len; i++) {
+                for (let i = 0; i < len; i++) {
                     batch.Out[i] = batch.P[i] + batch.I[i] + batch.D[i] + batch.FF[i]
                 }
             }
