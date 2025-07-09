@@ -107,7 +107,7 @@ function reset() {
     document.title = "ArduPilot PID Review"
 
     const types = ["PIDP", "PIDR", "PIDY",
-        "PIQP", "PIQR", "PIQY",
+        "PIQP", "PIQR", "PIQY", "PIQT",
         "RATE_R", "RATE_P", "RATE_Y"]
     for (const type of types) {
         let ele = document.getElementById("type_" + type)
@@ -1317,6 +1317,11 @@ function time_range_changed() {
 }
 
 function get_PID_param_names(prefix) {
+    if (prefix === "Q_P_VELZ_") {
+        return {
+            KP: prefix + "P"
+        }
+    }
     return {
         KP: prefix + "P",
         KI: prefix + "I",
@@ -1410,6 +1415,7 @@ async function load(log_file) {
     { id: ["PIQR"], prefixes: ["Q_A_RAT_RLL_"] },
     { id: ["PIQP"], prefixes: ["Q_A_RAT_PIT_"] },
     { id: ["PIQY"], prefixes: ["Q_A_RAT_YAW_"] },
+    { id: ["PIQT"], prefixes: ["Q_P_VELZ_"] },
     { id: ["RATE", "R"], prefixes: ["ATC_RAT_RLL_", "Q_A_RAT_RLL_"] },
     { id: ["RATE", "P"], prefixes: ["ATC_RAT_PIT_", "Q_A_RAT_PIT_"] },
     { id: ["RATE", "Y"], prefixes: ["ATC_RAT_YAW_", "Q_A_RAT_YAW_"] }]
@@ -1527,14 +1533,17 @@ async function load(log_file) {
                     })
 
                 } else {
-                    // Convert radians to degress
                     const rad2deg = 180.0 / Math.PI
+                    const convert = PID_log_messages[i].params.prefix !== "Q_P_VELZ_"
                     PID_log_messages[i].sets[batch.param_set].push({
                         time: time.slice(batch.batch_start, batch.batch_end),
                         sample_rate: batch.sample_rate,
-                        Tar: array_scale(Array.from(log_msg.Tar.slice(batch.batch_start, batch.batch_end)), rad2deg),
-                        Act: array_scale(Array.from(log_msg.Act.slice(batch.batch_start, batch.batch_end)), rad2deg),
-                        Err: array_scale(Array.from(log_msg.Err.slice(batch.batch_start, batch.batch_end)), rad2deg),
+                        Tar: convert ? array_scale(Array.from(log_msg.Tar.slice(batch.batch_start, batch.batch_end)), rad2deg)
+                                          : Array.from(log_msg.Tar.slice(batch.batch_start, batch.batch_end)),
+                        Act: convert ? array_scale(Array.from(log_msg.Act.slice(batch.batch_start, batch.batch_end)), rad2deg)
+                                          : Array.from(log_msg.Act.slice(batch.batch_start, batch.batch_end)),
+                        Err: convert ? array_scale(Array.from(log_msg.Err.slice(batch.batch_start, batch.batch_end)), rad2deg)
+                                          : Array.from(log_msg.Err.slice(batch.batch_start, batch.batch_end)),
                         P: Array.from(log_msg.P.slice(batch.batch_start, batch.batch_end)),
                         I: Array.from(log_msg.I.slice(batch.batch_start, batch.batch_end)),
                         D: Array.from(log_msg.D.slice(batch.batch_start, batch.batch_end)),
