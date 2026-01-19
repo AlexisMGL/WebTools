@@ -210,6 +210,7 @@ let graphPlots = {}
 let routeMap = null
 let routeLayers = []
 let leafletLoadingPromise = null
+let debugSysStatusLogged = false
 const manualFieldnames = {
     87: ["time_boot_ms", "lat", "lon", "alt", "vx", "vy", "vz", "afx", "afy", "afz", "yaw", "yaw_rate", "type_mask", "target_system", "target_component"],
     147: ["current_consumed", "energy_consumed", "temperature", "voltages", "current_battery", "id", "battery_function", "type", "battery_remaining"],
@@ -2819,6 +2820,19 @@ async function load_tlog(log_file) {
         }
         payload = payloadForStats
 
+        if (message.name === "SYS_STATUS" && !debugSysStatusLogged) {
+            debugSysStatusLogged = true
+            console.log("SYS_STATUS debug", {
+                msgId: header.msgId,
+                metaFieldnames: meta?.fieldnames,
+                payloadDecoded: payload,
+                availableFields: availableMessageFields["SYS_STATUS"],
+                payloadLength: header.payload_length,
+                headerVersion: header.version,
+                srcSystem: header.srcSystem,
+                srcComponent: header.srcComponent
+            })
+        }
 
         // Get timestamp
 
