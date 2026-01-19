@@ -191,6 +191,7 @@ let tlogFieldStats = {}
 let availableMessageFields = {}
 let tlogStatusTexts = []
 let ptgiAltSeries = []
+let ptgiRawSeries = []
 let customDistSeries = []
 
 // --- Supabase (shared config) ---
@@ -915,8 +916,8 @@ function evaluateSequence() {
     }
     const ptgiDump = document.getElementById("ptgi-list")
     if (ptgiDump) {
-        ptgiDump.textContent = ptgiAltSeries
-            .map(e => `${e.time.toFixed(2)}s: alt=${e.alt}`)
+        ptgiDump.textContent = ptgiRawSeries
+            .map(e => `${e.time.toFixed(2)}s: ${JSON.stringify(e.payload)}`)
             .join("\n")
     }
     const customDump = document.getElementById("custom-list")
@@ -1467,6 +1468,7 @@ async function load_tlog(log_file) {
                 updateFieldStats(message.name, field, payload.values[idx])
             })
             if (message.name === "POSITION_TARGET_GLOBAL_INT") {
+                ptgiRawSeries.push({ time, payload: Object.fromEntries(payload.fieldnames.map((n, idx) => [n, payload.values[idx]])) })
                 const idxAlt = payload.fieldnames.findIndex(n => n.toLowerCase() === "alt")
                 if (idxAlt !== -1 && Number.isFinite(payload.values[idxAlt])) {
                     ptgiAltSeries.push({ time, alt: payload.values[idxAlt] })
@@ -2172,6 +2174,7 @@ function reset() {
     tlogStatusTexts = []
     sequenceMatches = {}
     ptgiAltSeries = []
+    ptgiRawSeries = []
     customDistSeries = []
     markChecksPending("En attente d'un tlog")
     renderSequenceResultsPending()
