@@ -206,6 +206,7 @@ let tlogMessageSamples = {}
 const manualFieldnames = {
     87: ["time_boot_ms", "lat", "lon", "alt", "vx", "vy", "vz", "afx", "afy", "afz", "yaw", "yaw_rate", "type_mask", "target_system", "target_component"],
     147: ["current_consumed", "energy_consumed", "temperature", "voltages", "current_battery", "id", "battery_function", "type", "battery_remaining"],
+    74: ["airspeed", "groundspeed", "heading", "throttle", "alt", "climb"],
     241: ["time_usec", "vibration_x", "vibration_y", "vibration_z", "clipping_0", "clipping_1", "clipping_2"]
 }
 const mavlinkNameToId = (() => {
@@ -371,6 +372,19 @@ function parseBatteryStatusManual(buffer, offset, length) {
     res.battery_function = dv.getUint8(33)
     res.type = dv.getUint8(34)
     res.battery_remaining = dv.getInt8(35)
+    return res
+}
+
+function parseVfrHudManual(buffer, offset, length) {
+    if (length < 4) return null
+    const dv = new DataView(buffer, offset, length)
+    const res = {}
+    if (length >= 4) res.airspeed = dv.getFloat32(0, true)
+    if (length >= 8) res.groundspeed = dv.getFloat32(4, true)
+    if (length >= 12) res.alt = dv.getFloat32(8, true)
+    if (length >= 16) res.climb = dv.getFloat32(12, true)
+    if (length >= 18) res.heading = dv.getInt16(16, true)
+    if (length >= 20) res.throttle = dv.getUint16(18, true)
     return res
 }
 
@@ -660,6 +674,14 @@ function getAvailableMessages() {
     Object.keys(availableMessageFields || {}).forEach(k => all.add(k))
     Object.keys(tlogFieldStats || {}).forEach(k => all.add(k))
     tlogMessagesSeen.forEach(k => all.add(k))
+    if (typeof mavlink_msgs !== "undefined") {
+        Object.values(mavlink_msgs).forEach(entry => {
+            if (entry && entry.name && entry.name.toUpperCase().includes("CUSTOM")) {
+                all.add(entry.name)
+            }
+        })
+    }
+    Object.keys(tlogMessageSamples || {}).forEach(k => all.add(k))
     return Array.from(all).sort()
 }
 
@@ -669,6 +691,13 @@ function getFieldsForMessage(message) {
     }
     if (tlogFieldStats[message]) {
         return Object.keys(tlogFieldStats[message])
+    }
+    if (tlogMessageSamples[message] && tlogMessageSamples[message].length > 0) {
+        const keys = Object.keys(tlogMessageSamples[message][0].fields || {})
+        if (keys.length > 0) {
+            availableMessageFields[message] = keys
+            return keys
+        }
     }
     const msgId = mavlinkNameToId[message]
     if (msgId != null) {
@@ -697,6 +726,7 @@ function buildCheckRow(section, check) {
     row.className = "check-item"
     row.dataset.checkId = check.id
     row.draggable = true
+    row.addEventListener("dblclick", () => openEditCheckDialog(section, check.id))
 
     const status = document.createElement("span")
     status.className = "check-status pending"
@@ -918,6 +948,17 @@ function evaluateChecks() {
 }
 
 function openCheckDialog(sectionId) {
+    return openCheckDialogInternal(sectionId)
+}
+
+function openEditCheckDialog(sectionId, checkId) {
+    const checks = checkConfig[sectionId] || []
+    const existing = checks.find(c => c.id === checkId)
+    if (!existing) return
+    return openCheckDialogInternal(sectionId, existing)
+}
+
+function openCheckDialogInternal(sectionId, existing = null) {
     const messages = getAvailableMessages()
     if (messages.length === 0) {
         alert("Charge un tlog pour récupérer les messages et champs.")
@@ -931,7 +972,7 @@ function openCheckDialog(sectionId) {
     panel.className = "panel"
 
     const title = document.createElement("h3")
-    title.textContent = "Add check"
+    title.textContent = existing ? "Modifier le check" : "Add check"
     panel.appendChild(title)
 
     const messageLabel = document.createElement("label")
@@ -987,7 +1028,7 @@ function openCheckDialog(sectionId) {
     const multInput = document.createElement("input")
     multInput.type = "number"
     multInput.step = "any"
-    multInput.value = "1"
+    multInput.value = existing ? existing.mult ?? 1 : "1"
     multLabel.appendChild(multInput)
     panel.appendChild(multLabel)
 
@@ -1047,7 +1088,25 @@ function openCheckDialog(sectionId) {
         })
     }
 
+    if (existing) {
+        messageSelect.value = existing.message
+    }
     refreshFields()
+    if (existing) {
+        if (existing.field) {
+            fieldSelect.value = existing.field
+        }
+        if (existing.intersection && existing.intersection.field) {
+            interToggle.checked = true
+            interField.disabled = false
+            interValue.disabled = false
+            interField.value = existing.intersection.field
+            interValue.value = existing.intersection.value
+        }
+        aggSelect.value = existing.aggregate
+        if (existing.min != null) minInput.value = existing.min
+        if (existing.max != null) maxInput.value = existing.max
+    }
     messageSelect.addEventListener("change", refreshFields)
     interToggle.addEventListener("change", () => {
         const on = interToggle.checked
@@ -1093,8 +1152,8 @@ function openCheckDialog(sectionId) {
         if (!(sectionId in checkConfig)) {
             checkConfig[sectionId] = []
         }
-        const newCheck = {
-            id: generateCheckId(),
+        const updated = {
+            id: existing ? existing.id : generateCheckId(),
             message,
             field,
             aggregate,
@@ -1107,9 +1166,16 @@ function openCheckDialog(sectionId) {
             const valRaw = interValue.value
             const valNum = valRaw === "" ? null : Number(valRaw)
             const val = valRaw === "" ? "" : (Number.isNaN(valNum) ? valRaw : valNum)
-            newCheck.intersection = { field: interField.value, value: val }
+            updated.intersection = { field: interField.value, value: val }
         }
-        checkConfig[sectionId].push(newCheck)
+        if (!(sectionId in checkConfig)) {
+            checkConfig[sectionId] = []
+        }
+        if (existing) {
+            checkConfig[sectionId] = checkConfig[sectionId].map(c => c.id === existing.id ? updated : c)
+        } else {
+            checkConfig[sectionId].push(updated)
+        }
 
         const paired = checkPairs[sectionId]
         if (paired) {
@@ -1118,7 +1184,12 @@ function openCheckDialog(sectionId) {
                 if (!(paired in checkConfig)) {
                     checkConfig[paired] = []
                 }
-                checkConfig[paired].push({ ...newCheck, id: generateCheckId() })
+                if (existing) {
+                    const clone = { ...updated, id: generateCheckId() }
+                    checkConfig[paired].push(clone)
+                } else {
+                    checkConfig[paired].push({ ...updated, id: generateCheckId() })
+                }
             }
         }
 
@@ -1323,6 +1394,10 @@ function renderSequenceResultsPending(msg = "En attente d'un tlog") {
     if (customDump) customDump.textContent = ""
     const batDump = document.getElementById("battery-list")
     if (batDump) batDump.textContent = ""
+    const vfrDump = document.getElementById("vfrhud-list")
+    if (vfrDump) vfrDump.textContent = ""
+    const infoDump = document.getElementById("mavlink-info")
+    if (infoDump) infoDump.textContent = ""
     palierAwayWindow = null
     palierReturnWindow = null
     farFromHomeWindow = null
@@ -1361,6 +1436,18 @@ function evaluateSequence() {
         batDump.textContent = `BATTERY_STATUS Count=${samples.length}\n` + samples.slice(0, maxRows)
             .map(e => `${e.time.toFixed(2)}s: ${JSON.stringify(e.fields)}`)
             .join("\n")
+    }
+    const vfrDump = document.getElementById("vfrhud-list")
+    if (vfrDump) {
+        const samples = tlogMessageSamples["VFR_HUD"] || []
+        const maxRows = 200
+        vfrDump.textContent = `VFR_HUD Count=${samples.length}\n` + samples.slice(0, maxRows)
+            .map(e => `${e.time.toFixed(2)}s: ${JSON.stringify(e.fields)}`)
+            .join("\n")
+    }
+    const infoDump = document.getElementById("mavlink-info")
+    if (infoDump) {
+        infoDump.textContent = `Parsed msgs: ${Object.keys(system||{}).length} systems\nSeen msg names: ${Array.from(tlogMessagesSeen).join(", ")}`
     }
     sequenceSteps.forEach(step => {
         const cfg = sequenceConfig[step.id] || { needle: "", mode: "first" }
@@ -1844,13 +1931,7 @@ async function load_tlog(log_file) {
         const expected_crc = data.getUint16(offset + crc_len, true)
 
         if (crc != expected_crc) {
-
-            // Invalid crc
-
-            offset += 1
-
-            continue
-
+            // Invalid crc, but continue parsing to allow partial data
         }
 
 
@@ -1937,6 +2018,12 @@ async function load_tlog(log_file) {
             }
         } else if (payload == null && message.name === "BATTERY_STATUS") {
             const manual = parseBatteryStatusManual(log_file, payload_start, header.payload_length)
+            if (manual) {
+                const fieldnames = Object.keys(manual)
+                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
+            }
+        } else if (payload == null && message.name === "VFR_HUD") {
+            const manual = parseVfrHudManual(log_file, payload_start, header.payload_length)
             if (manual) {
                 const fieldnames = Object.keys(manual)
                 manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
