@@ -287,6 +287,38 @@
   <div id="sequence-rows"></div>
 </section>
 
+<section id="telem-check" hidden>
+  <h2>Telem Check</h2>
+  <div class="analysis-row two-col">
+    <div class="analysis-card">
+      <div class="card-header">
+        <h3>Heartbeats</h3>
+      </div>
+      <div class="analysis-result" id="telem-blackout">En attente d'un tlog</div>
+      <div class="analysis-result" id="telem-hb-rate">En attente d'un tlog</div>
+    </div>
+    <div class="analysis-card">
+      <div class="card-header">
+        <h3>Totaux Flux</h3>
+      </div>
+      <div class="analysis-result" id="telem-flight-totals">En attente d'un tlog</div>
+      <div class="analysis-result" id="telem-offflight-totals">En attente d'un tlog</div>
+    </div>
+  </div>
+  <div class="analysis-card">
+    <div class="card-header">
+      <h3>Flux IN / OUT (Mb/s)</h3>
+    </div>
+    <div id="telem-rate-chart" style="height:320px"></div>
+  </div>
+  <div class="analysis-card">
+    <div class="card-header">
+      <h3>Flux moyen (Mb/s)</h3>
+    </div>
+    <div id="telem-avg-chart" style="height:260px"></div>
+  </div>
+</section>
+
 <section id="tlog-analysis">
   <h2>Analyse TLog</h2>
 

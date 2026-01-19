@@ -1479,6 +1479,7 @@ function evaluateSequence() {
     renderSequenceResultsPending()
     sequenceMatches = {}
     if (tlogStatusTexts.length === 0) {
+        renderTelemCheck()
         updateDerivedSections()
         return
     }
@@ -1569,6 +1570,7 @@ function evaluateSequence() {
             ff.textContent = "Full flight : bornes manquantes"
         }
     }
+    renderTelemCheck()
     updateDerivedSections()
     evaluateChecks()
     plotGraphs()
@@ -2082,6 +2084,230 @@ function clearDerivedSections() {
         const el = document.getElementById(id)
         if (el) el.textContent = "En attente d'un tlog"
     })
+}
+
+function resetTelemCheck(message = "En attente d'un tlog") {
+    const section = document.getElementById("telem-check")
+    if (section) section.hidden = true
+    const ids = ["telem-blackout", "telem-hb-rate", "telem-flight-totals", "telem-offflight-totals"]
+    ids.forEach(id => {
+        const el = document.getElementById(id)
+        if (el) el.textContent = message
+    })
+    if (typeof Plotly !== "undefined") {
+        ["telem-rate-chart", "telem-avg-chart"].forEach(id => {
+            const el = document.getElementById(id)
+            if (el) {
+                try { Plotly.purge(el) } catch (e) { }
+            }
+        })
+    }
+}
+
+function getFlightWindow() {
+    const bounds = getPhaseBounds(sequenceMatches || {})
+    const start = sequenceMatches["vtol-takeoff"] ?? sequenceMatches["seq-start"] ?? null
+    const end = sequenceMatches["vtol-landing"] ?? bounds.landingEnd ?? tlogEndTime
+    const hasWindow = start != null && end != null && end > start
+    return { start, end, hasWindow }
+}
+
+function collectTelemSamples() {
+    const res = {
+        inTimes: [], inSizes: [],
+        outTimes: [], outSizes: [],
+        heartbeatInTimes: [], heartbeatOutTimes: []
+    }
+    if (!system) return res
+    for (const [sysId, comps] of Object.entries(system)) {
+        const numericId = Number(sysId)
+        const isOut = numericId === 255
+        Object.values(comps || {}).forEach(comp => {
+            Object.entries(comp.msg || {}).forEach(([name, msg]) => {
+                const tgtTimes = isOut ? res.outTimes : res.inTimes
+                const tgtSizes = isOut ? res.outSizes : res.inSizes
+                for (let i = 0; i < msg.time.length; i++) {
+                    tgtTimes.push(msg.time[i])
+                    tgtSizes.push(msg.size[i])
+                }
+                if (name === "HEARTBEAT") {
+                    const hbArr = isOut ? res.heartbeatOutTimes : res.heartbeatInTimes
+                    msg.time.forEach(t => hbArr.push(t))
+                }
+            })
+        })
+    }
+    return res
+}
+
+function splitTotals(times, sizes, start, end) {
+    let inWindow = 0
+    let offWindow = 0
+    const hasWindow = start != null && end != null && end > start
+    for (let i = 0; i < times.length; i++) {
+        const t = times[i]
+        const bits = sizes[i]
+        if (!Number.isFinite(bits)) continue
+        if (hasWindow && t >= start && t <= end) {
+            inWindow += bits
+        } else {
+            offWindow += bits
+        }
+    }
+    return { inWindow, offWindow }
+}
+
+function computeHeartbeatStats(samples, flightWindow) {
+    const { start, end, hasWindow } = flightWindow
+    const hbSource = samples.heartbeatInTimes.length > 0 ? samples.heartbeatInTimes
+        : (samples.heartbeatOutTimes.length > 0 ? samples.heartbeatOutTimes : [])
+    if (!hasWindow || hbSource.length === 0) {
+        return { blackout: null, ratePerMin: null }
+    }
+    const hb = hbSource.filter(t => t >= start && t <= end).sort((a, b) => a - b)
+    if (hb.length === 0) {
+        return { blackout: end - start, ratePerMin: 0 }
+    }
+    let maxGap = Math.max(hb[0] - start, end - hb[hb.length - 1])
+    for (let i = 1; i < hb.length; i++) {
+        const gap = hb[i] - hb[i - 1]
+        if (gap > maxGap) maxGap = gap
+    }
+    const durationMin = (end - start) / 60
+    const ratePerMin = durationMin > 0 ? hb.length / durationMin : null
+    return { blackout: maxGap, ratePerMin }
+}
+
+function buildFluxRateSeries(times, sizes, binWidth, start, end) {
+    const hasWindow = start != null && end != null && end > start
+    const filteredTimes = []
+    const filteredSizes = []
+    for (let i = 0; i < times.length; i++) {
+        const t = times[i]
+        const bits = sizes[i]
+        if (!Number.isFinite(bits)) continue
+        if (hasWindow && (t < start || t > end)) continue
+        filteredTimes.push(t)
+        filteredSizes.push(bits)
+    }
+    if (filteredTimes.length === 0) return null
+    const total = { count: [], low_bin: Infinity, high_bin: -Infinity }
+    const binned = bin_count(filteredTimes, filteredSizes, binWidth, total)
+    if (!binned.time || !binned.count) return null
+    return {
+        x: binned.time,
+        y: binned.count.map(v => v / 1e6) // bits/s to Mb/s
+    }
+}
+
+function formatGo(bits) {
+    const gb = bits / 8 / 1e9
+    if (!Number.isFinite(gb)) return "0.000 Go"
+    return `${gb.toFixed(3)} Go`
+}
+
+function renderTelemCheck() {
+    const section = document.getElementById("telem-check")
+    if (!section) return
+    const blackoutEl = document.getElementById("telem-blackout")
+    const hbRateEl = document.getElementById("telem-hb-rate")
+    const flightTotalsEl = document.getElementById("telem-flight-totals")
+    const offTotalsEl = document.getElementById("telem-offflight-totals")
+    if (!system) {
+        resetTelemCheck()
+        return
+    }
+    const flightWindow = getFlightWindow()
+    const samples = collectTelemSamples()
+    const hbStats = computeHeartbeatStats(samples, flightWindow)
+    if (section) section.hidden = false
+    if (blackoutEl) {
+        blackoutEl.textContent = flightWindow.hasWindow && hbStats.blackout != null
+            ? `Plus long blackout: ${hbStats.blackout.toFixed(2)} s`
+            : "Plus long blackout: bornes manquantes ou HB absent"
+    }
+    if (hbRateEl) {
+        hbRateEl.textContent = flightWindow.hasWindow && hbStats.ratePerMin != null
+            ? `Heartbeats par minute: ${hbStats.ratePerMin.toFixed(2)}`
+            : "Heartbeats par minute: bornes manquantes"
+    }
+
+    const inTotals = splitTotals(samples.inTimes, samples.inSizes, flightWindow.start, flightWindow.end)
+    const outTotals = splitTotals(samples.outTimes, samples.outSizes, flightWindow.start, flightWindow.end)
+    const flightInBits = inTotals.inWindow
+    const flightOutBits = outTotals.inWindow
+    const offInBits = inTotals.offWindow
+    const offOutBits = outTotals.offWindow
+    if (flightTotalsEl) {
+        flightTotalsEl.textContent = flightWindow.hasWindow
+            ? `Flux vol: IN ${formatGo(flightInBits)} | OUT ${formatGo(flightOutBits)} | Total ${formatGo(flightInBits + flightOutBits)}`
+            : "Flux vol: bornes manquantes"
+    }
+    if (offTotalsEl) {
+        offTotalsEl.textContent = `Hors vol: IN ${formatGo(offInBits)} | OUT ${formatGo(offOutBits)} | Total ${formatGo(offInBits + offOutBits)}`
+    }
+
+    const rateDiv = document.getElementById("telem-rate-chart")
+    const avgDiv = document.getElementById("telem-avg-chart")
+    const binWidth = 1
+    const inSeries = buildFluxRateSeries(samples.inTimes, samples.inSizes, binWidth, flightWindow.start, flightWindow.end)
+    const outSeries = buildFluxRateSeries(samples.outTimes, samples.outSizes, binWidth, flightWindow.start, flightWindow.end)
+    if (rateDiv && typeof Plotly !== "undefined") {
+        const traces = []
+        if (inSeries) {
+            traces.push({
+                type: 'scattergl',
+                mode: 'lines',
+                name: 'IN',
+                x: inSeries.x,
+                y: inSeries.y
+            })
+        }
+        if (outSeries) {
+            traces.push({
+                type: 'scattergl',
+                mode: 'lines',
+                name: 'OUT',
+                x: outSeries.x,
+                y: outSeries.y
+            })
+        }
+        const layout = {
+            margin: { l: 50, r: 20, t: 10, b: 50 },
+            yaxis: { title: { text: "Mb/s" } },
+            xaxis: { title: { text: "Temps (s)" } },
+            showlegend: true
+        }
+        Plotly.purge(rateDiv)
+        if (traces.length > 0) {
+            Plotly.newPlot(rateDiv, traces, layout, { displaylogo: false })
+        } else {
+            rateDiv.innerHTML = "Pas de données telemetry"
+        }
+    }
+
+    if (avgDiv && typeof Plotly !== "undefined") {
+        const duration = flightWindow.hasWindow ? (flightWindow.end - flightWindow.start) : null
+        const avgIn = duration && duration > 0 ? (flightInBits / duration) / 1e6 : null
+        const avgOut = duration && duration > 0 ? (flightOutBits / duration) / 1e6 : null
+        Plotly.purge(avgDiv)
+        if (avgIn != null || avgOut != null) {
+            const trace = {
+                type: 'bar',
+                x: ['IN', 'OUT'],
+                y: [avgIn ?? 0, avgOut ?? 0],
+                marker: { color: ['#1f77b4', '#ff7f0e'] }
+            }
+            const layout = {
+                margin: { l: 50, r: 20, t: 10, b: 50 },
+                yaxis: { title: { text: "Mb/s" } },
+                showlegend: false
+            }
+            Plotly.newPlot(avgDiv, [trace], layout, { displaylogo: false })
+        } else {
+            avgDiv.innerHTML = "Flux moyen indisponible (bornes manquantes)"
+        }
+    }
 }
 
 function formatInterval(res) {
@@ -3337,6 +3563,7 @@ function reset() {
     if (routeInfo) routeInfo.textContent = "En attente d'un tlog"
     markChecksPending("En attente d'un tlog")
     renderSequenceResultsPending()
+    resetTelemCheck()
     clearDerivedSections()
 
 
