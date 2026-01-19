@@ -13,11 +13,13 @@
 <script type="text/javascript" src="../Libraries/LoadingOverlay.js"></script>
 <script type="text/javascript" src="../Libraries/Plotly_helpers.js"></script>
 <script type="text/javascript" src="../Libraries/LogHelpers.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <script src='../modules/plotly.js/dist/plotly.min.js'></script>
 
 <script src="../modules/build/floating-ui/dist/umd/popper.min.js"></script>
 <script src="../modules/build/tippyjs/dist/tippy-bundle.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 </head>
 <table style="width:1200px"><tr><td>
@@ -407,6 +409,20 @@
       <div class="analysis-result" id="parachute-info"></div>
     </div>
   </div>
+</section>
+
+<section id="route-map-section">
+  <h2>Route</h2>
+  <div id="route-map" style="height:400px;border:1px solid #d9dfe7;border-radius:6px;"></div>
+  <div class="analysis-result" id="route-map-info"></div>
+</section>
+
+<section id="graphs-section">
+  <h2>Graph</h2>
+  <div style="margin-bottom:8px;">
+    <button id="add-graph-btn">Ajouter un graph</button>
+  </div>
+  <div id="graphs-container"></div>
 </section>
 
 <h3 hidden>MAVLink</h3>

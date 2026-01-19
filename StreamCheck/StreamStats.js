@@ -194,6 +194,8 @@ let ptgiAltSeries = []
 let ptgiRawSeries = []
 let customDistSeries = []
 let gpiDistSeries = []
+let ptgiPath = []
+let gpiPath = []
 let homeLat = null
 let homeLon = null
 let tlogMessagesSeen = new Set()
@@ -203,6 +205,11 @@ let palierAwayWindow = null
 let palierReturnWindow = null
 let farFromHomeWindow = null
 let tlogMessageSamples = {}
+let graphConfig = {}
+let graphPlots = {}
+let routeMap = null
+let routeLayers = []
+let leafletLoadingPromise = null
 const manualFieldnames = {
     87: ["time_boot_ms", "lat", "lon", "alt", "vx", "vy", "vz", "afx", "afy", "afz", "yaw", "yaw_rate", "type_mask", "target_system", "target_component"],
     147: ["current_consumed", "energy_consumed", "temperature", "voltages", "current_battery", "id", "battery_function", "type", "battery_remaining"],
@@ -227,8 +234,10 @@ const SUPABASE_URL = "https://tcyzpwgfetktblazbgtz.supabase.co"
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXpwd2dmZXRrdGJsYXpiZ3R6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3ODgyNzIsImV4cCI6MjA3ODM2NDI3Mn0.UEDF3LrZeSD3aeaBtSivvFAs8YCr1iUSs1EAhOEAyyQ"
 const REMOTE_TABLE_CHECKS = "streamcheck_checks"
 const REMOTE_TABLE_SEQ = "streamcheck_sequence"
+const REMOTE_TABLE_GRAPHS = "streamcheck_graphs"
 const REMOTE_CHECKS_ID = "shared"
 const REMOTE_SEQ_ID = "shared"
+const REMOTE_GRAPHS_ID = "shared"
 let supabasePromise
 
 async function getSupabase() {
@@ -1206,11 +1215,21 @@ function initCheckUI() {
         btn.addEventListener("click", () => openCheckDialog(btn.dataset.section))
     })
     syncChecksFromRemote()
+    const addGraphBtn = document.getElementById("add-graph-btn")
+    if (addGraphBtn) {
+        addGraphBtn.addEventListener("click", openAddGraphDialog)
+    }
+    syncGraphsFromRemote()
+    renderGraphCards()
 }
 
 document.addEventListener("DOMContentLoaded", initCheckUI)
 
+const GRAPHS_STORAGE_KEY = "streamcheck_graphs_v1"
 const SEQ_STORAGE_KEY = "streamcheck_sequence_v1"
+const graphDefaults = []
+let graphLocalCache = loadSavedGraphs()
+graphConfig = graphLocalCache
 const sequenceSteps = [
     { id: "seq-start", label: "Début (avant VTOL Takeoff)" },
     { id: "vtol-takeoff", label: "VTOL Takeoff" },
@@ -1285,6 +1304,38 @@ function loadSavedSequenceConfig() {
     }
 }
 
+async function fetchRemoteGraphs() {
+    try {
+        const supabase = await getSupabase()
+        const { data, error } = await supabase
+            .from(REMOTE_TABLE_GRAPHS)
+            .select("config")
+            .eq("id", REMOTE_GRAPHS_ID)
+            .maybeSingle()
+        if (error) {
+            if (error.code !== "PGRST116") {
+                throw error
+            }
+            return null
+        }
+        return data?.config ?? null
+    } catch (e) {
+        console.warn("Remote graphs fetch failed", e)
+        return null
+    }
+}
+
+async function pushRemoteGraphs() {
+    try {
+        const supabase = await getSupabase()
+        await supabase
+            .from(REMOTE_TABLE_GRAPHS)
+            .upsert({ id: REMOTE_GRAPHS_ID, config: graphConfig })
+    } catch (e) {
+        console.warn("Remote graphs save failed", e)
+    }
+}
+
 function saveSequenceConfig() {
     try {
         localStorage.setItem(SEQ_STORAGE_KEY, JSON.stringify(sequenceConfig))
@@ -1292,6 +1343,27 @@ function saveSequenceConfig() {
         console.warn("Could not save sequencing config", e)
     }
     pushRemoteSequence().catch(err => console.warn("Remote sequence save failed", err))
+}
+
+function loadSavedGraphs() {
+    try {
+        const raw = localStorage.getItem(GRAPHS_STORAGE_KEY)
+        if (!raw) return {}
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === "object" ? parsed : {}
+    } catch (e) {
+        console.warn("Could not load graphs", e)
+        return {}
+    }
+}
+
+function saveGraphs() {
+    try {
+        localStorage.setItem(GRAPHS_STORAGE_KEY, JSON.stringify(graphConfig))
+    } catch (e) {
+        console.warn("Could not save graphs", e)
+    }
+    pushRemoteGraphs().catch(err => console.warn("Remote graphs save failed", err))
 }
 
 function renderSequenceRows() {
@@ -1499,6 +1571,8 @@ function evaluateSequence() {
     }
     updateDerivedSections()
     evaluateChecks()
+    plotGraphs()
+    renderRouteMap()
 }
 
 function initSequenceUI() {
@@ -1509,6 +1583,440 @@ function initSequenceUI() {
 
 document.addEventListener("DOMContentLoaded", initSequenceUI)
 
+function renderGraphCards() {
+    const container = document.getElementById("graphs-container")
+    if (!container) return
+    container.replaceChildren()
+    Object.entries(graphConfig || {}).forEach(([graphId, graph]) => {
+        graph.series = Array.isArray(graph.series) ? graph.series : []
+        const card = document.createElement("div")
+        card.className = "analysis-card"
+        const header = document.createElement("div")
+        header.className = "card-header"
+        const h3 = document.createElement("h3")
+        h3.textContent = graph.name || "Graph"
+        const del = document.createElement("button")
+        del.textContent = "supprimer"
+        del.addEventListener("click", () => {
+            delete graphConfig[graphId]
+            saveGraphs()
+            renderGraphCards()
+            plotGraphs()
+        })
+        const addSeries = document.createElement("button")
+        addSeries.textContent = "ajouter serie"
+        addSeries.addEventListener("click", () => openGraphSeriesDialog(graphId))
+        header.append(h3, addSeries, del)
+        card.appendChild(header)
+        const graphDiv = document.createElement("div")
+        graphDiv.id = `graph-${graphId}`
+        graphDiv.style.height = "320px"
+        card.appendChild(graphDiv)
+        const stats = document.createElement("div")
+        stats.className = "analysis-result"
+        stats.id = `graph-stats-${graphId}`
+        card.appendChild(stats)
+        container.appendChild(card)
+    })
+    plotGraphs()
+}
+
+function openAddGraphDialog() {
+    const name = prompt("Nom du graph")
+    if (!name) return
+    const id = generateCheckId()
+    graphConfig[id] = { name, series: [] }
+    saveGraphs()
+    renderGraphCards()
+}
+
+function openGraphSeriesDialog(graphId) {
+    const graph = graphConfig[graphId]
+    if (!graph) return
+    graph.series = Array.isArray(graph.series) ? graph.series : []
+    const messages = getAvailableMessages()
+    if (messages.length === 0) {
+        alert("Charge un tlog pour récupérer les messages et champs.")
+        return
+    }
+
+    const modal = document.createElement("div")
+    modal.className = "check-modal"
+    const panel = document.createElement("div")
+    panel.className = "panel"
+    const title = document.createElement("h3")
+    title.textContent = "Ajouter une série"
+    panel.appendChild(title)
+
+    const messageLabel = document.createElement("label")
+    messageLabel.textContent = "Message"
+    const messageSelect = document.createElement("select")
+    messages.forEach(m => {
+        const opt = document.createElement("option")
+        opt.value = m
+        opt.textContent = m
+        messageSelect.appendChild(opt)
+    })
+    messageLabel.appendChild(messageSelect)
+    panel.appendChild(messageLabel)
+
+    const fieldLabel = document.createElement("label")
+    fieldLabel.textContent = "Champ"
+    const fieldSelect = document.createElement("select")
+    fieldLabel.appendChild(fieldSelect)
+    panel.appendChild(fieldLabel)
+
+    const interRow = document.createElement("div")
+    interRow.className = "intersection-row"
+    const interToggle = document.createElement("input")
+    interToggle.type = "checkbox"
+    interToggle.id = "graph-intersection"
+    const interLabel = document.createElement("label")
+    interLabel.textContent = "Filtrer (champ = valeur)"
+    interLabel.prepend(interToggle)
+    const interField = document.createElement("select")
+    interField.disabled = true
+    const interValue = document.createElement("input")
+    interValue.type = "number"
+    interValue.step = "any"
+    interValue.placeholder = "valeur"
+    interValue.disabled = true
+    interRow.append(interLabel, interField, interValue)
+    panel.appendChild(interRow)
+
+    const multLabel = document.createElement("label")
+    multLabel.textContent = "Multiplicateur (par défaut 1.0)"
+    const multInput = document.createElement("input")
+    multInput.type = "number"
+    multInput.step = "any"
+    multInput.value = "1"
+    multLabel.appendChild(multInput)
+    panel.appendChild(multLabel)
+
+    const actions = document.createElement("div")
+    actions.className = "actions"
+    const cancelBtn = document.createElement("button")
+    cancelBtn.textContent = "Annuler"
+    const addBtn = document.createElement("button")
+    addBtn.textContent = "Ajouter"
+    addBtn.className = "primary"
+    actions.append(cancelBtn, addBtn)
+    panel.appendChild(actions)
+
+    modal.appendChild(panel)
+    document.body.appendChild(modal)
+
+    function refreshFields() {
+        fieldSelect.replaceChildren()
+        interField.replaceChildren()
+        const fields = getFieldsForMessage(messageSelect.value)
+        if (fields.length === 0) {
+            const opt = document.createElement("option")
+            opt.value = ""
+            opt.textContent = "Aucun champ disponible"
+            fieldSelect.appendChild(opt)
+            const opt2 = document.createElement("option")
+            opt2.value = ""
+            opt2.textContent = "Aucun champ"
+            interField.appendChild(opt2)
+            return
+        }
+        fields.forEach(f => {
+            const opt = document.createElement("option")
+            opt.value = f
+            opt.textContent = f
+            fieldSelect.appendChild(opt)
+            const opt2 = document.createElement("option")
+            opt2.value = f
+            opt2.textContent = f
+            interField.appendChild(opt2)
+        })
+    }
+
+    refreshFields()
+    messageSelect.addEventListener("change", refreshFields)
+    interToggle.addEventListener("change", () => {
+        const on = interToggle.checked
+        interField.disabled = !on
+        interValue.disabled = !on
+    })
+
+    function closeModal() {
+        document.body.removeChild(modal)
+    }
+    cancelBtn.addEventListener("click", closeModal)
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal()
+    })
+
+    addBtn.addEventListener("click", () => {
+        const message = messageSelect.value
+        const field = fieldSelect.value
+        if (!message || !field) {
+            alert("Choisis un message et un champ.")
+            return
+        }
+        const mult = Number(multInput.value) || 1
+        let intersection = null
+        if (interToggle.checked && interField.value) {
+            const raw = interValue.value
+            const num = raw === "" ? null : Number(raw)
+            const val = raw === "" ? "" : (Number.isNaN(num) ? raw : num)
+            intersection = { field: interField.value, value: val }
+        }
+        graph.series.push({
+            id: generateCheckId(),
+            message,
+            field,
+            mult,
+            intersection
+        })
+        saveGraphs()
+        renderGraphCards()
+        closeModal()
+    })
+}
+
+function plotGraphs() {
+    const bounds = getPhaseBounds(sequenceMatches)
+    const start = bounds.start0 ?? 0
+    const end = bounds.landingEnd ?? tlogEndTime
+    Object.entries(graphConfig || {}).forEach(([graphId, graph]) => {
+        graph.series = Array.isArray(graph.series) ? graph.series : []
+        if (!graph.series || graph.series.length === 0) {
+            const targetEmpty = document.getElementById(`graph-stats-${graphId}`)
+            if (targetEmpty) targetEmpty.textContent = "Pas de serie"
+            return
+        }
+        const target = document.getElementById(`graph-${graphId}`)
+        if (!target) return
+        const traces = []
+        graphPlots[graphId] = graphPlots[graphId] || {}
+        graphPlots[graphId].series = []
+        const seriesList = Array.isArray(graph.series) ? graph.series : []
+        seriesList.forEach((series, idx) => {
+            const arr = tlogMessageSamples[series.message] || []
+            const x = []
+            const y = []
+            arr.forEach(s => {
+                if (s.time == null) return
+                if (start != null && s.time < start) return
+                if (end != null && s.time > end) return
+                if (series.intersection && series.intersection.field) {
+                    const v = s.fields?.[series.intersection.field]
+                    if (v != series.intersection.value) return
+                }
+                let val = s.fields?.[series.field]
+                if (typeof val === "bigint") val = Number(val)
+                if (!Number.isFinite(val)) return
+                val = val * (series.mult ?? 1)
+                x.push(s.time)
+                y.push(val)
+            })
+            graphPlots[graphId].series.push({ x, y, name: `${series.message}.${series.field}` })
+            traces.push({
+                x,
+                y,
+                name: `${series.message}.${series.field}`,
+                type: "scatter",
+                mode: "lines",
+                line: { width: 2 },
+            })
+        })
+        Plotly.newPlot(target, traces, {
+            margin: { t: 20, r: 10, b: 40, l: 60 },
+            xaxis: { title: "Temps (s)", range: start != null && end != null ? [start, end] : undefined },
+            yaxis: { title: "Valeurs" },
+            dragmode: "zoom",
+            paper_bgcolor: "white",
+            plot_bgcolor: "white",
+            hovermode: "closest",
+        }, { responsive: true })
+        target.on("plotly_relayout", (ev) => {
+            const rng = ev["xaxis.range"] || ev["xaxis.range[0]"] ? [ev["xaxis.range[0]"], ev["xaxis.range[1]"]] : null
+            updateGraphStats(graphId, rng)
+        })
+        target.on("plotly_selected", (ev) => {
+            if (!ev || !ev.range) return
+            updateGraphStats(graphId, [ev.range.x[0], ev.range.x[1]])
+        })
+        updateGraphStats(graphId, start != null && end != null ? [start, end] : null)
+    })
+}
+
+function renderRouteMap() {
+    const mapDiv = document.getElementById("route-map")
+    if (!mapDiv) return
+    const info = document.getElementById("route-map-info")
+    const bounds = getPhaseBounds(sequenceMatches)
+    const start = bounds.start0 ?? 0
+    const end = bounds.landingEnd ?? tlogEndTime
+    if (start == null || end == null) {
+        if (info) info.textContent = "Bornes manquantes (sequence)"
+        return
+    }
+    const plan = ptgiPath.filter(p => p.time >= start && (end == null || p.time <= end) && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+    const actual = gpiPath.filter(p => p.time >= start && (end == null || p.time <= end) && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+    if (plan.length === 0 && actual.length === 0) {
+        if (info) info.textContent = "Pas de points (attends un tlog ou borne manquante)"
+        return
+    }
+    ensureLeafletLoaded().then(Lctx => {
+        if (Lctx) {
+            if (!routeMap) {
+                routeMap = Lctx.map(mapDiv).setView([0, 0], 2)
+                Lctx.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 18,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(routeMap)
+            }
+            routeLayers.forEach(l => {
+                try { routeMap.removeLayer(l) } catch (e) {}
+            })
+            routeLayers = []
+            let allLatLng = []
+            if (plan.length > 0) {
+                const latlngs = plan.map(p => [p.lat, p.lon])
+                const poly = Lctx.polyline(latlngs, { color: "#1f78ff", weight: 3, opacity: 0.8 })
+                poly.addTo(routeMap)
+                routeLayers.push(poly)
+                allLatLng = allLatLng.concat(latlngs)
+            }
+            if (actual.length > 0) {
+                const latlngs = actual.map(p => [p.lat, p.lon])
+                const poly = Lctx.polyline(latlngs, { color: "#b32020", weight: 3, opacity: 0.8 })
+                poly.addTo(routeMap)
+                routeLayers.push(poly)
+                allLatLng = allLatLng.concat(latlngs)
+            }
+            if (allLatLng.length > 0) {
+                routeMap.fitBounds(allLatLng)
+            }
+            if (info) info.textContent = `Plan points: ${plan.length} | Position points: ${actual.length} (fenetre ${start?.toFixed ? start.toFixed(1) : start}s -> ${end?.toFixed ? end.toFixed(1) : end}s)`
+        } else {
+            // Fallback Plotly scattergeo
+            const traces = []
+            if (plan.length > 0) {
+                traces.push({
+                    type: "scattergeo",
+                    mode: "lines",
+                    lat: plan.map(p => p.lat),
+                    lon: plan.map(p => p.lon),
+                    line: { color: "#1f78ff", width: 2 },
+                    name: "Plan"
+                })
+            }
+            if (actual.length > 0) {
+                traces.push({
+                    type: "scattergeo",
+                    mode: "lines",
+                    lat: actual.map(p => p.lat),
+                    lon: actual.map(p => p.lon),
+                    line: { color: "#b32020", width: 2 },
+                    name: "Position"
+                })
+            }
+            Plotly.purge(mapDiv)
+            Plotly.newPlot(mapDiv, traces, {
+                margin: { t: 10, b: 10, l: 10, r: 10 },
+                showlegend: true,
+                geo: {
+                    showcountries: true,
+                    showland: true,
+                    landcolor: "#f7f7f7",
+                    oceancolor: "#e8f2ff",
+                    lakecolor: "#e8f2ff",
+                    showocean: true
+                }
+            }, {responsive: true, displaylogo: false})
+            if (info) info.textContent = "Mode fallback (Plotly) : plan=" + plan.length + " / pos=" + actual.length
+        }
+    }).catch(() => {
+        if (info) info.textContent = "Carte non chargee (erreur Leaflet)"
+    })
+}
+
+function ensureLeafletLoaded() {
+    if (typeof window === "undefined") return Promise.resolve(null)
+    if (window.L) return Promise.resolve(window.L)
+    if (leafletLoadingPromise) return leafletLoadingPromise
+    leafletLoadingPromise = new Promise(resolve => {
+        const finish = () => resolve(window.L || null)
+        const addFallback = () => {
+            const script = document.createElement("script")
+            script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            script.dataset.leaflet = "true"
+            script.onload = finish
+            script.onerror = () => resolve(null)
+            document.head.appendChild(script)
+            if (!document.querySelector('link[data-leaflet]')) {
+                const link = document.createElement("link")
+                link.rel = "stylesheet"
+                link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+                link.dataset.leaflet = "true"
+                document.head.appendChild(link)
+            }
+        }
+        const existing = document.querySelector('script[src*="leaflet"]')
+        if (existing) {
+            existing.addEventListener('load', finish)
+            existing.addEventListener('error', () => {
+                existing.remove()
+                addFallback()
+            })
+            const iv = setInterval(() => {
+                if (window.L) {
+                    clearInterval(iv)
+                    finish()
+                }
+            }, 100)
+            setTimeout(() => { clearInterval(iv); if (!window.L) addFallback() }, 3000)
+            return
+        }
+        addFallback()
+        const iv = setInterval(() => {
+            if (window.L) {
+                clearInterval(iv)
+                finish()
+            }
+        }, 100)
+        setTimeout(() => { clearInterval(iv); finish() }, 5000)
+    })
+    return leafletLoadingPromise
+}
+
+function updateGraphStats(graphId, range) {
+    const statsEl = document.getElementById(`graph-stats-${graphId}`)
+    if (!statsEl) return
+    const series = graphPlots[graphId]?.series || []
+    if (series.length === 0) {
+        statsEl.textContent = "Pas de donnees"
+        return
+    }
+    const lines = []
+    series.forEach(s => {
+        let min = Infinity, max = -Infinity, sum = 0, count = 0
+        for (let i = 0; i < s.x.length; i++) {
+            const t = s.x[i]
+            const v = s.y[i]
+            if (range) {
+                if (t < range[0] || t > range[1]) continue
+            }
+            if (!Number.isFinite(v)) continue
+            if (v < min) min = v
+            if (v > max) max = v
+            sum += v
+            count++
+        }
+        if (count === 0) {
+            lines.push(`${s.name}: aucun point`)
+        } else {
+            const mean = sum / count
+            lines.push(`${s.name}: min ${min.toFixed(3)} | max ${max.toFixed(3)} | mean ${mean.toFixed(3)} (n=${count})`)
+        }
+    })
+    statsEl.textContent = lines.join(" | ")
+}
 async function syncChecksFromRemote() {
     const remote = await fetchRemoteConfig(REMOTE_TABLE_CHECKS, REMOTE_CHECKS_ID)
     if (remote && typeof remote === "object") {
@@ -1526,6 +2034,24 @@ async function syncChecksFromRemote() {
     checkConfig = localChecksCache || {}
     renderChecks()
     evaluateChecks()
+}
+
+async function syncGraphsFromRemote() {
+    const remote = await fetchRemoteGraphs()
+    if (remote && typeof remote === "object") {
+        graphConfig = remote
+        try {
+            localStorage.setItem(GRAPHS_STORAGE_KEY, JSON.stringify(graphConfig))
+        } catch (e) {
+            console.warn("Could not cache remote graphs", e)
+        }
+        renderGraphCards()
+        plotGraphs()
+        return
+    }
+    graphConfig = graphLocalCache || {}
+    renderGraphCards()
+    plotGraphs()
 }
 
 async function syncSequenceFromRemote() {
@@ -2004,6 +2530,13 @@ async function load_tlog(log_file) {
         }
         let payload = decodeMavlinkPayload(header.msgId, log_file, payload_start, header.payload_length)
         let manualPayload = null
+        if (message.name === "VFR_HUD") {
+            const manual = parseVfrHudManual(log_file, payload_start, header.payload_length)
+            if (manual) {
+                const fieldnames = Object.keys(manual)
+                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
+            }
+        }
         if (payload == null && message.name === "POSITION_TARGET_GLOBAL_INT") {
             const manual = parsePTGIManual(log_file, payload_start, header.payload_length)
             if (manual) {
@@ -2022,14 +2555,11 @@ async function load_tlog(log_file) {
                 const fieldnames = Object.keys(manual)
                 manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
             }
-        } else if (payload == null && message.name === "VFR_HUD") {
-            const manual = parseVfrHudManual(log_file, payload_start, header.payload_length)
-            if (manual) {
-                const fieldnames = Object.keys(manual)
-                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
-            }
         }
-        const payloadForStats = payload ?? manualPayload
+        let payloadForStats = payload ?? manualPayload
+        if (message.name === "VFR_HUD" && manualPayload) {
+            payloadForStats = manualPayload
+        }
         if (payloadForStats != null) {
             if (!availableMessageFields[message.name]) {
                 availableMessageFields[message.name] = payloadForStats.fieldnames
@@ -2104,6 +2634,9 @@ async function load_tlog(log_file) {
             if (parsed && Number.isFinite(parsed.alt)) {
                 ptgiAltSeries.push({ time, alt: parsed.alt })
             }
+            if (parsed && Number.isFinite(parsed.lat) && Number.isFinite(parsed.lon)) {
+                ptgiPath.push({ time, lat: parsed.lat, lon: parsed.lon })
+            }
         }
         if (payload) {
             if (message.name === "GLOBAL_POSITION_INT") {
@@ -2116,6 +2649,9 @@ async function load_tlog(log_file) {
                     if (homeLat != null && homeLon != null) {
                         const dist = haversineMeters(homeLat, homeLon, data.lat, data.lon)
                         gpiDistSeries.push({ time, dist })
+                    }
+                    if (Number.isFinite(data.lat) && Number.isFinite(data.lon)) {
+                        gpiPath.push({ time, lat: data.lat, lon: data.lon })
                     }
                 }
             }
@@ -2410,6 +2946,8 @@ async function load_tlog(log_file) {
 
     plot_tlog()
     evaluateSequence()
+    plotGraphs()
+    renderRouteMap()
 
 
 
@@ -2775,8 +3313,10 @@ function reset() {
     sequenceMatches = {}
     ptgiAltSeries = []
     ptgiRawSeries = []
+    ptgiPath = []
     customDistSeries = []
     gpiDistSeries = []
+    gpiPath = []
     homeLat = null
     homeLon = null
     tlogMessagesSeen = new Set()
@@ -2786,6 +3326,15 @@ function reset() {
     palierAwayWindow = null
     palierReturnWindow = null
     farFromHomeWindow = null
+    graphPlots = {}
+    if (routeLayers && routeLayers.length > 0) {
+        routeLayers.forEach(l => {
+            try { if (routeMap) routeMap.removeLayer(l) } catch (e) {}
+        })
+    }
+    routeLayers = []
+    const routeInfo = document.getElementById("route-map-info")
+    if (routeInfo) routeInfo.textContent = "En attente d'un tlog"
     markChecksPending("En attente d'un tlog")
     renderSequenceResultsPending()
     clearDerivedSections()
