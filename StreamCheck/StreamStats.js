@@ -193,6 +193,9 @@ let tlogStatusTexts = []
 let ptgiAltSeries = []
 let ptgiRawSeries = []
 let customDistSeries = []
+let gpiDistSeries = []
+let homeLat = null
+let homeLon = null
 
 // --- Supabase (shared config) ---
 const SUPABASE_URL = "https://tcyzpwgfetktblazbgtz.supabase.co"
@@ -216,13 +219,14 @@ async function getSupabase() {
 }
 
 function getMavlinkFieldMeta(msgId) {
-    if (typeof mavlink20 === 'undefined' || mavlink20.map == null) {
+    const mavScope = (typeof mavlink20 !== "undefined") ? mavlink20 : (typeof window !== "undefined" ? window.mavlink20 : null)
+    if (!mavScope || mavScope.map == null) {
         return null
     }
     if (mavlinkFieldCache[msgId] != null) {
         return mavlinkFieldCache[msgId]
     }
-    const entry = mavlink20.map[msgId]
+    const entry = mavScope.map[msgId]
     if (entry == null || entry.type == null) {
         return null
     }
@@ -238,6 +242,10 @@ function getMavlinkFieldMeta(msgId) {
 
 function decodeMavlinkPayload(msgId, buffer, offset, length) {
     if (typeof jspack === 'undefined') {
+        return null
+    }
+    const mavScope = (typeof mavlink20 !== "undefined") ? mavlink20 : (typeof window !== "undefined" ? window.mavlink20 : null)
+    if (!mavScope || !mavScope.map) {
         return null
     }
     const meta = getMavlinkFieldMeta(msgId)
@@ -256,6 +264,60 @@ function decodeMavlinkPayload(msgId, buffer, offset, length) {
     }
     const values = meta.fieldnames.map((_, idx) => unpacked[meta.order[idx]])
     return { fieldnames: meta.fieldnames, values }
+}
+
+function parsePTGIManual(buffer, offset, length) {
+    if (length < 16) return null
+    const dv = new DataView(buffer, offset, length)
+    const res = {}
+    if (length >= 4) res.time_boot_ms = dv.getUint32(0, true)
+    res.lat = dv.getInt32(4, true) / 1e7
+    res.lon = dv.getInt32(8, true) / 1e7
+    res.alt = dv.getInt32(12, true) / 1000
+    if (length >= 28) {
+        res.vx = dv.getFloat32(16, true)
+        res.vy = dv.getFloat32(20, true)
+        res.vz = dv.getFloat32(24, true)
+    }
+    if (length >= 40) {
+        res.afx = dv.getFloat32(28, true)
+        res.afy = dv.getFloat32(32, true)
+        res.afz = dv.getFloat32(36, true)
+    }
+    if (length >= 48) {
+        res.yaw = dv.getFloat32(40, true)
+        res.yaw_rate = dv.getFloat32(44, true)
+    }
+    if (length >= 50) {
+        res.type_mask = dv.getUint16(48, true)
+    }
+    if (length >= 52) {
+        res.target_system = dv.getUint8(50)
+        res.target_component = dv.getUint8(51)
+    }
+    return res
+}
+
+function parseGPIGlobal(buffer, offset, length) {
+    if (length < 28) return null
+    const dv = new DataView(buffer, offset, length)
+    return {
+        time_boot_ms: dv.getUint32(0, true),
+        lat: dv.getInt32(4, true) / 1e7,
+        lon: dv.getInt32(8, true) / 1e7,
+        alt: dv.getInt32(12, true) / 1000,
+        relative_alt: dv.getInt32(16, true) / 1000
+    }
+}
+
+function haversineMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000
+    const toRad = (d) => d * Math.PI / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
 }
 
 function updateFieldStats(messageName, fieldName, value) {
@@ -916,14 +978,14 @@ function evaluateSequence() {
     }
     const ptgiDump = document.getElementById("ptgi-list")
     if (ptgiDump) {
-        ptgiDump.textContent = ptgiRawSeries
-            .map(e => `${e.time.toFixed(2)}s: ${JSON.stringify(e.payload)}`)
+        ptgiDump.textContent = `Count=${ptgiRawSeries.length}\n` + ptgiRawSeries
+            .map(e => `${e.time.toFixed(2)}s: ${e.payload ? JSON.stringify(e.payload) : "payload decode failed"}`)
             .join("\n")
     }
     const customDump = document.getElementById("custom-list")
     if (customDump) {
-        customDump.textContent = customDistSeries
-            .map(e => `${e.time.toFixed(2)}s: dist=${e.dist}`)
+        customDump.textContent = `CUSTOM Count=${customDistSeries.length}\n` + customDistSeries
+            .map(e => `${e.time != null ? e.time.toFixed(2) : "-"}s: dist=${e.dist}`)
             .join("\n")
     }
     sequenceSteps.forEach(step => {
@@ -1162,7 +1224,8 @@ function updateDerivedSections() {
     if (farEl) {
         const start = sequenceMatches["vtol-takeoff"]
         const end = sequenceMatches["vtol-landing"]
-        const res = longestFarFromHome(customDistSeries, 5000, start, end)
+        const source = customDistSeries.some(e => Number.isFinite(e.dist)) ? customDistSeries : gpiDistSeries
+        const res = longestFarFromHome(source, 5000, start, end)
         farEl.textContent = res ? `Début ${res.start.toFixed(2)}s, Fin ${res.end.toFixed(2)}s, Durée ${res.duration.toFixed(1)}s` : "Pas d'intervalle >5km"
     }
 }
@@ -1467,19 +1530,6 @@ async function load_tlog(log_file) {
             payload.fieldnames.forEach((field, idx) => {
                 updateFieldStats(message.name, field, payload.values[idx])
             })
-            if (message.name === "POSITION_TARGET_GLOBAL_INT") {
-                ptgiRawSeries.push({ time, payload: Object.fromEntries(payload.fieldnames.map((n, idx) => [n, payload.values[idx]])) })
-                const idxAlt = payload.fieldnames.findIndex(n => n.toLowerCase() === "alt")
-                if (idxAlt !== -1 && Number.isFinite(payload.values[idxAlt])) {
-                    ptgiAltSeries.push({ time, alt: payload.values[idxAlt] })
-                }
-            }
-            if (message.name.toUpperCase().includes("CUSTOM")) {
-                const idxDist = payload.fieldnames.findIndex(n => n.toLowerCase().includes("dist_home") || n.toLowerCase().includes("disthome"))
-                if (idxDist !== -1 && Number.isFinite(payload.values[idxDist])) {
-                    customDistSeries.push({ time, dist: payload.values[idxDist] })
-                }
-            }
         }
 
 
@@ -1518,12 +1568,63 @@ async function load_tlog(log_file) {
         end_time = time
 
         if (message.name === "STATUSTEXT") {
-            let text = extractStatusText(payload)
+            let text = payload ? extractStatusText(payload) : null
             if (text == null || text === "") {
                 text = extractStatusTextFromBytes(log_file, payload_start, header.payload_length)
             }
             if (text != null && text !== "") {
                 tlogStatusTexts.push({ time, text: text.trim() })
+            }
+        }
+        if (message.name === "POSITION_TARGET_GLOBAL_INT") {
+            let parsed = payload ? Object.fromEntries(payload.fieldnames.map((n, idx) => [n, payload.values[idx]])) : null
+            if (!parsed) {
+                const manual = parsePTGIManual(log_file, payload_start, header.payload_length)
+                if (manual) parsed = manual
+            }
+            ptgiRawSeries.push({ time, payload: parsed })
+            if (parsed && Number.isFinite(parsed.alt)) {
+                ptgiAltSeries.push({ time, alt: parsed.alt })
+            }
+        }
+        if (payload) {
+            if (message.name === "GLOBAL_POSITION_INT") {
+                const data = parseGPIGlobal(log_file, payload_start, header.payload_length)
+                if (data) {
+                    if (homeLat == null && Number.isFinite(data.lat) && Number.isFinite(data.lon)) {
+                        homeLat = data.lat
+                        homeLon = data.lon
+                    }
+                    if (homeLat != null && homeLon != null) {
+                        const dist = haversineMeters(homeLat, homeLon, data.lat, data.lon)
+                        gpiDistSeries.push({ time, dist })
+                    }
+                }
+            }
+            if (message.name.toUpperCase().includes("CUSTOM")) {
+                const idxDist = payload.fieldnames.findIndex(n => n.toLowerCase().includes("dist_home") || n.toLowerCase().includes("disthome"))
+                if (idxDist !== -1 && Number.isFinite(payload.values[idxDist])) {
+                    customDistSeries.push({ time, dist: payload.values[idxDist] })
+                } else {
+                    customDistSeries.push({ time, dist: null })
+                }
+            }
+        } else {
+            if (message.name === "GLOBAL_POSITION_INT") {
+                const data = parseGPIGlobal(log_file, payload_start, header.payload_length)
+                if (data) {
+                    if (homeLat == null && Number.isFinite(data.lat) && Number.isFinite(data.lon)) {
+                        homeLat = data.lat
+                        homeLon = data.lon
+                    }
+                    if (homeLat != null && homeLon != null) {
+                        const dist = haversineMeters(homeLat, homeLon, data.lat, data.lon)
+                        gpiDistSeries.push({ time, dist })
+                    }
+                }
+            }
+            if (message.name.toUpperCase().includes("CUSTOM")) {
+                customDistSeries.push({ time, dist: null })
             }
         }
 
@@ -2075,49 +2176,27 @@ async function load(e) {
 
     reset()
 
-
-
     const file = e.files[0]
-
     if (file == null) {
-
         return
-
     }
-
-
 
     if (file.name.toLowerCase().endsWith(".bin")) {
-
         let reader = new FileReader()
-
         reader.onload = function (e) {
-
             loading_call(() => { load_log(reader.result) })
-
         }
-
         reader.readAsArrayBuffer(file)
-
-
-
     } else if (file.name.toLowerCase().endsWith(".tlog")) {
-
         let reader = new FileReader()
-
         reader.onload = function (e) {
-
             loading_call(() => { return load_tlog(reader.result) })
-
         }
-
         reader.readAsArrayBuffer(file)
-
     }
 
-
-
 }
+
 
 
 
@@ -2176,6 +2255,9 @@ function reset() {
     ptgiAltSeries = []
     ptgiRawSeries = []
     customDistSeries = []
+    gpiDistSeries = []
+    homeLat = null
+    homeLon = null
     markChecksPending("En attente d'un tlog")
     renderSequenceResultsPending()
     clearDerivedSections()
@@ -2287,4 +2369,5 @@ function reset() {
 
 
 }
+
 
