@@ -987,6 +987,8 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const messageLabel = document.createElement("label")
     messageLabel.textContent = "Message"
     const messageSelect = document.createElement("select")
+    messageSelect.name = "chk-message"
+    messageSelect.id = "chk-message"
     messages.forEach(m => {
         const opt = document.createElement("option")
         opt.value = m
@@ -999,6 +1001,8 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const fieldLabel = document.createElement("label")
     fieldLabel.textContent = "Champ"
     const fieldSelect = document.createElement("select")
+    fieldSelect.name = "chk-field"
+    fieldSelect.id = "chk-field"
     fieldLabel.appendChild(fieldSelect)
     panel.appendChild(fieldLabel)
 
@@ -1007,15 +1011,18 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const interToggle = document.createElement("input")
     interToggle.type = "checkbox"
     interToggle.id = "chk-intersection"
+    interToggle.name = "chk-intersection"
     const interLabel = document.createElement("label")
     interLabel.textContent = "Filtrer (champ = valeur)"
     interLabel.prepend(interToggle)
     const interField = document.createElement("select")
+    interField.name = "chk-intersection-field"
     interField.disabled = true
     const interValue = document.createElement("input")
     interValue.type = "number"
     interValue.step = "any"
     interValue.placeholder = "valeur"
+    interValue.name = "chk-intersection-value"
     interValue.disabled = true
     interRow.append(interLabel, interField, interValue)
     panel.appendChild(interRow)
@@ -1023,6 +1030,7 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const aggLabel = document.createElement("label")
     aggLabel.textContent = "Agrégat"
     const aggSelect = document.createElement("select")
+    aggSelect.name = "chk-aggregate"
     ;["max", "min", "mean"].forEach(v => {
         const opt = document.createElement("option")
         opt.value = v
@@ -1038,6 +1046,7 @@ function openCheckDialogInternal(sectionId, existing = null) {
     multInput.type = "number"
     multInput.step = "any"
     multInput.value = existing ? existing.mult ?? 1 : "1"
+    multInput.name = "chk-mult"
     multLabel.appendChild(multInput)
     panel.appendChild(multLabel)
 
@@ -1046,6 +1055,7 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const minInput = document.createElement("input")
     minInput.type = "number"
     minInput.step = "any"
+    minInput.name = "chk-min"
     minLabel.appendChild(minInput)
     panel.appendChild(minLabel)
 
@@ -1054,6 +1064,7 @@ function openCheckDialogInternal(sectionId, existing = null) {
     const maxInput = document.createElement("input")
     maxInput.type = "number"
     maxInput.step = "any"
+    maxInput.name = "chk-max"
     maxLabel.appendChild(maxInput)
     panel.appendChild(maxLabel)
 
@@ -1385,10 +1396,14 @@ function renderSequenceRows() {
         const input = document.createElement("input")
         input.type = "text"
         input.placeholder = "Texte dans STATUSTEXT"
+        input.name = `seq-input-${step.id}`
+        input.id = `seq-input-${step.id}`
         input.dataset.seqInput = step.id
         row.appendChild(input)
 
         const select = document.createElement("select")
+        select.name = `seq-mode-${step.id}`
+        select.id = `seq-mode-${step.id}`
         select.dataset.seqMode = step.id
         ;[{ v: "first", l: "premier" }, { v: "last", l: "dernier" }].forEach(opt => {
             const o = document.createElement("option")
@@ -1653,6 +1668,8 @@ function openGraphSeriesDialog(graphId) {
     const messageLabel = document.createElement("label")
     messageLabel.textContent = "Message"
     const messageSelect = document.createElement("select")
+    messageSelect.name = "graph-message"
+    messageSelect.id = "graph-message"
     messages.forEach(m => {
         const opt = document.createElement("option")
         opt.value = m
@@ -1665,6 +1682,8 @@ function openGraphSeriesDialog(graphId) {
     const fieldLabel = document.createElement("label")
     fieldLabel.textContent = "Champ"
     const fieldSelect = document.createElement("select")
+    fieldSelect.name = "graph-field"
+    fieldSelect.id = "graph-field"
     fieldLabel.appendChild(fieldSelect)
     panel.appendChild(fieldLabel)
 
@@ -1673,15 +1692,18 @@ function openGraphSeriesDialog(graphId) {
     const interToggle = document.createElement("input")
     interToggle.type = "checkbox"
     interToggle.id = "graph-intersection"
+    interToggle.name = "graph-intersection"
     const interLabel = document.createElement("label")
     interLabel.textContent = "Filtrer (champ = valeur)"
     interLabel.prepend(interToggle)
     const interField = document.createElement("select")
+    interField.name = "graph-intersection-field"
     interField.disabled = true
     const interValue = document.createElement("input")
     interValue.type = "number"
     interValue.step = "any"
     interValue.placeholder = "valeur"
+    interValue.name = "graph-intersection-value"
     interValue.disabled = true
     interRow.append(interLabel, interField, interValue)
     panel.appendChild(interRow)
@@ -1692,6 +1714,7 @@ function openGraphSeriesDialog(graphId) {
     multInput.type = "number"
     multInput.step = "any"
     multInput.value = "1"
+    multInput.name = "graph-mult"
     multLabel.appendChild(multInput)
     panel.appendChild(multLabel)
 
