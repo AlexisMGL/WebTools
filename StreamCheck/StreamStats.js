@@ -5,7 +5,7 @@ var DataflashParser
 import('../modules/JsDataflashParser/parser.js').then((mod) => { DataflashParser = mod.default });
 
 let jspack
-let jspackReadyPromise = import("../Checklists/MAVLink/local_modules/jspack/jspack.js").then((mod) => {
+let jspackReadyPromise = import("./MAVLink/local_modules/jspack/jspack.js").then((mod) => {
     jspack = new mod.default()
 }).catch((e) => {
     console.warn("jspack load failed", e)
