@@ -1,6 +1,7 @@
 [build]
-  command = "echo 'Skipping build, serving static files'"  # Custom command that does nothing
-  publish = "."  # Directory to deploy, adjust if needed
+  # Ensure submodules are fetched so plotly/jsparser/etc. are present in deploy
+  command = "git submodule update --init --recursive || true"
+  publish = "."
 
 [[redirects]]
   from = "/*"
