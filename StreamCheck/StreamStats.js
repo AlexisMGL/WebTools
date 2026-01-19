@@ -196,6 +196,30 @@ let customDistSeries = []
 let gpiDistSeries = []
 let homeLat = null
 let homeLon = null
+let tlogMessagesSeen = new Set()
+let tlogFieldSeries = {}
+let tlogEndTime = null
+let palierAwayWindow = null
+let palierReturnWindow = null
+let farFromHomeWindow = null
+let tlogMessageSamples = {}
+const manualFieldnames = {
+    87: ["time_boot_ms", "lat", "lon", "alt", "vx", "vy", "vz", "afx", "afy", "afz", "yaw", "yaw_rate", "type_mask", "target_system", "target_component"],
+    147: ["current_consumed", "energy_consumed", "temperature", "voltages", "current_battery", "id", "battery_function", "type", "battery_remaining"],
+    241: ["time_usec", "vibration_x", "vibration_y", "vibration_z", "clipping_0", "clipping_1", "clipping_2"]
+}
+const mavlinkNameToId = (() => {
+    const res = {}
+    if (typeof mavlink_msgs !== "undefined") {
+        Object.keys(mavlink_msgs).forEach(id => {
+            const entry = mavlink_msgs[id]
+            if (entry && entry.name) {
+                res[entry.name] = Number(id)
+            }
+        })
+    }
+    return res
+})()
 
 // --- Supabase (shared config) ---
 const SUPABASE_URL = "https://tcyzpwgfetktblazbgtz.supabase.co"
@@ -231,10 +255,13 @@ function getMavlinkFieldMeta(msgId) {
         return null
     }
     const instance = new entry.type()
+    const fieldnames = (instance.fieldnames && instance.fieldnames.length > 0)
+        ? instance.fieldnames.slice()
+        : (manualFieldnames[msgId] || [])
     const meta = {
         format: entry.format,
         order: entry.order_map,
-        fieldnames: (instance.fieldnames || []).slice()
+        fieldnames
     }
     mavlinkFieldCache[msgId] = meta
     return meta
@@ -310,6 +337,71 @@ function parseGPIGlobal(buffer, offset, length) {
     }
 }
 
+function parseVibrationManual(buffer, offset, length) {
+    if (length < 20) return null
+    const dv = new DataView(buffer, offset, length)
+    const res = {
+        time_usec: dv.getBigUint64(0, true),
+        vibration_x: dv.getFloat32(8, true),
+        vibration_y: dv.getFloat32(12, true),
+        vibration_z: dv.getFloat32(16, true)
+    }
+    if (length >= 32) {
+        res.clipping_0 = dv.getUint32(20, true)
+        res.clipping_1 = dv.getUint32(24, true)
+        res.clipping_2 = dv.getUint32(28, true)
+    }
+    return res
+}
+
+function parseBatteryStatusManual(buffer, offset, length) {
+    // Common BATTERY_STATUS layout (len 36)
+    if (length < 36) return null
+    const dv = new DataView(buffer, offset, length)
+    const res = {}
+    res.current_consumed = dv.getInt32(0, true)
+    res.energy_consumed = dv.getInt32(4, true)
+    res.temperature = dv.getInt16(8, true)
+    res.voltages = []
+    for (let i = 0; i < 10; i++) {
+        res.voltages.push(dv.getUint16(10 + 2 * i, true))
+    }
+    res.current_battery = dv.getInt16(30, true)
+    res.id = dv.getUint8(32)
+    res.battery_function = dv.getUint8(33)
+    res.type = dv.getUint8(34)
+    res.battery_remaining = dv.getInt8(35)
+    return res
+}
+
+function pushFieldSample(messageName, fieldName, time, value) {
+    if (typeof value === "bigint") {
+        value = Number(value)
+    }
+    if (!Number.isFinite(value)) return
+    if (!(messageName in tlogFieldSeries)) {
+        tlogFieldSeries[messageName] = {}
+    }
+    if (!(fieldName in tlogFieldSeries[messageName])) {
+        tlogFieldSeries[messageName][fieldName] = []
+    }
+    tlogFieldSeries[messageName][fieldName].push({ time, value })
+}
+
+function pushMessageSample(messageName, time, payload) {
+    if (!payload || !payload.fieldnames) return
+    if (!(messageName in tlogMessageSamples)) {
+        tlogMessageSamples[messageName] = []
+    }
+    const sample = {}
+    payload.fieldnames.forEach((field, idx) => {
+        let val = payload.values[idx]
+        if (typeof val === "bigint") val = Number(val)
+        sample[field] = val
+    })
+    tlogMessageSamples[messageName].push({ time, fields: sample })
+}
+
 function haversineMeters(lat1, lon1, lat2, lon2) {
     const R = 6371000
     const toRad = (d) => d * Math.PI / 180
@@ -321,6 +413,9 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 }
 
 function updateFieldStats(messageName, fieldName, value) {
+    if (typeof value === "bigint") {
+        value = Number(value)
+    }
     if (!Number.isFinite(value)) {
         return
     }
@@ -348,6 +443,114 @@ function getStatValue(stats, aggregate) {
         return stats.max
     }
     return stats.sum / stats.count
+}
+
+function statsForWindow(message, field, start, end, aggregate) {
+    const arr = tlogFieldSeries[message]?.[field]
+    if (!arr || arr.length === 0) return null
+    let min = Infinity
+    let max = -Infinity
+    let sum = 0
+    let count = 0
+    const hasStart = Number.isFinite(start)
+    const hasEnd = Number.isFinite(end)
+    for (const { time, value } of arr) {
+        if (hasStart && time < start) continue
+        if (hasEnd && time > end) continue
+        if (!Number.isFinite(value)) continue
+        if (value < min) min = value
+        if (value > max) max = value
+        sum += value
+        count++
+    }
+    if (count === 0) return null
+    if (aggregate === "min") return min
+    if (aggregate === "max") return max
+    return sum / count
+}
+
+function statsForWindowWithFilter(message, field, start, end, aggregate, intersection) {
+    if (!intersection) {
+        return statsForWindow(message, field, start, end, aggregate)
+    }
+    const arr = tlogMessageSamples[message]
+    if (!arr || arr.length === 0) return null
+    const hasStart = Number.isFinite(start)
+    const hasEnd = Number.isFinite(end)
+    const interField = intersection.field
+    const interValue = intersection.value
+    let min = Infinity
+    let max = -Infinity
+    let sum = 0
+    let count = 0
+    for (const { time, fields } of arr) {
+        if (hasStart && time < start) continue
+        if (hasEnd && time > end) continue
+        if (!(interField in fields)) continue
+        if (fields[interField] != interValue) continue
+        let val = fields[field]
+        if (typeof val === "bigint") val = Number(val)
+        if (!Number.isFinite(val)) continue
+        if (val < min) min = val
+        if (val > max) max = val
+        sum += val
+        count++
+    }
+    if (count === 0) return null
+    if (aggregate === "min") return min
+    if (aggregate === "max") return max
+    return sum / count
+}
+
+function getPhaseBounds(seq) {
+    const start0 = seq["seq-start"]
+    const takeoffEnd = seq["vtol-takeoff"]
+    const transitionEnd = seq["transition"]
+    const cruiseAwayEnd = seq["cruise-away"]
+    const cruiseReturnEnd = seq["cruise-return"]
+    const airbrakeEnd = seq["airbrake"]
+    const landingEnd = seq["vtol-landing"] ?? tlogEndTime
+
+    const takeoffStart = start0
+    const transitionStart = takeoffEnd ?? start0
+    const cruiseAwayStart = transitionEnd ?? transitionStart
+
+    const cruiseAwayWindow = cruiseAwayEnd != null && cruiseAwayEnd > cruiseAwayStart
+        ? { start: cruiseAwayStart, end: cruiseAwayEnd }
+        : null
+
+    const cruiseReturnStart = cruiseAwayEnd ?? cruiseAwayStart
+    const cruiseReturnWindow = cruiseReturnEnd != null && cruiseReturnEnd > cruiseReturnStart
+        ? { start: cruiseReturnStart, end: cruiseReturnEnd }
+        : (airbrakeEnd && airbrakeEnd > cruiseReturnStart ? { start: cruiseReturnStart, end: airbrakeEnd } : null)
+
+    const airbrakeStart = cruiseReturnWindow?.end ?? cruiseReturnStart
+    const airbrakeWindow = airbrakeEnd != null && airbrakeEnd > airbrakeStart
+        ? { start: airbrakeStart, end: airbrakeEnd }
+        : null
+
+    const landingStart = airbrakeWindow?.end ?? airbrakeStart
+    const landingWindow = landingEnd != null && landingEnd > (landingStart ?? 0)
+        ? { start: landingStart, end: landingEnd }
+        : null
+
+    const takeoffWindow = (takeoffEnd != null && takeoffStart != null && takeoffEnd > takeoffStart)
+        ? { start: takeoffStart, end: takeoffEnd }
+        : null
+    const transitionWindow = (transitionEnd != null && transitionStart != null && transitionEnd > transitionStart)
+        ? { start: transitionStart, end: transitionEnd }
+        : null
+
+    return {
+        start0,
+        takeoffWindow,
+        transitionWindow,
+        cruiseAwayWindow,
+        cruiseReturnWindow,
+        airbrakeWindow,
+        landingWindow,
+        landingEnd
+    }
 }
 
 function statusTextToString(val) {
@@ -456,6 +659,7 @@ function getAvailableMessages() {
     const all = new Set()
     Object.keys(availableMessageFields || {}).forEach(k => all.add(k))
     Object.keys(tlogFieldStats || {}).forEach(k => all.add(k))
+    tlogMessagesSeen.forEach(k => all.add(k))
     return Array.from(all).sort()
 }
 
@@ -465,6 +669,14 @@ function getFieldsForMessage(message) {
     }
     if (tlogFieldStats[message]) {
         return Object.keys(tlogFieldStats[message])
+    }
+    const msgId = mavlinkNameToId[message]
+    if (msgId != null) {
+        const meta = getMavlinkFieldMeta(msgId)
+        if (meta && Array.isArray(meta.fieldnames) && meta.fieldnames.length > 0) {
+            availableMessageFields[message] = meta.fieldnames
+            return meta.fieldnames
+        }
     }
     return []
 }
@@ -484,6 +696,7 @@ function buildCheckRow(section, check) {
     const row = document.createElement("div")
     row.className = "check-item"
     row.dataset.checkId = check.id
+    row.draggable = true
 
     const status = document.createElement("span")
     status.className = "check-status pending"
@@ -496,11 +709,13 @@ function buildCheckRow(section, check) {
 
     const label = document.createElement("span")
     label.className = "check-label"
-    label.textContent = `${check.message} • ${check.field} (${check.aggregate}) in [${formatBound(check.min)} ; ${formatBound(check.max)}]`
+    const mult = check.mult != null ? Number(check.mult) : 1
+    const interTxt = check.intersection && check.intersection.field ? ` | si ${check.intersection.field}=${check.intersection.value}` : ""
+    label.textContent = `${check.message} · ${check.field} (${check.aggregate} x${mult}) in [${formatBound(check.min)} ; ${formatBound(check.max)}]${interTxt}`
 
     const remove = document.createElement("button")
     remove.className = "check-remove"
-    remove.textContent = "✕"
+    remove.textContent = "×"
     remove.addEventListener("click", () => removeCheck(section, check.id))
 
     row.append(status, value, label, remove)
@@ -527,6 +742,59 @@ function renderChecks() {
         }
         checks.forEach(check => list.appendChild(buildCheckRow(section, check)))
     })
+    attachDragHandlers()
+}
+
+let dragCheckInfo = null
+
+function attachDragHandlers() {
+    document.querySelectorAll(".check-item").forEach(row => {
+        row.addEventListener("dragstart", (e) => {
+            dragCheckInfo = {
+                id: row.dataset.checkId,
+                section: row.closest(".check-list")?.dataset.section || null
+            }
+            e.dataTransfer.effectAllowed = "move"
+        })
+        row.addEventListener("dragover", (e) => {
+            if (!dragCheckInfo) return
+            const list = row.closest(".check-list")
+            if (!list || list.dataset.section !== dragCheckInfo.section) return
+            e.preventDefault()
+            const dragging = list.querySelector(`[data-check-id=\"${dragCheckInfo.id}\"]`)
+            if (!dragging || dragging === row) return
+            const rect = row.getBoundingClientRect()
+            const before = e.clientY < rect.top + rect.height / 2
+            if (before) {
+                list.insertBefore(dragging, row)
+            } else {
+                list.insertBefore(dragging, row.nextSibling)
+            }
+        })
+        row.addEventListener("drop", (e) => {
+            e.preventDefault()
+            finalizeOrder(row.closest(".check-list"))
+        })
+        row.addEventListener("dragend", () => {
+            finalizeOrder(row.closest(".check-list"))
+        })
+    })
+}
+
+function finalizeOrder(list) {
+    if (!list || !dragCheckInfo) return
+    const section = list.dataset.section
+    if (!section || section !== dragCheckInfo.section) {
+        dragCheckInfo = null
+        return
+    }
+    const ids = Array.from(list.querySelectorAll("[data-check-id]")).map(el => el.dataset.checkId)
+    const current = checkConfig[section] || []
+    const idToCheck = Object.fromEntries(current.map(c => [c.id, c]))
+    checkConfig[section] = ids.map(id => idToCheck[id]).filter(Boolean)
+    dragCheckInfo = null
+    saveChecks()
+    evaluateChecks()
 }
 
 function removeCheck(section, checkId) {
@@ -583,14 +851,58 @@ function evaluateChecks() {
     if (Object.keys(tlogFieldStats).length === 0) {
         return
     }
+    const bounds = getPhaseBounds(sequenceMatches)
+    const sectionWindow = (section) => {
+        switch (section) {
+            case "vtol-takeoff":
+                return bounds.takeoffWindow
+            case "transition":
+                return bounds.transitionWindow
+            case "cruise-away":
+                return bounds.cruiseAwayWindow
+            case "cruise-return":
+                return bounds.cruiseReturnWindow
+            case "airbrake":
+                return bounds.airbrakeWindow
+            case "vtol-landing":
+                return bounds.landingWindow
+            case "palier-away":
+                return palierAwayWindow ? { start: palierAwayWindow.start, end: palierAwayWindow.end } : null
+            case "palier-return":
+                return palierReturnWindow ? { start: palierReturnWindow.start, end: palierReturnWindow.end } : null
+            case "full-flight":
+                return { start: bounds.start0, end: bounds.landingEnd }
+            case "far-from-home":
+                return farFromHomeWindow ? { start: farFromHomeWindow.start, end: farFromHomeWindow.end } : null
+            case "response":
+            case "parachute":
+                return { start: bounds.start0, end: bounds.landingEnd }
+            default:
+                return { start: null, end: null }
+        }
+    }
     for (const [section, checks] of Object.entries(checkConfig)) {
         for (const check of checks) {
-            const stats = tlogFieldStats[check.message]?.[check.field]
-            const value = getStatValue(stats, check.aggregate)
-            if (value == null) {
+            const win = sectionWindow(section)
+            if (!win || !Number.isFinite(win.start) || !Number.isFinite(win.end) || win.end <= win.start) {
+                setCheckStatus(check.id, "pending", "Phase vide ou bornes manquantes")
+                setCheckValue(check.id, "-")
+                continue
+            }
+            const rawVal = statsForWindowWithFilter(
+                check.message,
+                check.field,
+                win?.start,
+                win?.end,
+                check.aggregate,
+                check.intersection && check.intersection.field ? check.intersection : null
+            )
+            if (rawVal == null) {
                 setCheckStatus(check.id, "pending", "Pas de données pour ce champ")
                 continue
             }
+            const mult = check.mult != null ? Number(check.mult) : 1
+            const value = rawVal * mult
             let ok = true
             if (check.min != null && check.min !== "" && value < Number(check.min)) {
                 ok = false
@@ -640,6 +952,24 @@ function openCheckDialog(sectionId) {
     fieldLabel.appendChild(fieldSelect)
     panel.appendChild(fieldLabel)
 
+    const interRow = document.createElement("div")
+    interRow.className = "intersection-row"
+    const interToggle = document.createElement("input")
+    interToggle.type = "checkbox"
+    interToggle.id = "chk-intersection"
+    const interLabel = document.createElement("label")
+    interLabel.textContent = "Filtrer (champ = valeur)"
+    interLabel.prepend(interToggle)
+    const interField = document.createElement("select")
+    interField.disabled = true
+    const interValue = document.createElement("input")
+    interValue.type = "number"
+    interValue.step = "any"
+    interValue.placeholder = "valeur"
+    interValue.disabled = true
+    interRow.append(interLabel, interField, interValue)
+    panel.appendChild(interRow)
+
     const aggLabel = document.createElement("label")
     aggLabel.textContent = "Agrégat"
     const aggSelect = document.createElement("select")
@@ -651,6 +981,15 @@ function openCheckDialog(sectionId) {
     })
     aggLabel.appendChild(aggSelect)
     panel.appendChild(aggLabel)
+
+    const multLabel = document.createElement("label")
+    multLabel.textContent = "Multiplicateur (par défaut 1.0)"
+    const multInput = document.createElement("input")
+    multInput.type = "number"
+    multInput.step = "any"
+    multInput.value = "1"
+    multLabel.appendChild(multInput)
+    panel.appendChild(multLabel)
 
     const minLabel = document.createElement("label")
     minLabel.textContent = "Min autorisé (optionnel)"
@@ -683,12 +1022,17 @@ function openCheckDialog(sectionId) {
 
     function refreshFields() {
         fieldSelect.replaceChildren()
+        interField.replaceChildren()
         const fields = getFieldsForMessage(messageSelect.value)
         if (fields.length === 0) {
             const opt = document.createElement("option")
             opt.value = ""
             opt.textContent = "Aucun champ disponible"
             fieldSelect.appendChild(opt)
+            const opt2 = document.createElement("option")
+            opt2.value = ""
+            opt2.textContent = "Aucun champ"
+            interField.appendChild(opt2)
             return
         }
         fields.forEach(f => {
@@ -696,11 +1040,20 @@ function openCheckDialog(sectionId) {
             opt.value = f
             opt.textContent = f
             fieldSelect.appendChild(opt)
+            const opt2 = document.createElement("option")
+            opt2.value = f
+            opt2.textContent = f
+            interField.appendChild(opt2)
         })
     }
 
     refreshFields()
     messageSelect.addEventListener("change", refreshFields)
+    interToggle.addEventListener("change", () => {
+        const on = interToggle.checked
+        interField.disabled = !on
+        interValue.disabled = !on
+    })
 
     function closeModal() {
         document.body.removeChild(modal)
@@ -746,7 +1099,15 @@ function openCheckDialog(sectionId) {
             field,
             aggregate,
             min: minVal,
-            max: maxVal
+            max: maxVal,
+            mult: Number(multInput.value) || 1,
+            intersection: null
+        }
+        if (interToggle.checked && interField.value) {
+            const valRaw = interValue.value
+            const valNum = valRaw === "" ? null : Number(valRaw)
+            const val = valRaw === "" ? "" : (Number.isNaN(valNum) ? valRaw : valNum)
+            newCheck.intersection = { field: interField.value, value: val }
         }
         checkConfig[sectionId].push(newCheck)
 
@@ -960,6 +1321,11 @@ function renderSequenceResultsPending(msg = "En attente d'un tlog") {
     if (ptgiDump) ptgiDump.textContent = ""
     const customDump = document.getElementById("custom-list")
     if (customDump) customDump.textContent = ""
+    const batDump = document.getElementById("battery-list")
+    if (batDump) batDump.textContent = ""
+    palierAwayWindow = null
+    palierReturnWindow = null
+    farFromHomeWindow = null
 }
 
 function evaluateSequence() {
@@ -988,6 +1354,14 @@ function evaluateSequence() {
             .map(e => `${e.time != null ? e.time.toFixed(2) : "-"}s: dist=${e.dist}`)
             .join("\n")
     }
+    const batDump = document.getElementById("battery-list")
+    if (batDump) {
+        const samples = tlogMessageSamples["BATTERY_STATUS"] || []
+        const maxRows = 200
+        batDump.textContent = `BATTERY_STATUS Count=${samples.length}\n` + samples.slice(0, maxRows)
+            .map(e => `${e.time.toFixed(2)}s: ${JSON.stringify(e.fields)}`)
+            .join("\n")
+    }
     sequenceSteps.forEach(step => {
         const cfg = sequenceConfig[step.id] || { needle: "", mode: "first" }
         const resEl = document.querySelector(`[data-seq-result="${step.id}"]`)
@@ -1004,25 +1378,32 @@ function evaluateSequence() {
         const chosen = cfg.mode === "last" ? matches[matches.length - 1] : matches[0]
         sequenceMatches[step.id] = chosen.time
         if (resEl) {
-            resEl.textContent = `Trouvé à ${chosen.time.toFixed(2)} s`
+            const prefix = step.id === "seq-start" ? "Début" : `Fin ${step.label}`
+            resEl.textContent = `${prefix} : ${chosen.time.toFixed(2)} s`
         }
     })
-    // If no "cruise-return" marker but we have "cruise-away", treat whole cruise as return (test flight, no drop)
-    if (sequenceMatches["cruise-away"] != null && sequenceMatches["cruise-return"] == null) {
+    // If no "cruise-return" marker, treat whole cruise as return (test flight, no drop) starting after transition
+    if (sequenceMatches["cruise-return"] == null) {
         const awayEl = document.querySelector('[data-seq-result="cruise-away"]')
         const retEl = document.querySelector('[data-seq-result="cruise-return"]')
         if (awayEl) {
             awayEl.textContent = "Test : cruise away vide (pas de largage)"
         }
+        const fallbackStart = sequenceMatches["transition"] ?? sequenceMatches["cruise-away"]
         if (retEl) {
-            retEl.textContent = `Cruise return démarre à ${sequenceMatches["cruise-away"].toFixed(2)} s`
+            if (fallbackStart != null) {
+                retEl.textContent = `Cruise return démarre à ${fallbackStart.toFixed(2)} s`
+            } else {
+                retEl.textContent = "Cruise return démarre après transition (temps inconnu)"
+            }
         }
-        sequenceMatches["cruise-return"] = sequenceMatches["cruise-away"]
+        sequenceMatches["cruise-return"] = fallbackStart
     }
     const ff = document.getElementById("seq-full-flight")
     if (ff) {
-        const start = sequenceMatches["vtol-takeoff"]
-        const end = sequenceMatches["vtol-landing"]
+        const bounds = getPhaseBounds(sequenceMatches)
+        const start = bounds.start0
+        const end = bounds.landingEnd
         if (start != null && end != null && end > start) {
             ff.textContent = `Full flight : ${start.toFixed(2)} s -> ${end.toFixed(2)} s`
         } else {
@@ -1030,6 +1411,7 @@ function evaluateSequence() {
         }
     }
     updateDerivedSections()
+    evaluateChecks()
 }
 
 function initSequenceUI() {
@@ -1205,27 +1587,37 @@ function updateDerivedSections() {
     const airbrakeStart = sequenceMatches["airbrake"]
 
     if (palAwayEl) {
-        if (cruiseAwayStart != null && cruiseReturnStart != null && cruiseReturnStart > cruiseAwayStart) {
-            const res = longestConstantAltInterval(ptgiAltSeries, 2.0, cruiseAwayStart, cruiseReturnStart)
+        const bounds = getPhaseBounds(sequenceMatches)
+        const ca = bounds.cruiseAwayWindow
+        if (ca) {
+            const res = longestConstantAltInterval(ptgiAltSeries, 2.0, ca.start, ca.end)
+            palierAwayWindow = res ? { start: res.start, end: res.end } : null
             palAwayEl.textContent = res ? formatInterval(res) : "Pas de palier détecté"
         } else {
             palAwayEl.textContent = "Bornes manquantes ou cruise away vide"
+            palierAwayWindow = null
         }
     }
     if (palRetEl) {
-        if (cruiseReturnStart != null && airbrakeStart != null && airbrakeStart > cruiseReturnStart) {
-            const res = longestConstantAltInterval(ptgiAltSeries, 2.0, cruiseReturnStart, airbrakeStart)
+        const bounds = getPhaseBounds(sequenceMatches)
+        const cr = bounds.cruiseReturnWindow
+        if (cr) {
+            const res = longestConstantAltInterval(ptgiAltSeries, 2.0, cr.start, cr.end)
+            palierReturnWindow = res ? { start: res.start, end: res.end } : null
             palRetEl.textContent = res ? formatInterval(res) : "Pas de palier détecté"
         } else {
             palRetEl.textContent = "Bornes manquantes"
+            palierReturnWindow = null
         }
     }
 
     if (farEl) {
+        const bounds = getPhaseBounds(sequenceMatches)
         const start = sequenceMatches["vtol-takeoff"]
-        const end = sequenceMatches["vtol-landing"]
+        const end = bounds.landingEnd
         const source = customDistSeries.some(e => Number.isFinite(e.dist)) ? customDistSeries : gpiDistSeries
         const res = longestFarFromHome(source, 5000, start, end)
+        farFromHomeWindow = res ? { start: res.start, end: res.end } : null
         farEl.textContent = res ? `Début ${res.start.toFixed(2)}s, Fin ${res.end.toFixed(2)}s, Durée ${res.duration.toFixed(1)}s` : "Pas d'intervalle >5km"
     }
 }
@@ -1524,13 +1916,42 @@ async function load_tlog(log_file) {
         let msg = comp.msg[message.name]
 
         const payload_start = offset + (header.header_length - 2)
-        const payload = decodeMavlinkPayload(header.msgId, log_file, payload_start, header.payload_length)
-        if (payload != null) {
-            availableMessageFields[message.name] = payload.fieldnames
-            payload.fieldnames.forEach((field, idx) => {
-                updateFieldStats(message.name, field, payload.values[idx])
+        tlogMessagesSeen.add(message.name)
+        const meta = getMavlinkFieldMeta(header.msgId)
+        if (meta && Array.isArray(meta.fieldnames) && meta.fieldnames.length > 0 && !availableMessageFields[message.name]) {
+            availableMessageFields[message.name] = meta.fieldnames
+        }
+        let payload = decodeMavlinkPayload(header.msgId, log_file, payload_start, header.payload_length)
+        let manualPayload = null
+        if (payload == null && message.name === "POSITION_TARGET_GLOBAL_INT") {
+            const manual = parsePTGIManual(log_file, payload_start, header.payload_length)
+            if (manual) {
+                const fieldnames = Object.keys(manual)
+                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
+            }
+        } else if (payload == null && message.name === "VIBRATION") {
+            const manual = parseVibrationManual(log_file, payload_start, header.payload_length)
+            if (manual) {
+                const fieldnames = Object.keys(manual)
+                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
+            }
+        } else if (payload == null && message.name === "BATTERY_STATUS") {
+            const manual = parseBatteryStatusManual(log_file, payload_start, header.payload_length)
+            if (manual) {
+                const fieldnames = Object.keys(manual)
+                manualPayload = { fieldnames, values: fieldnames.map(k => manual[k]) }
+            }
+        }
+        const payloadForStats = payload ?? manualPayload
+        if (payloadForStats != null) {
+            if (!availableMessageFields[message.name]) {
+                availableMessageFields[message.name] = payloadForStats.fieldnames
+            }
+            payloadForStats.fieldnames.forEach((field, idx) => {
+                updateFieldStats(message.name, field, payloadForStats.values[idx])
             })
         }
+        payload = payloadForStats
 
 
         // Get timestamp
@@ -1566,6 +1987,13 @@ async function load_tlog(log_file) {
         }
 
         end_time = time
+        tlogEndTime = end_time
+        if (payloadForStats != null) {
+            payloadForStats.fieldnames.forEach((field, idx) => {
+                pushFieldSample(message.name, field, time, payloadForStats.values[idx])
+            })
+            pushMessageSample(message.name, time, payloadForStats)
+        }
 
         if (message.name === "STATUSTEXT") {
             let text = payload ? extractStatusText(payload) : null
@@ -1578,6 +2006,9 @@ async function load_tlog(log_file) {
         }
         if (message.name === "POSITION_TARGET_GLOBAL_INT") {
             let parsed = payload ? Object.fromEntries(payload.fieldnames.map((n, idx) => [n, payload.values[idx]])) : null
+            if (!parsed && manualPayload) {
+                parsed = Object.fromEntries(manualPayload.fieldnames.map((n, idx) => [n, manualPayload.values[idx]]))
+            }
             if (!parsed) {
                 const manual = parsePTGIManual(log_file, payload_start, header.payload_length)
                 if (manual) parsed = manual
@@ -1607,6 +2038,12 @@ async function load_tlog(log_file) {
                     customDistSeries.push({ time, dist: payload.values[idxDist] })
                 } else {
                     customDistSeries.push({ time, dist: null })
+                }
+            }
+            if (message.name === "VIBRATION") {
+                const parsed = Object.fromEntries(payload.fieldnames.map((n, idx) => [n, payload.values[idx]]))
+                if (Number.isFinite(parsed.vibration_x) || Number.isFinite(parsed.vibration_y) || Number.isFinite(parsed.vibration_z)) {
+                    // No extra series yet, but ensure payload recorded
                 }
             }
         } else {
@@ -1656,15 +2093,15 @@ async function load_tlog(log_file) {
 
         if (seq < comp.next_seq) {
 
-            // Deal with wrap at 255
+            // Deal with wrap at 256
 
-            seq += 255
+            seq += 256
 
         }
 
         comp.dropped += seq - comp.next_seq
 
-        comp.next_seq = (header.sequence + 1) % 256
+        comp.next_seq = (seq + 1) % 256
 
 
 
@@ -1885,10 +2322,7 @@ async function load_tlog(log_file) {
 
 
     plot_tlog()
-
-    evaluateChecks()
     evaluateSequence()
-    updateDerivedSections()
 
 
 
@@ -2258,6 +2692,13 @@ function reset() {
     gpiDistSeries = []
     homeLat = null
     homeLon = null
+    tlogMessagesSeen = new Set()
+    tlogFieldSeries = {}
+    tlogMessageSamples = {}
+    tlogEndTime = null
+    palierAwayWindow = null
+    palierReturnWindow = null
+    farFromHomeWindow = null
     markChecksPending("En attente d'un tlog")
     renderSequenceResultsPending()
     clearDerivedSections()
