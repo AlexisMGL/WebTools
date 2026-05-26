@@ -251,7 +251,11 @@
         // Set time and render
         if ("time" in data) {
             setTime(data.time).then(() => {
-                e.source.postMessage("renderDone")
+                if ("requestId" in data) {
+                    e.source.postMessage({ renderDone: data.requestId })
+                } else {
+                    e.source.postMessage("renderDone")
+                }
             })
         }
     })

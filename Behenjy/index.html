@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Behenjy - TLOG Analyzer</title>
+<link rel="icon" href="../images/AP_favicon.png">
+<link rel="stylesheet" href="styles.css">
+<script src="../modules/plotly.js/dist/plotly.min.js"></script>
+<script defer src="Behenjy.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <a class="brand-link" href="./">
+        <span class="brand-mark">B</span>
+        <span>
+          <span class="brand-name">Behenjy</span>
+          <span class="brand-subtitle">TLOG altitude analyzer</span>
+        </span>
+      </a>
+    </div>
+    <a class="repo-link" href="../">Web Tools</a>
+  </header>
+
+  <main class="app-shell">
+    <section class="intro-band">
+      <div class="intro-copy">
+        <p class="eyebrow">MAVLink VFR_HUD</p>
+        <h1>Altitude over time from telemetry logs</h1>
+        <p class="lede">Load a `.tlog` file and inspect the VFR_HUD altitude trace with fast hover, zoom, and reset controls.</p>
+      </div>
+
+      <div id="dropZone" class="upload-panel" tabindex="0">
+        <input id="fileInput" type="file" accept=".tlog" hidden>
+        <div class="upload-copy">
+          <span class="upload-kicker">Drop a TLOG here</span>
+          <strong id="selectedFileName">No file loaded</strong>
+          <span id="statusText">Choose a file to begin parsing VFR_HUD messages.</span>
+        </div>
+        <div class="upload-actions">
+          <button id="chooseFileButton" type="button">Choose TLOG</button>
+          <button id="sampleButton" class="secondary" type="button">Load sample log</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="statsPanel" class="stats-grid" aria-live="polite">
+      <div class="stat-card">
+        <span>VFR_HUD samples</span>
+        <strong id="sampleCount">0</strong>
+      </div>
+      <div class="stat-card">
+        <span>Duration</span>
+        <strong id="durationValue">0.0 s</strong>
+      </div>
+      <div class="stat-card">
+        <span>Altitude range</span>
+        <strong id="altitudeRange">-</strong>
+      </div>
+      <div class="stat-card">
+        <span>Average rate</span>
+        <strong id="sampleRate">0.0 Hz</strong>
+      </div>
+    </section>
+
+    <section class="chart-section">
+      <div class="chart-heading">
+        <div>
+          <p class="eyebrow">Graph</p>
+          <h2>VFR_HUD altitude</h2>
+        </div>
+        <div id="fileMeta" class="file-meta">Waiting for telemetry</div>
+      </div>
+      <div id="altitudePlot" class="plot"></div>
+      <div id="emptyState" class="empty-state">
+        <strong>Ready for a TLOG</strong>
+        <span>The altitude graph will appear here after the first VFR_HUD messages are decoded.</span>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

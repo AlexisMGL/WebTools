@@ -3,6 +3,10 @@
 
 class WidgetSandBoxVideoOverlay extends WidgetSandBox {
     initDone
+    timeUpdateRunning
+    pendingTime
+    timeUpdatePromise
+    timeRequestId
 
     constructor(options) {
 
@@ -36,6 +40,10 @@ setTime = function(time) {
         }
 
         super(options, true)
+        this.timeUpdateRunning = false
+        this.pendingTime = null
+        this.timeUpdatePromise = Promise.resolve()
+        this.timeRequestId = 0
 
         // Sandboxed iframe for user content
         this.iframe.src = 'Widgets/SandBox.html'
@@ -86,7 +94,7 @@ setTime = function(time) {
         this.loadLog(log)
     }
 
-    setTime(time) {
+    #postTime(time) {
         if (this.iframe.contentWindow == null) {
             return Promise.resolve()
         }
@@ -94,6 +102,11 @@ setTime = function(time) {
         return new Promise((resolve) => {
 
             const contentWindow = this.iframe.contentWindow
+            const requestId = ++this.timeRequestId
+            const timeout = setTimeout(() => {
+                window.removeEventListener('message', messageHandler)
+                resolve()
+            }, 1000)
 
             const messageHandler = function(event) {
                 // Make sure the event is for us
@@ -102,20 +115,42 @@ setTime = function(time) {
                 }
 
                 // Make sure its the correct message
-                if (event.data !== "renderDone") {
+                if (event.data?.renderDone !== requestId) {
                     return
                 }
 
                 // Remove self
-                window.removeEventListener('message', messageHandler);
+                clearTimeout(timeout)
+                window.removeEventListener('message', messageHandler)
 
                 // Done
                 resolve()
             }
-            window.addEventListener('message', messageHandler);
+            window.addEventListener('message', messageHandler)
 
-            contentWindow.postMessage({ time }, '*')
+            contentWindow.postMessage({ time, requestId }, '*')
         })
+    }
+
+    setTime(time) {
+        this.pendingTime = time
+
+        if (!this.timeUpdateRunning) {
+            this.timeUpdateRunning = true
+            this.timeUpdatePromise = this.#runTimeUpdates()
+        }
+
+        return this.timeUpdatePromise
+    }
+
+    async #runTimeUpdates() {
+        while (this.pendingTime != null) {
+            const time = this.pendingTime
+            this.pendingTime = null
+            await this.#postTime(time)
+        }
+
+        this.timeUpdateRunning = false
     }
 }
 customElements.define('widget-sand-box-video-overlay', WidgetSandBoxVideoOverlay)

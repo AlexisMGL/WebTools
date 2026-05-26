@@ -8,6 +8,18 @@ import_done[1] = import('../modules/JsDataflashParser/parser.js').then((mod) => 
 // Bin log object
 let log
 
+const syncPlotDefaultItem = "BARO[0].Alt"
+const syncPlotState = {
+    item: syncPlotDefaultItem,
+    series: null,
+    optionValues: new Set(),
+    drawPending: false
+}
+const widgetPreviewTimeState = {
+    running: false,
+    pendingVidTime: null
+}
+
 // Get flight time from stat params
 function getFlightTime(log) {
     if (!("PARM" in log.messageTypes)) {
@@ -290,6 +302,453 @@ function getLogDurationUS() {
     return lastTimeUs - firstTimeUs
 }
 
+function parseSyncPlotItem(item) {
+    if (typeof item != "string") {
+        return
+    }
+
+    const match = item.match(/^(\w+)(?:\[(\d+)\])?\.(\w+)$/)
+    if (match == null) {
+        return
+    }
+
+    return {
+        name: match[1],
+        instance: (match[2] == null) ? null : parseInt(match[2]),
+        field: match[3]
+    }
+}
+
+function isNumericLogFormat(format) {
+    return "bBMhHiLIfdQqcCEe".includes(format)
+}
+
+function getVideoCurrentTime() {
+    const video = document.getElementById("video")
+    if (video == null) {
+        return 0
+    }
+    return video.currentTime || 0
+}
+
+function getCurrentLogOffset() {
+    const offset = parseFloat(document.getElementById("log_offset").value)
+    return Number.isFinite(offset) ? offset : 0
+}
+
+function setCurrentLogOffset(offset) {
+    document.getElementById("log_offset").value = Number.isFinite(offset) ? offset.toFixed(3) : 0
+}
+
+function getLogTimeForVideoTime(vidTime) {
+    return vidTime - getCurrentLogOffset()
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max)
+}
+
+function getSyncPlotUnit(messageName, field) {
+    const type = log?.messageTypes?.[messageName]
+    const fieldInfo = type?.complexFields?.[field]
+    if ((fieldInfo == null) || (fieldInfo.units == null) || (fieldInfo.units == "?")) {
+        return ""
+    }
+    return fieldInfo.units
+}
+
+function addSyncPlotOption(fieldList, messageName, field) {
+    const value = `${messageName}.${field}`
+    const unit = getSyncPlotUnit(messageName, field)
+
+    const option = document.createElement("option")
+    option.setAttribute("value", value)
+    option.setAttribute("label", unit == "" ? value : `${value} (${unit})`)
+    fieldList.appendChild(option)
+
+    syncPlotState.optionValues.add(value)
+}
+
+function updateSyncPlotOptions() {
+    const fieldInput = document.getElementById("sync_plot_field")
+    const fieldList = document.getElementById("sync_plot_field_list")
+    if ((fieldInput == null) || (fieldList == null)) {
+        return
+    }
+
+    fieldList.replaceChildren()
+    syncPlotState.optionValues = new Set()
+
+    if (log == null) {
+        fieldInput.value = syncPlotDefaultItem
+        fieldInput.disabled = true
+        clearSyncPlotSeries()
+        updateSyncPlotTime(getVideoCurrentTime())
+        return
+    }
+
+    for (const msg of log.FMT) {
+        if ((msg == null) || (msg.Total_Length == 0) || (msg.Columns.indexOf("TimeUS") == -1)) {
+            continue
+        }
+
+        const messageNames = []
+        if ("InstancesOffsetArray" in msg) {
+            const instances = Object.keys(msg.InstancesOffsetArray).sort((a, b) => parseFloat(a) - parseFloat(b))
+            for (const instance of instances) {
+                messageNames.push(`${msg.Name}[${instance}]`)
+            }
+        } else {
+            messageNames.push(msg.Name)
+        }
+
+        for (let i = 0; i < msg.Columns.length; i++) {
+            const field = msg.Columns[i]
+            if ((field == "TimeUS") || !isNumericLogFormat(msg.Format.charAt(i))) {
+                continue
+            }
+
+            for (const messageName of messageNames) {
+                addSyncPlotOption(fieldList, messageName, field)
+            }
+        }
+    }
+
+    fieldInput.disabled = syncPlotState.optionValues.size == 0
+    if (syncPlotState.optionValues.size == 0) {
+        fieldInput.value = ""
+        clearSyncPlotSeries()
+        updateSyncPlotTime(getVideoCurrentTime())
+        return
+    }
+
+    let item = fieldInput.value
+    if (!syncPlotState.optionValues.has(item)) {
+        if (syncPlotState.optionValues.has(syncPlotDefaultItem)) {
+            item = syncPlotDefaultItem
+        } else if (syncPlotState.optionValues.has("BARO.Alt")) {
+            item = "BARO.Alt"
+        } else {
+            item = syncPlotState.optionValues.values().next().value
+        }
+    }
+
+    fieldInput.value = item
+    setSyncPlotItem(item)
+}
+
+function getSyncPlotSeries(item) {
+    if (log == null) {
+        return
+    }
+
+    const parsed = parseSyncPlotItem(item)
+    if (parsed == null) {
+        return
+    }
+
+    let timeUS
+    let value
+    if (parsed.instance == null) {
+        timeUS = log.get(parsed.name, "TimeUS")
+        value = log.get(parsed.name, parsed.field)
+    } else {
+        timeUS = log.get_instance(parsed.name, parsed.instance, "TimeUS")
+        value = log.get_instance(parsed.name, parsed.instance, parsed.field)
+    }
+
+    if ((timeUS == null) || (value == null)) {
+        return
+    }
+
+    let minTime = Infinity
+    let maxTime = -Infinity
+    let minValue = Infinity
+    let maxValue = -Infinity
+    let validCount = 0
+    const len = Math.min(timeUS.length, value.length)
+    for (let i = 0; i < len; i++) {
+        const time = timeUS[i] / 1000000
+        const sample = value[i]
+        if (!Number.isFinite(time) || !Number.isFinite(sample)) {
+            continue
+        }
+
+        minTime = Math.min(minTime, time)
+        maxTime = Math.max(maxTime, time)
+        minValue = Math.min(minValue, sample)
+        maxValue = Math.max(maxValue, sample)
+        validCount += 1
+    }
+
+    if (validCount == 0) {
+        return
+    }
+
+    const messageName = (parsed.instance == null) ? parsed.name : `${parsed.name}[${parsed.instance}]`
+    return {
+        item,
+        field: parsed.field,
+        unit: getSyncPlotUnit(messageName, parsed.field),
+        timeUS,
+        value,
+        len,
+        minTime,
+        maxTime,
+        minValue,
+        maxValue,
+        validCount
+    }
+}
+
+function clearSyncPlotSeries() {
+    syncPlotState.series = null
+
+    const slider = document.getElementById("sync_plot_slider")
+    if (slider != null) {
+        slider.disabled = true
+    }
+}
+
+function setSyncPlotItem(item) {
+    syncPlotState.item = item
+    syncPlotState.series = getSyncPlotSeries(item)
+
+    const slider = document.getElementById("sync_plot_slider")
+    if (slider == null) {
+        return
+    }
+
+    const series = syncPlotState.series
+    if (series == null) {
+        slider.disabled = true
+        updateSyncPlotTime(getVideoCurrentTime())
+        return
+    }
+
+    slider.disabled = false
+    slider.min = series.minTime
+    slider.max = series.maxTime
+    slider.step = Math.max((series.maxTime - series.minTime) / 10000, 0.001)
+    updateSyncPlotTime(getVideoCurrentTime())
+}
+
+function getSyncPlotValueAtTime(series, time) {
+    if ((series == null) || (series.len == 0)) {
+        return
+    }
+
+    const targetUS = time * 1000000
+    let low = 0
+    let high = series.len - 1
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2)
+        if (series.timeUS[mid] < targetUS) {
+            low = mid + 1
+        } else {
+            high = mid - 1
+        }
+    }
+
+    const i0 = clamp(low - 1, 0, series.len - 1)
+    const i1 = clamp(low, 0, series.len - 1)
+    const t0 = series.timeUS[i0] / 1000000
+    const t1 = series.timeUS[i1] / 1000000
+    const v0 = series.value[i0]
+    const v1 = series.value[i1]
+
+    if (!Number.isFinite(v0) || !Number.isFinite(v1) || (t0 == t1)) {
+        return Number.isFinite(v0) ? v0 : v1
+    }
+
+    return v0 + ((time - t0) / (t1 - t0)) * (v1 - v0)
+}
+
+function formatSyncValue(value) {
+    if (!Number.isFinite(value)) {
+        return "-"
+    }
+
+    const abs = Math.abs(value)
+    if ((abs > 0) && ((abs < 0.01) || (abs >= 10000))) {
+        return value.toExponential(2)
+    }
+    return value.toFixed(abs < 100 ? 2 : 1)
+}
+
+function updateSyncPlotStatus(logTime) {
+    const status = document.getElementById("sync_plot_status")
+    if (status == null) {
+        return
+    }
+
+    if (log == null) {
+        status.textContent = "Load a log to enable sync plot"
+        return
+    }
+
+    const series = syncPlotState.series
+    if (series == null) {
+        status.textContent = "No data for selected plot"
+        return
+    }
+
+    const value = getSyncPlotValueAtTime(series, logTime)
+    const unit = series.unit == "" ? "" : ` ${series.unit}`
+    status.textContent = `Offset ${getCurrentLogOffset().toFixed(3)} s | ${series.item} ${formatSyncValue(value)}${unit}`
+}
+
+function updateSyncPlotTime(vidTime) {
+    const series = syncPlotState.series
+    const slider = document.getElementById("sync_plot_slider")
+    const logTime = getLogTimeForVideoTime(vidTime)
+
+    if ((series != null) && (slider != null) && (document.activeElement !== slider)) {
+        slider.value = clamp(logTime, series.minTime, series.maxTime)
+    }
+
+    updateSyncPlotStatus(logTime)
+    requestSyncPlotDraw()
+}
+
+function requestSyncPlotDraw() {
+    if (syncPlotState.drawPending) {
+        return
+    }
+
+    syncPlotState.drawPending = true
+    requestAnimationFrame(() => {
+        syncPlotState.drawPending = false
+        drawSyncPlot()
+    })
+}
+
+function drawSyncPlotMessage(ctx, width, height, message) {
+    ctx.fillStyle = "#666"
+    ctx.font = "12px sans-serif"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText(message, width / 2, height / 2)
+}
+
+function drawSyncPlot() {
+    const canvas = document.getElementById("sync_plot_canvas")
+    const panel = document.getElementById("sync_panel")
+    if ((canvas == null) || (panel == null) || panel.classList.contains("collapsed")) {
+        return
+    }
+
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+    if ((width == 0) || (height == 0)) {
+        return
+    }
+
+    const pixelRatio = window.devicePixelRatio || 1
+    const canvasWidth = Math.floor(width * pixelRatio)
+    const canvasHeight = Math.floor(height * pixelRatio)
+    if ((canvas.width != canvasWidth) || (canvas.height != canvasHeight)) {
+        canvas.width = canvasWidth
+        canvas.height = canvasHeight
+    }
+
+    const ctx = canvas.getContext("2d")
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+    ctx.clearRect(0, 0, width, height)
+
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, width, height)
+
+    const series = syncPlotState.series
+    if (series == null) {
+        drawSyncPlotMessage(ctx, width, height, log == null ? "No log loaded" : "No plot data")
+        return
+    }
+
+    const left = 52
+    const right = 12
+    const top = 10
+    const bottom = 20
+    const plotWidth = Math.max(width - left - right, 1)
+    const plotHeight = Math.max(height - top - bottom, 1)
+
+    let minValue = series.minValue
+    let maxValue = series.maxValue
+    if (minValue == maxValue) {
+        minValue -= 0.5
+        maxValue += 0.5
+    }
+
+    let minTime = series.minTime
+    let maxTime = series.maxTime
+    if (minTime == maxTime) {
+        minTime -= 0.5
+        maxTime += 0.5
+    }
+
+    const timeRange = maxTime - minTime
+    const valueRange = maxValue - minValue
+
+    ctx.strokeStyle = "#d0d0d0"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    for (let i = 0; i <= 4; i++) {
+        const y = top + (plotHeight * i / 4)
+        ctx.moveTo(left, y)
+        ctx.lineTo(left + plotWidth, y)
+    }
+    ctx.stroke()
+
+    ctx.strokeStyle = "#333"
+    ctx.strokeRect(left, top, plotWidth, plotHeight)
+
+    const maxSamples = Math.max(Math.floor(plotWidth * 3), 1)
+    const step = Math.max(Math.floor(series.validCount / maxSamples), 1)
+    ctx.strokeStyle = "#1f77b4"
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    let started = false
+    for (let i = 0; i < series.len; i += step) {
+        const time = series.timeUS[i] / 1000000
+        const value = series.value[i]
+        if (!Number.isFinite(time) || !Number.isFinite(value)) {
+            continue
+        }
+
+        const x = left + ((time - minTime) / timeRange) * plotWidth
+        const y = top + (1 - ((value - minValue) / valueRange)) * plotHeight
+        if (!started) {
+            ctx.moveTo(x, y)
+            started = true
+        } else {
+            ctx.lineTo(x, y)
+        }
+    }
+    ctx.stroke()
+
+    const logTime = getLogTimeForVideoTime(getVideoCurrentTime())
+    const lineTime = clamp(logTime, minTime, maxTime)
+    const lineX = left + ((lineTime - minTime) / timeRange) * plotWidth
+    ctx.strokeStyle = ((logTime < minTime) || (logTime > maxTime)) ? "#777" : "#d32f2f"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(lineX, top)
+    ctx.lineTo(lineX, top + plotHeight)
+    ctx.stroke()
+
+    ctx.fillStyle = "#333"
+    ctx.font = "11px sans-serif"
+    ctx.textBaseline = "top"
+    ctx.textAlign = "right"
+    ctx.fillText(formatSyncValue(maxValue), left - 6, top)
+    ctx.textBaseline = "bottom"
+    ctx.fillText(formatSyncValue(minValue), left - 6, top + plotHeight)
+    ctx.textAlign = "left"
+    ctx.fillText(minTime.toFixed(1) + "s", left, height - 4)
+    ctx.textAlign = "right"
+    ctx.fillText(maxTime.toFixed(1) + "s", left + plotWidth, height - 4)
+}
+
 
 function load() {
 
@@ -396,6 +855,68 @@ function load() {
     const playBtn = document.getElementById('play');
     const seek = document.getElementById('seek');
     const timeDisplay = document.getElementById('time');
+    const syncField = document.getElementById("sync_plot_field")
+    const syncSlider = document.getElementById("sync_plot_slider")
+    const syncPanel = document.getElementById("sync_panel")
+    const syncToggle = document.getElementById("sync_panel_toggle")
+
+    const updateSyncField = () => {
+        if (!syncPlotState.optionValues.has(syncField.value)) {
+            clearSyncPlotSeries()
+            updateSyncPlotTime(video.currentTime)
+            return
+        }
+        setSyncPlotItem(syncField.value)
+    }
+    syncField.oninput = updateSyncField
+    syncField.onchange = updateSyncField
+
+    const updateSyncSlider = () => {
+        const selectedLogTime = parseFloat(syncSlider.value)
+        if (!Number.isFinite(selectedLogTime)) {
+            return
+        }
+
+        setCurrentLogOffset(video.currentTime - selectedLogTime)
+        scheduleWidgetTimeUpdate(video.currentTime)
+        updateSyncPlotTime(video.currentTime)
+    }
+    syncSlider.oninput = updateSyncSlider
+    syncSlider.onchange = updateSyncSlider
+
+    syncToggle.onclick = () => {
+        const collapsed = syncPanel.classList.toggle("collapsed")
+        syncToggle.textContent = collapsed ? "Show" : "Hide"
+        syncToggle.title = collapsed ? "Expand sync plot" : "Collapse sync plot"
+        if (!collapsed) {
+            requestSyncPlotDraw()
+        }
+    }
+    window.addEventListener('resize', requestSyncPlotDraw)
+    updateSyncPlotTime(video.currentTime)
+
+    let syncPlaybackFrame = null
+    function stopSyncPlaybackFollow() {
+        if (syncPlaybackFrame != null) {
+            cancelAnimationFrame(syncPlaybackFrame)
+            syncPlaybackFrame = null
+        }
+    }
+
+    function followSyncPlayback() {
+        updateSyncPlotTime(video.currentTime)
+        if (!video.paused && !video.ended) {
+            syncPlaybackFrame = requestAnimationFrame(followSyncPlayback)
+        } else {
+            syncPlaybackFrame = null
+        }
+    }
+
+    function startSyncPlaybackFollow() {
+        if (syncPlaybackFrame == null) {
+            syncPlaybackFrame = requestAnimationFrame(followSyncPlayback)
+        }
+    }
 
     // Play / Pause
     playBtn.onclick = () => {
@@ -407,8 +928,15 @@ function load() {
     };
 
     // Update play / pause button
-    video.onplay = () => playBtn.textContent = "||";
-    video.onpause = () => playBtn.textContent = "▶";
+    video.onplay = () => {
+        playBtn.textContent = "||"
+        startSyncPlaybackFollow()
+    }
+    video.onpause = () => {
+        playBtn.textContent = "▶"
+        stopSyncPlaybackFollow()
+        updateSyncPlotTime(video.currentTime)
+    }
 
     // Skip buttons
     document.getElementById('skip-back').onclick  = () => video.currentTime -= 5;
@@ -471,6 +999,7 @@ function load() {
         matchOverlaySize()
         updateTimeline()
         updateSeekBar()
+        updateSyncPlotTime(video.currentTime)
     };
 
     function updateTimeline() {
@@ -484,13 +1013,16 @@ function load() {
     // Timeline update
     video.ontimeupdate = () => {
         // There is no auto slow down here, assume widgets can keep up with playback
-        setWidgetTime(video.currentTime)
+        scheduleWidgetTimeUpdate(video.currentTime)
         updateTimeline()
+        updateSyncPlotTime(video.currentTime)
     };
 
     // Seek
     seek.oninput = () => {
         video.currentTime = seek.value * video.duration;
+        scheduleWidgetTimeUpdate(video.currentTime)
+        updateSyncPlotTime(video.currentTime)
     };
 
     function formatTime(t) {
@@ -529,11 +1061,13 @@ function load() {
                 }
 
                 setDefaultOffset()
+                updateSyncPlotOptions()
 
                 for (const widget of grid.getGridItems()) {
                     widget.loadLog()
                 }
-                setWidgetTime(video.currentTime)
+                scheduleWidgetTimeUpdate(video.currentTime)
+                updateSyncPlotTime(video.currentTime)
             })
         }
         reader.readAsArrayBuffer(file)
@@ -541,9 +1075,13 @@ function load() {
     }
 
     // Update time when offset is changed
-    document.getElementById("log_offset").onchange = () => {
-        setWidgetTime(video.currentTime)
+    const logOffsetInput = document.getElementById("log_offset")
+    const updateOffset = () => {
+        scheduleWidgetTimeUpdate(video.currentTime)
+        updateSyncPlotTime(video.currentTime)
     }
+    logOffsetInput.oninput = updateOffset
+    logOffsetInput.onchange = updateOffset
 
     // Overlay input
     const overlayInput = document.getElementById("overlay-input")
@@ -566,7 +1104,7 @@ function load() {
                 if (widget != null) {
                     widget.init()
                     widget.loadLog()
-                    setWidgetTime(video.currentTime)
+                    scheduleWidgetTimeUpdate(video.currentTime)
                 }
             } else {
                 alert("Unable to load from: " + file)
@@ -625,6 +1163,27 @@ async function setWidgetTime(vidTime) {
 
     // Wait for all widgets to complete
     return Promise.allSettled(timeUpdate)
+}
+
+function scheduleWidgetTimeUpdate(vidTime) {
+    widgetPreviewTimeState.pendingVidTime = vidTime
+
+    if (widgetPreviewTimeState.running) {
+        return
+    }
+
+    widgetPreviewTimeState.running = true
+    runScheduledWidgetTimeUpdate()
+}
+
+async function runScheduledWidgetTimeUpdate() {
+    while (widgetPreviewTimeState.pendingVidTime != null) {
+        const vidTime = widgetPreviewTimeState.pendingVidTime
+        widgetPreviewTimeState.pendingVidTime = null
+        await setWidgetTime(vidTime)
+    }
+
+    widgetPreviewTimeState.running = false
 }
 
 async function exportVideo() {
@@ -760,7 +1319,7 @@ async function exportVideo() {
     console.log(`Export took: ${exportTime.toFixed(2)}s, ${exportFPS.toFixed(2)} FPS, ${(timeRatio * 100).toFixed(2)}% realtime`)
 
     // Reset widgets to match video preview
-    setWidgetTime(video.currentTime)
+    scheduleWidgetTimeUpdate(video.currentTime)
 }
 
 function seekTo(video, time) {
@@ -895,7 +1454,7 @@ function widget_dropped(event, previousWidget, newWidget) {
         copy.loadLog()
     }
 
-    setWidgetTime(video.currentTime)
+    scheduleWidgetTimeUpdate(video.currentTime)
 
     // If the widget was removed from the palette grid then reload it
     if (previousWidget.grid === palette) {
@@ -995,7 +1554,7 @@ function load_widgets(target_grid, widgets) {
         widget.loadLog()
     }
 
-    setWidgetTime(video.currentTime)
+    scheduleWidgetTimeUpdate(video.currentTime)
 }
 
 function load_layout(grid_layout, widgets) {

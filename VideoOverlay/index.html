@@ -206,6 +206,105 @@
     max-width: 1200px;
   }
 
+  .sync-panel {
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 8px;
+    border: 1px solid #888;
+    border-radius: 4px;
+    background: #f8f8f8;
+    box-sizing: border-box;
+  }
+
+  .sync-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 5px 8px;
+  }
+
+  .sync-title {
+    font-weight: bold;
+  }
+
+  .sync-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #sync_plot_field {
+    width: 210px;
+  }
+
+  #sync_plot_status {
+    flex: 1;
+    min-width: 220px;
+    color: #333;
+  }
+
+  .sync-body {
+    position: relative;
+    height: 110px;
+    border-top: 1px solid #bbb;
+    background: white;
+  }
+
+  #sync_plot_canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  #sync_plot_slider {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100% !important;
+    margin: 0;
+    background: transparent !important;
+    cursor: ew-resize;
+  }
+
+  #sync_plot_slider::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  #sync_plot_slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3px;
+    height: 110px;
+    border: 0;
+    border-radius: 0;
+    background: #d32f2f;
+  }
+
+  #sync_plot_slider::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  #sync_plot_slider::-moz-range-thumb {
+    width: 3px;
+    height: 106px;
+    border: 0;
+    border-radius: 0;
+    background: #d32f2f;
+  }
+
+  #sync_plot_slider:disabled {
+    display: none;
+  }
+
+  .sync-panel.collapsed .sync-body {
+    display: none;
+  }
+
 </style>
 
 <body onload="load()">
@@ -394,6 +493,23 @@
 <br>
 
 <div class="centerDiv">
+  <div id="sync_panel" class="normal-style sync-panel">
+    <div class="sync-header">
+      <span class="sync-title">Log sync</span>
+      <span class="sync-control">
+        <label for="sync_plot_field">Plot</label>
+        <input id="sync_plot_field" list="sync_plot_field_list" value="BARO[0].Alt" disabled>
+        <datalist id="sync_plot_field_list"></datalist>
+      </span>
+      <span id="sync_plot_status">Load a log to enable sync plot</span>
+      <button id="sync_panel_toggle" type="button" title="Collapse sync plot">Hide</button>
+    </div>
+    <div class="sync-body">
+      <canvas id="sync_plot_canvas"></canvas>
+      <input type="range" id="sync_plot_slider" min="0" max="1" step="0.001" value="0" disabled title="Select the log time that matches the current video frame">
+    </div>
+  </div>
+
   <div class="video-container checker-bg">
     <video id="video"></video>
     <div id="overlay">

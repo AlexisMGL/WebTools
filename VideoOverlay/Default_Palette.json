@@ -875,7 +875,7 @@
         "form_content": {
           "label": "Altitude (m)",
           "decimalPlaces": 2,
-          "logItem": "POS.RelHomeAlt",
+          "logItem": "BARO[0].Alt",
           "scaleFactor": 1,
           "color": "#000000"
         },

@@ -2,6 +2,11 @@
 // Loads iframe and sends messages to it
 
 class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
+    timeUpdateRunning
+    pendingTime
+    timeUpdatePromise
+    timeRequestId
+
     constructor(options) {
 
         if (options == null) {
@@ -55,7 +60,11 @@ class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
         // Set time and render, reply once render is done
         if ("time" in data) {
             setTime(data.time).then(() => {
-                e.source.postMessage("renderDone")
+                if ("requestId" in data) {
+                    e.source.postMessage({ renderDone: data.requestId })
+                } else {
+                    e.source.postMessage("renderDone")
+                }
             })
         }
 
@@ -67,6 +76,10 @@ class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
         }
 
         super(options)
+        this.timeUpdateRunning = false
+        this.pendingTime = null
+        this.timeUpdatePromise = Promise.resolve()
+        this.timeRequestId = 0
 
         // Wait a short time to give the html a chance to load
         setTimeout(() => this.loadLog(), 100)
@@ -107,7 +120,7 @@ class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
         setTimeout(() => this.loadLog(), 100)
     }
 
-    setTime(time) {
+    #postTime(time) {
         if (this.iframe.contentWindow == null) {
             return Promise.resolve()
         }
@@ -115,6 +128,11 @@ class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
         return new Promise((resolve) => {
 
             const contentWindow = this.iframe.contentWindow
+            const requestId = ++this.timeRequestId
+            const timeout = setTimeout(() => {
+                window.removeEventListener('message', messageHandler)
+                resolve()
+            }, 1000)
 
             const messageHandler = function(event) {
                 // Make sure the event is for us
@@ -123,20 +141,42 @@ class WidgetCustomHTMLVideoOverlay extends WidgetCustomHTML {
                 }
 
                 // Make sure its the correct message
-                if (event.data !== "renderDone") {
+                if ((event.data?.renderDone !== requestId) && (event.data !== "renderDone")) {
                     return
                 }
 
                 // Remove self
-                window.removeEventListener('message', messageHandler);
+                clearTimeout(timeout)
+                window.removeEventListener('message', messageHandler)
 
                 // Done
                 resolve()
             }
-            window.addEventListener('message', messageHandler);
+            window.addEventListener('message', messageHandler)
 
-            contentWindow.postMessage({ time }, '*')
+            contentWindow.postMessage({ time, requestId }, '*')
         })
+    }
+
+    setTime(time) {
+        this.pendingTime = time
+
+        if (!this.timeUpdateRunning) {
+            this.timeUpdateRunning = true
+            this.timeUpdatePromise = this.#runTimeUpdates()
+        }
+
+        return this.timeUpdatePromise
+    }
+
+    async #runTimeUpdates() {
+        while (this.pendingTime != null) {
+            const time = this.pendingTime
+            this.pendingTime = null
+            await this.#postTime(time)
+        }
+
+        this.timeUpdateRunning = false
     }
 }
 customElements.define('widget-custom-html-video-overlay', WidgetCustomHTMLVideoOverlay)
